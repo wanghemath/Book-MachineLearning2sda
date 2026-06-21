@@ -1,0 +1,1182 @@
+# Filtering and Wavelet Transform
+
+::: {.hero}
+**Part IV. Frequency-Domain and Multiresolution Methods**  
+**Chapter goal:** learn how filters reshape a time series in the time and frequency domains, then extend the idea from global Fourier frequencies to local time-frequency analysis with wavelets. We use filters for smoothing, detrending, denoising, transient detection, and feature extraction for modern forecasting and sequence-learning models.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. define a linear time-invariant filter using convolution and the backshift operator;
+2. distinguish finite impulse response and infinite impulse response filters;
+3. compute the frequency response of a filter and interpret its magnitude and phase;
+4. prove that filtering transforms spectra by $f_Y(\omega)=|A(\omega)|^2 f_X(\omega)$;
+5. explain moving-average smoothers, difference filters, seasonal-difference filters, and band-pass filters;
+6. understand why Fourier methods can miss local frequency changes;
+7. define short-time Fourier analysis as a first solution to localization;
+8. explain the Haar wavelet transform and multiresolution decomposition;
+9. use wavelet coefficients for denoising, compression, change-point detection, and feature extraction;
+10. use AI tools to critique filtering choices, leakage risks, and interpretability claims.
+
+## 14.1 Why filtering?
+
+In Chapters 12 and 13 we learned that a stationary time series can be viewed through its frequency content. This chapter asks a complementary question:
+
+> How can we transform a time series so that certain frequencies, trends, or localized events become easier to see?
+
+A **filter** is a rule that takes an input series $\{X_t\}$ and produces an output series $\{Y_t\}$. A simple example is the centered moving average
+
+$$
+Y_t=\frac{1}{2m+1}\sum_{j=-m}^m X_{t-j}.
+$$
+
+This filter smooths the series by replacing each observation with a local average. Short-scale variation is reduced; slow variation is preserved. In frequency language, this is a **low-pass filter**.
+
+A first difference
+
+$$
+Y_t=\nabla X_t=X_t-X_{t-1}
+$$
+
+does the opposite: it removes constant levels and emphasizes short-scale changes. It is a **high-pass filter**.
+
+Filtering is used for several purposes:
+
+- remove noise before forecasting;
+- remove trend or seasonality before fitting stationary models;
+- isolate business-cycle or seasonal frequencies;
+- detect transients, jumps, bursts, or anomalies;
+- construct features for machine-learning models;
+- precondition data before deep sequence models.
+
+::: {.callout-warning}
+## Filtering changes the problem
+Filtering is not a neutral preprocessing step. A filtered series has a different dependence structure from the original series. Before filtering, ask: Which part of the signal am I trying to preserve, and which part am I trying to suppress?
+:::
+
+## 14.2 Linear time-invariant filters
+
+A **linear time-invariant filter** has the form
+
+$$
+Y_t=\sum_{j=-\infty}^{\infty} a_j X_{t-j},
+$$
+
+where the sequence $\{a_j\}$ is called the **filter kernel**, **impulse response**, or **filter coefficients**.
+
+The filter is **linear** because
+
+$$
+L(\alpha X_t+\beta Z_t)=\alpha L(X_t)+\beta L(Z_t),
+$$
+
+and it is **time-invariant** because the same coefficients $a_j$ are used at every time $t$.
+
+A sufficient condition for the sum to be well behaved is absolute summability:
+
+$$
+\sum_{j=-\infty}^{\infty}|a_j|<\infty.
+$$
+
+When the filter uses only finitely many coefficients, it is called a **finite impulse response** filter, or FIR filter. When infinitely many coefficients are used, it is called an **infinite impulse response** filter, or IIR filter.
+
+### Backshift notation
+
+Using the backshift operator $B X_t=X_{t-1}$, we can write
+
+$$
+Y_t=a(B)X_t,
+$$
+
+where
+
+$$
+a(B)=\sum_{j=-\infty}^{\infty}a_jB^j.
+$$
+
+For example, the first-difference filter is
+
+$$
+\nabla X_t=(1-B)X_t.
+$$
+
+The seasonal-difference filter with period $s$ is
+
+$$
+\nabla_s X_t=(1-B^s)X_t=X_t-X_{t-s}.
+$$
+
+The centered three-point moving average is
+
+$$
+Y_t=\frac{1}{3}(X_{t-1}+X_t+X_{t+1})
+=\left(\frac{1}{3}B+\frac{1}{3}+\frac{1}{3}B^{-1}\right)X_t.
+$$
+
+::: {.callout-note}
+## Causal versus centered filters
+A forecasting filter must be causal: it can use $X_t,X_{t-1},\ldots$ but not future values. A centered smoother is useful for retrospective visualization, but it leaks future information if used inside a forecasting pipeline.
+:::
+
+## 14.3 Frequency response
+
+To understand a filter, feed it a complex sinusoid
+
+$$
+X_t=e^{2\pi i\omega t}.
+$$
+
+Then
+
+$$
+\begin{aligned}
+Y_t
+&=\sum_j a_j X_{t-j} \\
+&=\sum_j a_j e^{2\pi i\omega(t-j)} \\
+&=e^{2\pi i\omega t}\sum_j a_j e^{-2\pi i\omega j}.
+\end{aligned}
+$$
+
+Thus the sinusoid remains at the same frequency. Only its amplitude and phase are changed. The multiplier
+
+$$
+A(\omega)=\sum_{j=-\infty}^{\infty}a_j e^{-2\pi i\omega j}
+$$
+
+is called the **frequency response** of the filter.
+
+The magnitude
+
+$$
+|A(\omega)|
+$$
+
+measures how much the filter amplifies or attenuates frequency $\omega$. The squared magnitude
+
+$$
+|A(\omega)|^2
+$$
+
+measures the effect on power or variance at frequency $\omega$.
+
+The phase
+
+$$
+\arg A(\omega)
+$$
+
+measures how much the filter shifts that frequency component in time.
+
+### Examples
+
+The first-difference filter has coefficients $a_0=1$ and $a_1=-1$. Therefore,
+
+$$
+A(\omega)=1-e^{-2\pi i\omega}.
+$$
+
+Using $|1-e^{-ix}|^2=2-2\cos x=4\sin^2(x/2)$, we get
+
+$$
+|A(\omega)|^2=4\sin^2(\pi\omega).
+$$
+
+At $\omega=0$, the response is $0$, so differencing removes constant components. At $\omega=1/2$, the response is $4$, so high-frequency oscillations are amplified.
+
+For the two-sided moving average with window $2m+1$,
+
+$$
+a_j=\frac{1}{2m+1},\qquad j=-m,\ldots,m.
+$$
+
+The response is
+
+$$
+A(\omega)=\frac{1}{2m+1}\sum_{j=-m}^{m}e^{-2\pi i\omega j}.
+$$
+
+This response is large near $\omega=0$ and small at many higher frequencies, so the filter smooths the series.
+
+## 14.4 Filtering and spectral density
+
+Suppose $\{X_t\}$ is a zero-mean stationary time series with spectral density $f_X(\omega)$, and define
+
+$$
+Y_t=\sum_j a_jX_{t-j}.
+$$
+
+Then the output process $\{Y_t\}$ has spectral density
+
+$$
+f_Y(\omega)=|A(\omega)|^2f_X(\omega).
+$$
+
+This formula is one of the central results of frequency-domain time-series analysis.
+
+### Derivation
+
+The autocovariance of $Y_t$ is
+
+$$
+\begin{aligned}
+\gamma_Y(h)
+&=\operatorname{Cov}(Y_{t+h},Y_t)\\
+&=\operatorname{Cov}\left(\sum_j a_jX_{t+h-j},\sum_k a_kX_{t-k}\right)\\
+&=\sum_j\sum_k a_ja_k\gamma_X(h-j+k).
+\end{aligned}
+$$
+
+Taking the Fourier transform gives
+
+$$
+\begin{aligned}
+f_Y(\omega)
+&=\sum_h \gamma_Y(h)e^{-2\pi i\omega h}\\
+&=\sum_h\sum_j\sum_k a_ja_k\gamma_X(h-j+k)e^{-2\pi i\omega h}.
+\end{aligned}
+$$
+
+Let $r=h-j+k$, so $h=r+j-k$. Then
+
+$$
+\begin{aligned}
+f_Y(\omega)
+&=\sum_j\sum_k a_ja_k e^{-2\pi i\omega(j-k)}
+\sum_r \gamma_X(r)e^{-2\pi i\omega r}\\
+&=\left(\sum_j a_je^{-2\pi i\omega j}\right)
+\left(\sum_k a_ke^{2\pi i\omega k}\right)f_X(\omega)\\
+&=A(\omega)\overline{A(\omega)}f_X(\omega)\\
+&=|A(\omega)|^2f_X(\omega).
+\end{aligned}
+$$
+
+::: {.callout-important}
+## Filter design principle
+To suppress a frequency band, make $|A(\omega)|^2$ small on that band. To preserve a frequency band, make $|A(\omega)|^2$ close to $1$ on that band.
+:::
+
+## 14.5 Common filters in time-series analysis
+
+### Moving-average smoother
+
+A trailing moving average of length $m$ is
+
+$$
+Y_t=\frac{1}{m}\sum_{j=0}^{m-1}X_{t-j}.
+$$
+
+It is causal and therefore can be used in real time. However, it introduces a delay because it averages current and past observations.
+
+A centered moving average is
+
+$$
+Y_t=\frac{1}{2m+1}\sum_{j=-m}^{m}X_{t-j}.
+$$
+
+It is symmetric and has no phase distortion, but it uses future values and therefore should not be used to create forecasting features unless it is computed only inside the training window and with careful leakage prevention.
+
+### Difference filter
+
+The first difference
+
+$$
+Y_t=X_t-X_{t-1}
+$$
+
+removes constants and weakens low-frequency trend. In ARIMA notation, this is $\nabla X_t=(1-B)X_t$.
+
+The second difference
+
+$$
+\nabla^2X_t=X_t-2X_{t-1}+X_{t-2}
+$$
+
+removes linear trends.
+
+### Seasonal-difference filter
+
+For seasonal period $s$,
+
+$$
+Y_t=X_t-X_{t-s}.
+$$
+
+The response is
+
+$$
+A(\omega)=1-e^{-2\pi i\omega s},
+$$
+
+so
+
+$$
+|A(\omega)|^2=4\sin^2(\pi s\omega).
+$$
+
+This filter removes components at frequencies
+
+$$
+\omega=0,\frac{1}{s},\frac{2}{s},\ldots,
+$$
+
+up to aliases on the discrete frequency grid.
+
+### Exponential smoothing as an IIR filter
+
+Simple exponential smoothing is
+
+$$
+Y_t=\alpha X_t+(1-\alpha)Y_{t-1},\qquad 0<\alpha<1.
+$$
+
+Iterating gives
+
+$$
+Y_t=\alpha\sum_{j=0}^{\infty}(1-\alpha)^jX_{t-j}.
+$$
+
+Thus exponential smoothing is a causal IIR low-pass filter with geometrically decaying weights.
+
+## 14.6 Interactive HTML: smoothing, differencing, and frequency response
+
+The following interactive module shows the same signal before and after two common filters. The raw signal contains a slow component, a fast component, and noise. The moving-average filter suppresses fast variation. The difference filter suppresses slow variation.
+
+::: {.interactive-card}
+### Interactive filter explorer
+
+Use the controls to change the moving-average window, the frequency of the fast component, and the noise level. The second plot shows the theoretical magnitude-squared response of the moving-average and first-difference filters.
+
+<div class="controls-grid">
+  <label>Moving-average window
+    <input id="ch14-ma-window" type="range" min="3" max="41" step="2" value="13">
+    <span id="ch14-ma-window-value">13</span>
+  </label>
+  <label>Fast frequency
+    <input id="ch14-fast-frequency" type="range" min="0.06" max="0.45" step="0.01" value="0.22">
+    <span id="ch14-fast-frequency-value">0.22</span>
+  </label>
+  <label>Noise level
+    <input id="ch14-noise-level" type="range" min="0" max="1.2" step="0.05" value="0.35">
+    <span id="ch14-noise-level-value">0.35</span>
+  </label>
+</div>
+
+<div id="ch14-filter-time-plot" style="height:430px;"></div>
+<div id="ch14-filter-response-plot" style="height:360px;"></div>
+
+<script>
+(function(){
+  function gaussianNoise(i) {
+    var u = Math.sin((i + 1) * 12.9898) * 43758.5453;
+    return (u - Math.floor(u)) * 2 - 1;
+  }
+  function movingAverage(x, m) {
+    var y = [];
+    for (var i = 0; i < x.length; i++) {
+      var s = 0;
+      var c = 0;
+      for (var j = 0; j < m; j++) {
+        var idx = i - j;
+        if (idx >= 0) { s += x[idx]; c += 1; }
+      }
+      y.push(s / c);
+    }
+    return y;
+  }
+  function difference(x) {
+    var y = [0];
+    for (var i = 1; i < x.length; i++) y.push(x[i] - x[i - 1]);
+    return y;
+  }
+  function maResponse(w, m) {
+    var num = Math.sin(Math.PI * m * w);
+    var den = m * Math.sin(Math.PI * w);
+    if (Math.abs(den) < 1e-8) return 1;
+    return Math.pow(num / den, 2);
+  }
+  function update() {
+    var m = parseInt(document.getElementById('ch14-ma-window').value, 10);
+    var fast = parseFloat(document.getElementById('ch14-fast-frequency').value);
+    var noise = parseFloat(document.getElementById('ch14-noise-level').value);
+    document.getElementById('ch14-ma-window-value').textContent = m;
+    document.getElementById('ch14-fast-frequency-value').textContent = fast.toFixed(2);
+    document.getElementById('ch14-noise-level-value').textContent = noise.toFixed(2);
+
+    var n = 240;
+    var t = [];
+    var x = [];
+    var slow = [];
+    for (var i = 0; i < n; i++) {
+      t.push(i);
+      var s = 1.4 * Math.sin(2 * Math.PI * 0.025 * i);
+      slow.push(s);
+      x.push(s + 0.45 * Math.sin(2 * Math.PI * fast * i) + noise * gaussianNoise(i));
+    }
+    var ma = movingAverage(x, m);
+    var hp = difference(x);
+
+    Plotly.newPlot('ch14-filter-time-plot', [
+      {x: t, y: x, mode: 'lines', name: 'raw series'},
+      {x: t, y: ma, mode: 'lines', name: 'moving-average low-pass'},
+      {x: t, y: hp, mode: 'lines', name: 'first difference high-pass'},
+      {x: t, y: slow, mode: 'lines', name: 'slow component', line: {dash: 'dot'}}
+    ], {
+      title: 'Filtering in the time domain',
+      xaxis: {title: 'time'},
+      yaxis: {title: 'value'},
+      margin: {t: 55, r: 20, b: 50, l: 55}
+    }, {responsive: true});
+
+    var w = [];
+    var maResp = [];
+    var diffResp = [];
+    for (var k = 0; k <= 300; k++) {
+      var ww = 0.5 * k / 300;
+      w.push(ww);
+      maResp.push(maResponse(ww, m));
+      diffResp.push(4 * Math.pow(Math.sin(Math.PI * ww), 2));
+    }
+    Plotly.newPlot('ch14-filter-response-plot', [
+      {x: w, y: maResp, mode: 'lines', name: '|A(ω)|² moving average'},
+      {x: w, y: diffResp, mode: 'lines', name: '|A(ω)|² first difference'}
+    ], {
+      title: 'Magnitude-squared frequency responses',
+      xaxis: {title: 'frequency ω', range: [0, 0.5]},
+      yaxis: {title: '|A(ω)|²'},
+      margin: {t: 55, r: 20, b: 50, l: 55}
+    }, {responsive: true});
+  }
+  ['ch14-ma-window','ch14-fast-frequency','ch14-noise-level'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', update);
+  });
+  update();
+})();
+</script>
+:::
+
+## 14.7 Python: filtering and frequency response
+
+```{python}
+#| label: ch14-filtering-example
+#| fig-cap: "A moving-average filter suppresses high-frequency variation, while differencing emphasizes short-scale changes."
+#| warning: false
+#| message: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+n = 240
+t = np.arange(n)
+slow = 1.4 * np.sin(2 * np.pi * 0.025 * t)
+fast = 0.45 * np.sin(2 * np.pi * 0.22 * t)
+noise = 0.35 * rng.normal(size=n)
+x = slow + fast + noise
+
+m = 13
+kernel = np.ones(m) / m
+ma = np.convolve(x, kernel, mode="same")
+diff = np.r_[np.nan, np.diff(x)]
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, x, label="raw", alpha=0.6)
+plt.plot(t, ma, label="centered moving average")
+plt.plot(t, slow, label="slow component", linestyle="--")
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Low-pass smoothing with a moving-average filter")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 3))
+plt.plot(t, diff, label="first difference")
+plt.xlabel("time")
+plt.ylabel("difference")
+plt.title("High-pass behavior of the first-difference filter")
+plt.legend()
+plt.show()
+```
+
+```{python}
+#| label: ch14-frequency-response-python
+#| fig-cap: "Magnitude-squared responses of common filters."
+#| warning: false
+#| message: false
+
+omega = np.linspace(0, 0.5, 800)
+
+def moving_average_response(omega, m):
+    # H(omega) = (1/m) sum_{j=0}^{m-1} exp(-2 pi i omega j)
+    response = np.zeros_like(omega, dtype=complex)
+    for j in range(m):
+        response += np.exp(-2j * np.pi * omega * j) / m
+    return response
+
+A_ma = moving_average_response(omega, m=13)
+A_diff = 1 - np.exp(-2j * np.pi * omega)
+A_seasonal = 1 - np.exp(-2j * np.pi * 12 * omega)
+
+plt.figure(figsize=(9, 4))
+plt.plot(omega, np.abs(A_ma) ** 2, label="MA(13) smoother")
+plt.plot(omega, np.abs(A_diff) ** 2, label="first difference")
+plt.plot(omega, np.abs(A_seasonal) ** 2, label="seasonal difference, s=12")
+plt.xlabel("frequency ω")
+plt.ylabel("squared gain |A(ω)|²")
+plt.title("Frequency responses of three filters")
+plt.legend()
+plt.show()
+```
+
+## 14.8 Filters, leakage, and forecasting validation
+
+Filtering can introduce **look-ahead leakage**. Suppose the goal is to forecast $X_{t+1}$ from information available at time $t$. If we create a centered moving-average feature
+
+$$
+Z_t=\frac{1}{3}(X_{t-1}+X_t+X_{t+1}),
+$$
+
+then $Z_t$ contains the future value $X_{t+1}$. A supervised-learning model trained on $Z_t$ is given information that would not be available at prediction time.
+
+For forecasting, causal features are safer:
+
+$$
+Z_t=\frac{1}{m}\sum_{j=0}^{m-1}X_{t-j}.
+$$
+
+Even then, validation must respect time order. The filter must be fit or applied inside each training window, and no operation should use future observations when producing training or validation features.
+
+::: {.callout-important}
+## Practical rule
+For exploratory plots, centered smoothers are often acceptable. For forecasting features, use causal filters unless you can prove that no future information enters the feature construction.
+:::
+
+## 14.9 From Fourier to local time-frequency analysis
+
+The Fourier transform represents a series using global sinusoids. This works well when frequency content is stable over time. But many real sequences are **nonstationary in frequency**:
+
+- a machine sensor develops a high-frequency vibration only near failure;
+- an ECG signal has local transient events;
+- a financial return series has short bursts of volatility;
+- a traffic series changes its weekly pattern after a disruption;
+- a speech signal changes frequency content from phoneme to phoneme.
+
+A single periodogram tells us which frequencies are present overall, but not when they occur.
+
+### Short-time Fourier transform
+
+A natural solution is to compute Fourier transforms on local windows. Given a window function $g$, the short-time Fourier transform is
+
+$$
+\operatorname{STFT}_x(u,\omega)
+=\sum_t x_t g(t-u)e^{-2\pi i\omega t}.
+$$
+
+The parameter $u$ localizes time, and $\omega$ localizes frequency. The squared magnitude
+
+$$
+|\operatorname{STFT}_x(u,\omega)|^2
+$$
+
+is a local time-frequency energy measure.
+
+The limitation is that the window width is fixed. A narrow window gives good time resolution but poor frequency resolution. A wide window gives good frequency resolution but poor time resolution.
+
+Wavelets address this by changing the window width with scale.
+
+## 14.10 Wavelets and multiresolution analysis
+
+A **wavelet** is a localized oscillatory function. Unlike a sine wave, which extends forever, a wavelet is concentrated in time.
+
+Starting from a mother wavelet $\psi(t)$, define scaled and translated wavelets by
+
+$$
+\psi_{a,b}(t)=\frac{1}{\sqrt{|a|}}\psi\left(\frac{t-b}{a}\right),
+$$
+
+where $a$ is scale and $b$ is location.
+
+- Small $a$: compressed wavelet, good for high-frequency local events.
+- Large $a$: stretched wavelet, good for low-frequency broad behavior.
+
+The continuous wavelet transform is
+
+$$
+W_x(a,b)=\int x(t)\overline{\psi_{a,b}(t)}\,dt.
+$$
+
+For discrete data, we often use dyadic scales $a=2^j$ and translations aligned with the sample grid. This leads to the discrete wavelet transform.
+
+::: {.callout-note}
+## Wavelet idea
+Fourier analysis asks: how much frequency $\omega$ is present in the whole signal? Wavelet analysis asks: how much scale $a$ is present near time $b$?
+:::
+
+## 14.11 The Haar wavelet
+
+The simplest wavelet is the **Haar wavelet**:
+
+$$
+\psi(t)=
+\begin{cases}
+1, & 0\leq t<1/2,\\
+-1, & 1/2\leq t<1,\\
+0, & \text{otherwise.}
+\end{cases}
+$$
+
+For a pair of observations $(x_0,x_1)$, the Haar transform computes
+
+$$
+a=\frac{x_0+x_1}{\sqrt 2},
+\qquad
+ d=\frac{x_0-x_1}{\sqrt 2}.
+$$
+
+The coefficient $a$ is an average, and $d$ is a detail. The inverse transform is
+
+$$
+x_0=\frac{a+d}{\sqrt 2},
+\qquad
+x_1=\frac{a-d}{\sqrt 2}.
+$$
+
+For a longer sequence of length $n=2^J$, the Haar transform repeatedly averages neighboring pairs and stores the differences. This gives a multiresolution representation:
+
+$$
+\text{data} = \text{coarse approximation} + \text{details at several scales}.
+$$
+
+The Haar transform is orthonormal, so it preserves energy:
+
+$$
+\sum_t x_t^2 = \sum_k c_k^2,
+$$
+
+where $c_k$ are the wavelet coefficients.
+
+## 14.12 Python: Haar wavelet transform from scratch
+
+The next code block implements a simple orthonormal Haar transform. This avoids hiding the mathematics inside a library.
+
+```{python}
+#| label: ch14-haar-transform-from-scratch
+#| fig-cap: "A Haar wavelet transform separates a signal into coarse and detail coefficients."
+#| warning: false
+#| message: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def haar_transform(x):
+    """Return the orthonormal Haar wavelet coefficients of a length-2^J vector."""
+    x = np.asarray(x, dtype=float).copy()
+    n = len(x)
+    coeffs = []
+    current = x.copy()
+    while len(current) > 1:
+        avg = (current[0::2] + current[1::2]) / np.sqrt(2)
+        detail = (current[0::2] - current[1::2]) / np.sqrt(2)
+        coeffs.append(detail)
+        current = avg
+    coeffs.append(current)
+    # Store as [coarsest average, finest-to-coarsest details reversed]
+    return coeffs[-1], coeffs[-2::-1]
+
+
+def inverse_haar_transform(coarse, details):
+    """Invert coefficients returned by haar_transform."""
+    current = np.asarray(coarse, dtype=float)
+    for detail in details:
+        detail = np.asarray(detail, dtype=float)
+        out = np.empty(current.size * 2)
+        out[0::2] = (current + detail) / np.sqrt(2)
+        out[1::2] = (current - detail) / np.sqrt(2)
+        current = out
+    return current
+
+n = 256
+t = np.arange(n)
+clean = np.sin(2 * np.pi * t / 64)
+clean += 0.7 * ((t >= 110) & (t <= 135))  # local transient
+noisy = clean + 0.35 * rng.normal(size=n)
+
+coarse, details = haar_transform(noisy)
+reconstructed = inverse_haar_transform(coarse, details)
+
+print("Maximum reconstruction error:", np.max(np.abs(noisy - reconstructed)))
+print("Time-domain energy:", np.sum(noisy ** 2))
+print("Wavelet-domain energy:", np.sum(coarse ** 2) + sum(np.sum(d ** 2) for d in details))
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, noisy, label="noisy signal", alpha=0.65)
+plt.plot(t, clean, label="clean signal", linewidth=2)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Signal with a local transient")
+plt.legend()
+plt.show()
+```
+
+```{python}
+#| label: ch14-haar-detail-coefficients
+#| fig-cap: "Haar detail coefficients reveal local changes at different scales."
+#| warning: false
+#| message: false
+
+plt.figure(figsize=(10, 4))
+for level, detail in enumerate(details[:5], start=1):
+    # Spread coefficients over the original time axis for visualization.
+    centers = np.linspace(0, n - 1, len(detail), endpoint=True)
+    plt.plot(centers, detail + 2.5 * (level - 1), marker="o", markersize=2, linewidth=1,
+             label=f"detail level {level}")
+plt.xlabel("time location")
+plt.ylabel("coefficient value plus vertical offset")
+plt.title("Multiscale Haar detail coefficients")
+plt.legend(ncol=2)
+plt.show()
+```
+
+## 14.13 Wavelet denoising
+
+Wavelet denoising is based on a simple observation. For many signals, meaningful structure is represented by a relatively small number of large wavelet coefficients, while noise is spread across many small coefficients.
+
+A common procedure is:
+
+1. compute wavelet coefficients;
+2. estimate the noise level;
+3. shrink or remove small detail coefficients;
+4. invert the wavelet transform.
+
+A standard universal threshold is
+
+$$
+\lambda=\widehat\sigma\sqrt{2\log n}.
+$$
+
+A robust estimate of $\sigma$ from the finest-scale detail coefficients is
+
+$$
+\widehat\sigma=\frac{\operatorname{median}(|d_{J,k}|)}{0.6745}.
+$$
+
+Hard thresholding uses
+
+$$
+\eta_\lambda(d)=
+\begin{cases}
+d, & |d|>\lambda,\\
+0, & |d|\leq \lambda.
+\end{cases}
+$$
+
+Soft thresholding uses
+
+$$
+\eta_\lambda(d)=\operatorname{sign}(d)(|d|-\lambda)_+.
+$$
+
+Soft thresholding is continuous and often produces smoother reconstructions.
+
+```{python}
+#| label: ch14-wavelet-denoising
+#| fig-cap: "Wavelet thresholding removes small coefficients and reconstructs a denoised signal."
+#| warning: false
+#| message: false
+
+
+def soft_threshold(x, lam):
+    return np.sign(x) * np.maximum(np.abs(x) - lam, 0.0)
+
+coarse, details = haar_transform(noisy)
+sigma_hat = np.median(np.abs(details[-1])) / 0.6745
+lam = sigma_hat * np.sqrt(2 * np.log(n))
+
+details_soft = [soft_threshold(d, lam) for d in details]
+denoised = inverse_haar_transform(coarse, details_soft)
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, noisy, label="noisy", alpha=0.45)
+plt.plot(t, clean, label="clean", linewidth=2)
+plt.plot(t, denoised, label="wavelet denoised", linewidth=2)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Wavelet denoising with soft thresholding")
+plt.legend()
+plt.show()
+
+print("Noise estimate:", sigma_hat)
+print("Universal threshold:", lam)
+print("RMSE noisy:", np.sqrt(np.mean((noisy - clean) ** 2)))
+print("RMSE denoised:", np.sqrt(np.mean((denoised - clean) ** 2)))
+```
+
+::: {.callout-warning}
+## Denoising is not always forecasting improvement
+A denoised curve may look better but forecast worse if the threshold removes predictive short-term variation. Always compare filtered and unfiltered pipelines using time-aware validation.
+:::
+
+## 14.14 Interactive HTML: Haar details and denoising
+
+This module simulates a smooth signal with a local jump. A Haar transform reacts strongly near abrupt changes. Increase the threshold to remove small details and keep only larger local features.
+
+::: {.interactive-card}
+### Interactive Haar denoising explorer
+
+<div class="controls-grid">
+  <label>Noise level
+    <input id="ch14-wavelet-noise" type="range" min="0" max="1" step="0.05" value="0.35">
+    <span id="ch14-wavelet-noise-value">0.35</span>
+  </label>
+  <label>Threshold
+    <input id="ch14-wavelet-threshold" type="range" min="0" max="1.5" step="0.05" value="0.45">
+    <span id="ch14-wavelet-threshold-value">0.45</span>
+  </label>
+</div>
+
+<div id="ch14-haar-signal-plot" style="height:410px;"></div>
+<div id="ch14-haar-detail-plot" style="height:330px;"></div>
+
+<script>
+(function(){
+  function noise(i) {
+    var u = Math.sin((i + 5) * 78.233) * 9437.123;
+    return (u - Math.floor(u)) * 2 - 1;
+  }
+  function haarOneLevel(x) {
+    var avg = [];
+    var detail = [];
+    for (var i = 0; i < x.length; i += 2) {
+      avg.push((x[i] + x[i+1]) / Math.sqrt(2));
+      detail.push((x[i] - x[i+1]) / Math.sqrt(2));
+    }
+    return {avg: avg, detail: detail};
+  }
+  function invHaarOneLevel(avg, detail) {
+    var x = [];
+    for (var i = 0; i < avg.length; i++) {
+      x.push((avg[i] + detail[i]) / Math.sqrt(2));
+      x.push((avg[i] - detail[i]) / Math.sqrt(2));
+    }
+    return x;
+  }
+  function soft(x, lam) {
+    var y = [];
+    for (var i = 0; i < x.length; i++) {
+      var s = x[i] >= 0 ? 1 : -1;
+      y.push(s * Math.max(Math.abs(x[i]) - lam, 0));
+    }
+    return y;
+  }
+  function update() {
+    var sig = parseFloat(document.getElementById('ch14-wavelet-noise').value);
+    var lam = parseFloat(document.getElementById('ch14-wavelet-threshold').value);
+    document.getElementById('ch14-wavelet-noise-value').textContent = sig.toFixed(2);
+    document.getElementById('ch14-wavelet-threshold-value').textContent = lam.toFixed(2);
+
+    var n = 128;
+    var t = [];
+    var clean = [];
+    var x = [];
+    for (var i = 0; i < n; i++) {
+      t.push(i);
+      var c = Math.sin(2 * Math.PI * i / 48) + (i >= 58 && i <= 75 ? 0.9 : 0);
+      clean.push(c);
+      x.push(c + sig * noise(i));
+    }
+    var h = haarOneLevel(x);
+    var dSoft = soft(h.detail, lam);
+    var recon = invHaarOneLevel(h.avg, dSoft);
+    var loc = [];
+    for (var j = 0; j < h.detail.length; j++) loc.push(2*j + 0.5);
+
+    Plotly.newPlot('ch14-haar-signal-plot', [
+      {x: t, y: x, mode: 'lines', name: 'noisy signal'},
+      {x: t, y: clean, mode: 'lines', name: 'clean signal'},
+      {x: t, y: recon, mode: 'lines', name: 'one-level Haar denoised'}
+    ], {
+      title: 'One-level Haar denoising',
+      xaxis: {title: 'time'},
+      yaxis: {title: 'value'},
+      margin: {t: 55, r: 20, b: 50, l: 55}
+    }, {responsive: true});
+
+    Plotly.newPlot('ch14-haar-detail-plot', [
+      {x: loc, y: h.detail, mode: 'markers+lines', name: 'raw detail coefficients'},
+      {x: loc, y: dSoft, mode: 'markers+lines', name: 'thresholded details'}
+    ], {
+      title: 'Haar detail coefficients',
+      xaxis: {title: 'time location'},
+      yaxis: {title: 'detail coefficient'},
+      margin: {t: 55, r: 20, b: 50, l: 55}
+    }, {responsive: true});
+  }
+  ['ch14-wavelet-noise','ch14-wavelet-threshold'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', update);
+  });
+  update();
+})();
+</script>
+:::
+
+## 14.15 Wavelets as features for machine learning
+
+Wavelet transforms are not only visualization tools. They can be used to construct features for supervised or unsupervised learning.
+
+For a time window $x_{t-L+1:t}$, possible wavelet features include:
+
+- energy at each scale;
+- maximum absolute detail coefficient at each scale;
+- number of coefficients exceeding a threshold;
+- entropy of normalized wavelet energy;
+- scale where the largest event occurs;
+- reconstructed low-frequency trend;
+- reconstructed high-frequency residual.
+
+These features are useful for:
+
+- anomaly detection in sensors;
+- classification of ECG or EEG segments;
+- machine-health monitoring;
+- event detection in audio and seismic data;
+- multiscale forecasting features for tree-based models.
+
+A scale-energy feature is
+
+$$
+E_j=\sum_k d_{j,k}^2,
+$$
+
+where $d_{j,k}$ is the detail coefficient at scale $j$ and location $k$.
+
+The normalized energy distribution is
+
+$$
+p_j=\frac{E_j}{\sum_\ell E_\ell}.
+$$
+
+A wavelet entropy feature is
+
+$$
+H=-\sum_j p_j\log p_j.
+$$
+
+Low entropy means the signal's variation is concentrated at a few scales. High entropy means variation is spread over many scales.
+
+```{python}
+#| label: ch14-wavelet-features
+#| fig-cap: "Wavelet scale energies summarize multiscale structure."
+#| warning: false
+#| message: false
+
+coarse, details = haar_transform(noisy)
+scale_energies = np.array([np.sum(d ** 2) for d in details])
+p = scale_energies / scale_energies.sum()
+entropy = -np.sum(p * np.log(p + 1e-12))
+
+plt.figure(figsize=(8, 4))
+plt.bar(np.arange(1, len(scale_energies) + 1), scale_energies)
+plt.xlabel("detail scale")
+plt.ylabel("energy")
+plt.title(f"Wavelet scale energies; entropy = {entropy:.3f}")
+plt.show()
+```
+
+## 14.16 Mini case study: detecting a transient burst
+
+The following example compares global Fourier evidence with local wavelet evidence. A short high-frequency burst may not dominate the global periodogram, but it can produce large local detail coefficients.
+
+```{python}
+#| label: ch14-transient-burst-case-study
+#| fig-cap: "A local burst is easier to locate with wavelet details than with a global spectrum."
+#| warning: false
+#| message: false
+
+n = 512
+t = np.arange(n)
+base = np.sin(2 * np.pi * t / 80)
+burst = np.zeros(n)
+burst_window = (t >= 240) & (t <= 300)
+burst[burst_window] = 0.8 * np.sin(2 * np.pi * 0.28 * t[burst_window])
+x_burst = base + burst + 0.25 * rng.normal(size=n)
+
+# Periodogram
+x_centered = x_burst - x_burst.mean()
+D = np.fft.rfft(x_centered)
+freq = np.fft.rfftfreq(n, d=1)
+I = (np.abs(D) ** 2) / n
+
+coarse_b, details_b = haar_transform(x_burst)
+# Use a fine-to-medium detail level for transient detection.
+detail = details_b[-2]
+loc = np.linspace(0, n - 1, len(detail), endpoint=True)
+
+plt.figure(figsize=(10, 3))
+plt.plot(t, x_burst)
+plt.axvspan(240, 300, alpha=0.2, label="true burst interval")
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Signal with a local high-frequency burst")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(8, 3))
+plt.plot(freq, I)
+plt.xlabel("frequency")
+plt.ylabel("periodogram")
+plt.title("Global periodogram")
+plt.show()
+
+plt.figure(figsize=(10, 3))
+plt.plot(loc, np.abs(detail), marker="o", markersize=2)
+plt.axvspan(240, 300, alpha=0.2, label="true burst interval")
+plt.xlabel("time location")
+plt.ylabel("absolute detail coefficient")
+plt.title("Local wavelet detail response")
+plt.legend()
+plt.show()
+```
+
+## 14.17 AI-assisted modeling box
+
+::: {.callout-ai}
+## Using AI to critique filtering and wavelets
+
+Ask an AI assistant questions like these, then verify the answers mathematically and computationally.
+
+**Prompt 1. Filtering choice**
+
+> I have a daily time series with weekly seasonality, long-term trend, and occasional spikes. I want to forecast 14 days ahead. Should I use a centered moving average, trailing moving average, differencing, or wavelet denoising? State the leakage risk for each option.
+
+**Prompt 2. Frequency response**
+
+> Derive the frequency response of the filter $Y_t=X_t-X_{t-7}$. Which frequencies are removed? Explain in terms of the squared gain.
+
+**Prompt 3. Wavelet interpretation**
+
+> A signal has high wavelet detail energy at fine scales only during a short time interval. Give three possible explanations and one diagnostic plot for each.
+
+**Prompt 4. ML feature design**
+
+> Build leakage-safe wavelet features for a rolling forecasting model. The features must use only information available up to forecast origin $t$.
+
+Verification checklist:
+
+1. Did the AI distinguish exploratory smoothing from forecasting features?
+2. Did it state whether the filter is causal?
+3. Did it derive or at least correctly describe $|A(\omega)|^2$?
+4. Did it mention that denoising can remove predictive signal?
+5. Did it propose time-aware validation rather than random splitting?
+:::
+
+## 14.18 Common mistakes
+
+1. **Using centered filters for forecasting features.**  
+   This leaks future observations into the training data.
+
+2. **Assuming smoothing always improves forecasting.**  
+   Smoothing can remove short-term signals that are useful for prediction.
+
+3. **Interpreting filter output without understanding the frequency response.**  
+   Always ask which frequencies were amplified and which were suppressed.
+
+4. **Treating wavelet coefficients as magic anomaly scores.**  
+   Large coefficients may indicate jumps, bursts, edges, noise, or boundary artifacts.
+
+5. **Ignoring boundary effects.**  
+   Convolution and wavelet transforms need conventions near the beginning and end of the sample.
+
+6. **Comparing filtered and unfiltered models on different validation schemes.**  
+   Use the same rolling-origin evaluation design.
+
+7. **Forgetting scale.**  
+   A wavelet coefficient is meaningful only relative to its scale, noise level, and boundary position.
+
+## 14.19 Exercises
+
+1. **Frequency response of a difference filter.**  
+   Derive the frequency response and squared gain of $Y_t=X_t-X_{t-1}$. Explain why it removes low-frequency components.
+
+2. **Seasonal difference.**  
+   For $Y_t=X_t-X_{t-s}$, show that
+   $$
+   |A(\omega)|^2=4\sin^2(\pi s\omega).
+   $$
+   Which frequencies are removed?
+
+3. **Moving average response.**  
+   Derive the frequency response of the trailing moving average
+   $$
+   Y_t=\frac{1}{m}\sum_{j=0}^{m-1}X_{t-j}.
+   $$
+   Use Python to plot $|A(\omega)|^2$ for $m=5,13,25$.
+
+4. **Filtering white noise.**  
+   Let $X_t\sim WN(0,\sigma^2)$ and $Y_t=(X_t+X_{t-1})/2$. Compute $\gamma_Y(0)$ and $\gamma_Y(1)$. Then verify by simulation.
+
+5. **Leakage diagnosis.**  
+   A student uses $Z_t=(X_{t-2}+X_{t-1}+X_t+X_{t+1}+X_{t+2})/5$ as a feature to predict $X_{t+1}$. Identify the leakage and propose a corrected feature.
+
+6. **Haar transform by hand.**  
+   Compute the Haar coefficients of $(4,6,10,14)$ using the orthonormal averaging/detail convention.
+
+7. **Energy preservation.**  
+   Prove that the two-point Haar transform preserves squared norm:
+   $$
+   x_0^2+x_1^2=a^2+d^2.
+   $$
+
+8. **Wavelet denoising experiment.**  
+   Simulate a piecewise-constant signal plus Gaussian noise. Apply Haar soft thresholding. Compare RMSE before and after denoising.
+
+9. **Transient detection.**  
+   Simulate a sinusoid with a short burst. Compare a global periodogram with wavelet detail coefficients. Which method locates the burst more clearly?
+
+10. **AI verification.**  
+    Ask an AI assistant to recommend a filter for a seasonal forecasting problem. Write a critique of its recommendation using causality, frequency response, and validation design.
+
+## 14.20 Mini project
+
+Choose a real or simulated time series with at least one of the following properties:
+
+- trend plus high-frequency noise;
+- seasonal pattern plus spikes;
+- transient burst;
+- changing frequency over time;
+- sensor signal with anomalies.
+
+Your report should include:
+
+1. a raw time plot;
+2. at least two filters and their frequency responses;
+3. a comparison of filtered and unfiltered periodograms;
+4. a Haar or wavelet-style multiresolution analysis;
+5. a leakage-safe statement explaining whether each filter can be used for forecasting;
+6. a short AI-assisted modeling log, including one AI suggestion you accepted and one you rejected;
+7. a final recommendation: smoothing, differencing, wavelet features, or no filtering.
+
+## 14.21 Chapter checklist
+
+By the end of this chapter, you should be able to say:
+
+- I can write a linear filter as $Y_t=\sum_j a_jX_{t-j}$.
+- I can compute a filter's frequency response $A(\omega)$.
+- I can explain why filtering changes spectral density by $|A(\omega)|^2$.
+- I can distinguish low-pass, high-pass, and seasonal-difference filters.
+- I can identify leakage caused by noncausal smoothing.
+- I can explain why Fourier methods are global.
+- I can describe the purpose of wavelets in time-frequency localization.
+- I can implement a basic Haar transform from scratch.
+- I can use wavelet coefficients for denoising or transient detection.
+- I can evaluate filtering choices with time-aware validation.
+
+## 14.22 Further reading
+
+- Shumway and Stoffer, *Time Series Analysis and Its Applications*, sections on filters and spectral analysis.
+- Percival and Walden, *Wavelet Methods for Time Series Analysis*.
+- Mallat, *A Wavelet Tour of Signal Processing*.
+- Strang and Nguyen, *Wavelets and Filter Banks*.
+- Brockwell and Davis, *Introduction to Time Series and Forecasting*, chapters on linear filters and spectral methods.
+

@@ -1,0 +1,1664 @@
+# Linear Processes, AR, MA, and ARMA Models
+
+::: {.hero}
+**Part II. Stationarity and Linear Time-Domain Models**  
+**Chapter goal:** build the central linear time-domain model class: linear processes, autoregressive models, moving-average models, and ARMA models. The emphasis is on backshift notation, causality, invertibility, root conditions, impulse responses, autocovariance, simulation, and model interpretation.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. use the backshift operator $B$ to write AR, MA, and ARMA models compactly;
+2. explain why ARMA models are linear filters applied to white noise;
+3. distinguish AR($p$), MA($q$), ARMA($p,q$), and general linear processes;
+4. compute causal MA$(\infty)$ representations by matching coefficients;
+5. state and apply root conditions for stationarity, causality, and invertibility;
+6. derive the autocovariance and ACF of MA(1) and AR(1);
+7. explain why model redundancy occurs when AR and MA polynomials have common factors;
+8. simulate AR, MA, and ARMA processes in Python;
+9. connect impulse responses, roots, and time-domain behavior;
+10. use AI tools to check algebraic derivations and code while verifying the mathematical assumptions yourself.
+
+## 4.1 Motivation: linear filters as models of memory
+
+In Chapter 3, we studied stationarity and autocorrelation. We saw that white noise has no linear memory, MA(1) has memory that cuts off after one lag, and AR(1) has memory that decays geometrically. In this chapter we organize these examples into a general modeling framework.
+
+The starting idea is simple:
+
+::: {.callout-note}
+## Time-domain modeling principle
+A stationary time series can often be modeled as a transformed version of white noise. The transformation is a **linear filter** that spreads the effect of each shock forward or backward through time.
+:::
+
+Let $\{W_t\}$ be white noise with mean $0$ and variance $\sigma^2$:
+
+$$
+E[W_t]=0,\qquad \operatorname{Var}(W_t)=\sigma^2,\qquad \operatorname{Cov}(W_t,W_s)=0 \quad (s\ne t).
+$$
+
+A linear time-series model describes $X_t$ as a weighted sum of shocks:
+
+$$
+X_t=\sum_{j=-\infty}^{\infty} a_j W_{t-j}.
+$$
+
+For forecasting, the most important special case is the **causal** case:
+
+$$
+X_t=\sum_{j=0}^{\infty}\psi_j W_{t-j}.
+$$
+
+This means the present depends on current and past shocks, not future shocks. The coefficient $\psi_j$ is the effect at time $t$ of a shock that occurred $j$ periods ago. The sequence
+
+$$
+\psi_0,\psi_1,\psi_2,\dots
+$$
+
+is called the **impulse-response sequence**.
+
+::: {.callout-tip}
+## Interpretation
+If $W_t$ is a surprise at time $t$, then $\psi_j$ tells us how much of that surprise remains visible $j$ steps later. ARMA models are compact ways to describe these impulse responses.
+:::
+
+## 4.2 The backshift operator
+
+The **backshift operator** $B$ moves a time series one step into the past:
+
+$$
+BX_t=X_{t-1}.
+$$
+
+More generally,
+
+$$
+B^jX_t=X_{t-j}.
+$$
+
+For example,
+
+$$
+(1-B)X_t=X_t-X_{t-1}
+$$
+
+is the first difference used in exploratory analysis and ARIMA modeling.
+
+Backshift notation allows us to rewrite long recurrence equations as polynomial equations. For example,
+
+$$
+X_t=\phi X_{t-1}+W_t
+$$
+
+can be written as
+
+$$
+(1-\phi B)X_t=W_t.
+$$
+
+The expression
+
+$$
+\phi(B)=1-\phi B
+$$
+
+is an operator polynomial. It acts on the sequence $\{X_t\}$.
+
+::: {.callout-important}
+## Algebra with operators
+Backshift notation looks like ordinary polynomial algebra, but the objects are operators applied to time series. The notation is powerful because many time-series questions become questions about polynomial roots and series expansions.
+:::
+
+## 4.3 Linear processes
+
+A zero-mean process $\{X_t\}$ is a **linear process** if it can be written as
+
+$$
+X_t=\sum_{j=0}^{\infty}\psi_jW_{t-j},
+$$
+
+where $\{W_t\}\sim WN(0,\sigma^2)$ and
+
+$$
+\sum_{j=0}^{\infty}|\psi_j|<\infty.
+$$
+
+Using backshift notation,
+
+$$
+X_t=\psi(B)W_t,
+$$
+
+where
+
+$$
+\psi(B)=\psi_0+\psi_1B+\psi_2B^2+\cdots.
+$$
+
+The absolute summability condition ensures the infinite sum is well behaved and the process has finite variance.
+
+### Mean and variance
+
+If $E[W_t]=0$, then
+
+$$
+E[X_t]=\sum_{j=0}^{\infty}\psi_jE[W_{t-j}]=0.
+$$
+
+The variance is
+
+$$
+\operatorname{Var}(X_t)
+=\operatorname{Var}\left(\sum_{j=0}^{\infty}\psi_jW_{t-j}\right)
+=\sigma^2\sum_{j=0}^{\infty}\psi_j^2,
+$$
+
+because the white-noise terms are uncorrelated.
+
+### Autocovariance of a linear process
+
+For $h\ge0$,
+
+$$
+\gamma(h)=\operatorname{Cov}(X_{t+h},X_t).
+$$
+
+Using
+
+$$
+X_{t+h}=\sum_{j=0}^{\infty}\psi_jW_{t+h-j}
+$$
+
+and
+
+$$
+X_t=\sum_{k=0}^{\infty}\psi_kW_{t-k},
+$$
+
+only terms with equal noise indices contribute to covariance. The condition
+
+$$
+t+h-j=t-k
+$$
+
+is equivalent to $j=k+h$. Therefore,
+
+$$
+\gamma(h)=\sigma^2\sum_{k=0}^{\infty}\psi_{k+h}\psi_k,
+\qquad h\ge0.
+$$
+
+Because autocovariance is symmetric,
+
+$$
+\gamma(-h)=\gamma(h).
+$$
+
+::: {.callout-note}
+## Central formula
+For a causal linear process
+$$
+X_t=\sum_{j=0}^{\infty}\psi_jW_{t-j},
+$$
+the autocovariance is
+$$
+\gamma(h)=\sigma^2\sum_{j=0}^{\infty}\psi_j\psi_{j+|h|}.
+$$
+This formula is one of the most useful bridges between model parameters and ACF behavior.
+:::
+
+## 4.4 Moving-average models
+
+A **moving-average model of order $q$**, written MA($q$), is
+
+$$
+X_t=W_t+\theta_1W_{t-1}+\cdots+\theta_qW_{t-q},
+$$
+
+where $\{W_t\}\sim WN(0,\sigma^2)$.
+
+Using the backshift operator,
+
+$$
+X_t=(1+\theta_1B+\cdots+\theta_qB^q)W_t.
+$$
+
+Define the MA polynomial
+
+$$
+\theta(B)=1+\theta_1B+\cdots+\theta_qB^q.
+$$
+
+Then
+
+$$
+X_t=\theta(B)W_t.
+$$
+
+An MA($q$) process is a finite linear process with
+
+$$
+\psi_0=1,\qquad \psi_j=\theta_j \quad (1\le j\le q),\qquad \psi_j=0\quad(j>q).
+$$
+
+Therefore every MA($q$) process is weakly stationary.
+
+### Autocovariance of MA($q$)
+
+For $h\ge0$,
+
+$$
+\gamma(h)=\sigma^2\sum_{j=0}^{q-h}\theta_j\theta_{j+h},\qquad 0\le h\le q,
+$$
+
+where $\theta_0=1$. For $h>q$,
+
+$$
+\gamma(h)=0.
+$$
+
+Therefore the ACF of an MA($q$) process **cuts off** after lag $q$.
+
+::: {.callout-tip}
+## Diagnostic signature of MA models
+An MA($q$) process has theoretical ACF equal to zero after lag $q$. In real data, the sample ACF will not be exactly zero after lag $q$, but it should fluctuate near zero if the model is appropriate.
+:::
+
+## 4.5 Example: MA(1)
+
+Let
+
+$$
+X_t=W_t+\theta W_{t-1}.
+$$
+
+Then
+
+$$
+E[X_t]=0.
+$$
+
+The variance is
+
+$$
+\gamma(0)=\operatorname{Var}(X_t)
+=\operatorname{Var}(W_t+\theta W_{t-1})
+=\sigma^2(1+\theta^2).
+$$
+
+The lag-one autocovariance is
+
+$$
+\gamma(1)=\operatorname{Cov}(X_{t+1},X_t).
+$$
+
+Since
+
+$$
+X_{t+1}=W_{t+1}+\theta W_t,
+$$
+
+we have
+
+$$
+\gamma(1)
+=\operatorname{Cov}(W_{t+1}+\theta W_t, W_t+\theta W_{t-1})
+=\theta\operatorname{Var}(W_t)
+=\theta\sigma^2.
+$$
+
+For $|h|>1$,
+
+$$
+\gamma(h)=0.
+$$
+
+Thus
+
+$$
+\rho(1)=\frac{\theta}{1+\theta^2},
+$$
+
+and
+
+$$
+\rho(h)=0\qquad |h|>1.
+$$
+
+Notice that the map
+
+$$
+\theta\mapsto \frac{\theta}{1+\theta^2}
+$$
+
+is not one-to-one. In fact,
+
+$$
+\frac{\theta}{1+\theta^2}=\frac{1/\theta}{1+1/\theta^2}
+$$
+
+for $\theta\ne0$. This is the first warning that MA models may not have unique parameterizations unless we impose invertibility.
+
+## 4.6 Autoregressive models
+
+An **autoregressive model of order $p$**, written AR($p$), is
+
+$$
+X_t=\phi_1X_{t-1}+\phi_2X_{t-2}+\cdots+\phi_pX_{t-p}+W_t,
+$$
+
+where $\{W_t\}\sim WN(0,\sigma^2)$.
+
+Using backshift notation,
+
+$$
+(1-\phi_1B-\phi_2B^2-\cdots-\phi_pB^p)X_t=W_t.
+$$
+
+Define the AR polynomial
+
+$$
+\phi(B)=1-\phi_1B-\phi_2B^2-\cdots-\phi_pB^p.
+$$
+
+Then
+
+$$
+\phi(B)X_t=W_t.
+$$
+
+An AR process explains the present by regressing it on its own past plus a new shock.
+
+::: {.callout-note}
+## AR versus MA intuition
+An MA model remembers a finite number of shocks. An AR model remembers past observations. Because each past observation already contains earlier shocks, a causal AR process usually has infinitely long but decaying memory.
+:::
+
+## 4.7 Example: AR(1)
+
+Consider
+
+$$
+X_t=\phi X_{t-1}+W_t,
+$$
+
+or
+
+$$
+(1-\phi B)X_t=W_t.
+$$
+
+If $|\phi|<1$, then we can formally invert $1-\phi B$:
+
+$$
+\frac{1}{1-\phi B}=1+\phi B+\phi^2B^2+\cdots.
+$$
+
+Thus
+
+$$
+X_t=(1+\phi B+\phi^2B^2+\cdots)W_t
+$$
+
+and
+
+$$
+X_t=\sum_{j=0}^{\infty}\phi^jW_{t-j}.
+$$
+
+This is a causal linear process with impulse-response weights
+
+$$
+\psi_j=\phi^j.
+$$
+
+### Variance
+
+Using the linear-process variance formula,
+
+$$
+\gamma(0)=\sigma^2\sum_{j=0}^{\infty}\phi^{2j}
+=\frac{\sigma^2}{1-\phi^2}.
+$$
+
+### Autocovariance
+
+For $h\ge0$,
+
+$$
+\gamma(h)=\sigma^2\sum_{j=0}^{\infty}\phi^j\phi^{j+h}
+=\sigma^2\phi^h\sum_{j=0}^{\infty}\phi^{2j}
+=\frac{\sigma^2\phi^h}{1-\phi^2}.
+$$
+
+Therefore
+
+$$
+\rho(h)=\phi^h,\qquad h\ge0,
+$$
+
+and by symmetry,
+
+$$
+\rho(h)=\phi^{|h|}.
+$$
+
+If $0<\phi<1$, the ACF decays positively and geometrically. If $-1<\phi<0$, the ACF alternates signs and decays in magnitude.
+
+### The random walk as a boundary case
+
+If $\phi=1$, then
+
+$$
+X_t=X_{t-1}+W_t,
+$$
+
+which is the random walk. It is not stationary. The root of $1-\phi z=0$ is $z=1$, exactly on the unit circle. This boundary between stationary and nonstationary behavior is central in ARIMA modeling.
+
+## 4.8 ARMA models
+
+An **autoregressive moving-average model**, ARMA($p,q$), combines AR and MA structure:
+
+$$
+X_t-\phi_1X_{t-1}-\cdots-\phi_pX_{t-p}
+= W_t+\theta_1W_{t-1}+\cdots+\theta_qW_{t-q}.
+$$
+
+Using backshift notation,
+
+$$
+\phi(B)X_t=\theta(B)W_t,
+$$
+
+where
+
+$$
+\phi(B)=1-\phi_1B-\cdots-\phi_pB^p
+$$
+
+and
+
+$$
+\theta(B)=1+\theta_1B+\cdots+\theta_qB^q.
+$$
+
+Special cases:
+
+$$
+\text{AR}(p)=\text{ARMA}(p,0),
+$$
+
+and
+
+$$
+\text{MA}(q)=\text{ARMA}(0,q).
+$$
+
+ARMA models are popular because they can represent many short-memory stationary dependence patterns with relatively few parameters.
+
+::: {.callout-important}
+## ARMA modeling goal
+ARMA models do not try to explain every observation independently. They model the **dependence structure**: how shocks propagate and how the present depends on the past.
+:::
+
+## 4.9 Parameter redundancy and common factors
+
+Usually we require that $\phi(z)$ and $\theta(z)$ have no common factors. Otherwise, the same process can be written as a higher-order ARMA model than necessary.
+
+For example, suppose
+
+$$
+X_t=W_t.
+$$
+
+Then $X_t$ is white noise. But it also satisfies
+
+$$
+(1-B+0.5B^2)X_t=(1-B+0.5B^2)W_t.
+$$
+
+This looks like an ARMA(2,2) model, but the same polynomial appears on both sides and cancels. The process is still just white noise.
+
+::: {.callout-warning}
+## Model order is not only notation
+An ARMA$(p,q)$ representation is meaningful only after removing common factors. Otherwise, the apparent order may be artificially high.
+:::
+
+## 4.10 Causality
+
+A process is **causal** with respect to $\{W_t\}$ if it can be written as
+
+$$
+X_t=\psi(B)W_t=\sum_{j=0}^{\infty}\psi_jW_{t-j},
+$$
+
+where
+
+$$
+\sum_{j=0}^{\infty}|\psi_j|<\infty.
+$$
+
+Causality means $X_t$ is determined by current and past innovations only. This is the form we want for forecasting: the future should not be needed to explain the present.
+
+For an ARMA model
+
+$$
+\phi(B)X_t=\theta(B)W_t,
+$$
+
+a causal representation exists when
+
+$$
+\psi(B)=\frac{\theta(B)}{\phi(B)}
+$$
+
+has a convergent power-series expansion in nonnegative powers of $B$.
+
+### Root condition for causality
+
+For the ARMA model with no common factors, the process is causal if all roots of
+
+$$
+\phi(z)=0
+$$
+
+lie outside the unit circle:
+
+$$
+|z|>1.
+$$
+
+For AR(1),
+
+$$
+\phi(z)=1-\phi z.
+$$
+
+The root is
+
+$$
+z=\frac{1}{\phi}.
+$$
+
+The condition $|z|>1$ is equivalent to
+
+$$
+|\phi|<1.
+$$
+
+## 4.11 Invertibility
+
+A process is **invertible** with respect to $\{W_t\}$ if the innovations can be recovered from current and past observations:
+
+$$
+W_t=\pi(B)X_t=\sum_{j=0}^{\infty}\pi_jX_{t-j},
+$$
+
+where
+
+$$
+\sum_{j=0}^{\infty}|\pi_j|<\infty.
+$$
+
+For an ARMA model,
+
+$$
+\phi(B)X_t=\theta(B)W_t,
+$$
+
+invertibility means
+
+$$
+W_t=\frac{\phi(B)}{\theta(B)}X_t
+$$
+
+has a stable power-series expansion.
+
+### Root condition for invertibility
+
+The model is invertible if all roots of
+
+$$
+\theta(z)=0
+$$
+
+lie outside the unit circle:
+
+$$
+|z|>1.
+$$
+
+For MA(1),
+
+$$
+X_t=W_t+\theta W_{t-1}=(1+\theta B)W_t.
+$$
+
+The MA polynomial is
+
+$$
+\theta(z)=1+\theta z.
+$$
+
+Its root is
+
+$$
+z=-\frac{1}{\theta}.
+$$
+
+The root is outside the unit circle exactly when
+
+$$
+|\theta|<1.
+$$
+
+If $|\theta|<1$, then
+
+$$
+W_t=\frac{1}{1+\theta B}X_t
+=(1-\theta B+\theta^2B^2-\theta^3B^3+\cdots)X_t.
+$$
+
+Thus
+
+$$
+W_t=X_t-\theta X_{t-1}+\theta^2X_{t-2}-\theta^3X_{t-3}+\cdots.
+$$
+
+::: {.callout-note}
+## Why invertibility matters
+Invertibility gives a unique and stable way to recover shocks from observations. Without it, different MA parameter values can produce the same autocovariance structure, making estimation and interpretation ambiguous.
+:::
+
+## 4.12 Stationarity, causality, and invertibility: summary
+
+For
+
+$$
+\phi(B)X_t=\theta(B)W_t,
+$$
+
+with $\phi$ and $\theta$ sharing no common factors:
+
+- a stationary solution exists if the roots of $\phi(z)=0$ do not lie on the unit circle;
+- a causal stationary solution exists if the roots of $\phi(z)=0$ lie outside the unit circle;
+- the model is invertible if the roots of $\theta(z)=0$ lie outside the unit circle.
+
+In most statistical software, fitted ARMA models are typically constrained or reported in a causal and invertible parameterization because that parameterization is identifiable and forecastable.
+
+::: {.callout-important}
+## Practical convention
+For standard time-series forecasting, when we say an ARMA model is valid, we usually mean it is stationary, causal, and invertible unless stated otherwise.
+:::
+
+## 4.13 Matching coefficients: computing $\psi$-weights
+
+Suppose
+
+$$
+\phi(B)X_t=\theta(B)W_t
+$$
+
+and we want the causal representation
+
+$$
+X_t=\psi(B)W_t.
+$$
+
+Substituting gives
+
+$$
+\phi(B)\psi(B)W_t=\theta(B)W_t.
+$$
+
+Thus
+
+$$
+\phi(B)\psi(B)=\theta(B).
+$$
+
+Write
+
+$$
+\psi(B)=\psi_0+\psi_1B+\psi_2B^2+\cdots.
+$$
+
+Because $\theta_0=1$, we usually have
+
+$$
+\psi_0=1.
+$$
+
+For ARMA($p,q$), matching the coefficient of $B^k$ gives
+
+$$
+\psi_k-\phi_1\psi_{k-1}-\cdots-\phi_p\psi_{k-p}=\theta_k,
+$$
+
+where
+
+$$
+\theta_k=0\quad \text{for } k>q,
+$$
+
+and
+
+$$
+\psi_j=0\quad \text{for }j<0.
+$$
+
+Equivalently,
+
+$$
+\psi_k=\theta_k+\phi_1\psi_{k-1}+\cdots+\phi_p\psi_{k-p}.
+$$
+
+This recursion computes the impulse response.
+
+### Example: ARMA(1,1)
+
+Let
+
+$$
+(1-\phi B)X_t=(1+\theta B)W_t.
+$$
+
+We seek
+
+$$
+X_t=(\psi_0+\psi_1B+\psi_2B^2+\cdots)W_t.
+$$
+
+Matching coefficients in
+
+$$
+(1-\phi B)(\psi_0+\psi_1B+\psi_2B^2+\cdots)=1+\theta B
+$$
+
+gives
+
+$$
+\psi_0=1,
+$$
+
+$$
+\psi_1-\phi\psi_0=\theta,
+$$
+
+so
+
+$$
+\psi_1=\phi+\theta.
+$$
+
+For $k\ge2$,
+
+$$
+\psi_k-\phi\psi_{k-1}=0,
+$$
+
+hence
+
+$$
+\psi_k=\phi\psi_{k-1}.
+$$
+
+Therefore
+
+$$
+\psi_k=(\phi+\theta)\phi^{k-1},\qquad k\ge1.
+$$
+
+If $|\phi|<1$, this impulse response decays geometrically.
+
+## 4.14 Autocovariance of ARMA models
+
+One way to compute autocovariances is to use the causal linear-process representation:
+
+$$
+X_t=\sum_{j=0}^{\infty}\psi_jW_{t-j}.
+$$
+
+Then
+
+$$
+\gamma(h)=\sigma^2\sum_{j=0}^{\infty}\psi_j\psi_{j+|h|}.
+$$
+
+This is conceptually simple and computationally useful. In practice, we truncate the infinite sum after enough terms when the $\psi_j$ decay quickly.
+
+Another way is to multiply the ARMA equation by $X_{t-h}$ and take expectations. For large enough lags, the right-hand side involving finite MA terms disappears, leaving a homogeneous difference equation for $\gamma(h)$.
+
+For example, an AR($p$) process satisfies the **Yule-Walker equations**:
+
+$$
+\gamma(h)=\phi_1\gamma(h-1)+\cdots+\phi_p\gamma(h-p),\qquad h\ge1.
+$$
+
+These equations show that the ACF of an AR process follows the same recurrence structure as the process itself.
+
+## 4.15 ACF and PACF signatures
+
+Classical model identification often uses the sample ACF and PACF.
+
+### MA($q$)
+
+The theoretical ACF cuts off after lag $q$:
+
+$$
+\rho(h)=0\qquad h>q.
+$$
+
+The PACF usually decays gradually.
+
+### AR($p$)
+
+The theoretical PACF cuts off after lag $p$, while the ACF usually decays gradually according to the roots of the AR polynomial.
+
+### ARMA($p,q$)
+
+Both ACF and PACF usually decay gradually. The orders $p$ and $q$ are not usually obvious from visual inspection alone.
+
+::: {.callout-warning}
+## Do not overread ACF/PACF plots
+Sample ACF and PACF are noisy. They are diagnostic tools, not proofs. Model identification should combine plots, parameter estimation, information criteria, residual diagnostics, and forecasting validation.
+:::
+
+## 4.16 Interactive HTML: roots and impulse responses
+
+The following interactive module shows how the roots of an AR(2) polynomial control causality and impulse-response behavior. The AR polynomial is constructed to have complex-conjugate roots
+
+$$
+z_1=re^{i\omega},\qquad z_2=re^{-i\omega}.
+$$
+
+Then
+
+$$
+\phi(z)=1-\phi_1z-\phi_2z^2
+$$
+
+has coefficients
+
+$$
+\phi_1=\frac{2\cos(\omega)}{r},\qquad \phi_2=-\frac{1}{r^2}.
+$$
+
+When $r>1$, the roots are outside the unit circle and the AR(2) model is causal. When $r<1$, the roots are inside the unit circle and the forward causal representation is not stable.
+
+<div class="interactive-card">
+  <div class="controls">
+    <label>AR root radius $r$
+      <input id="ch04_root_radius" type="range" min="0.55" max="1.80" step="0.01" value="1.30">
+      <span id="ch04_radius_value"></span>
+    </label>
+    <label>Root angle $\omega/\pi$
+      <input id="ch04_root_angle" type="range" min="0.05" max="0.95" step="0.01" value="0.25">
+      <span id="ch04_angle_value"></span>
+    </label>
+    <label>Impulse-response horizon
+      <input id="ch04_horizon" type="range" min="10" max="80" step="1" value="40">
+      <span id="ch04_horizon_value"></span>
+    </label>
+  </div>
+  <div id="ch04_status" class="small"></div>
+  <div id="ch04_root_plot" style="height:420px;"></div>
+  <div id="ch04_impulse_plot" style="height:380px;"></div>
+</div>
+
+<script>
+(function() {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+
+  ready(function() {
+    const radiusSlider = document.getElementById("ch04_root_radius");
+    const angleSlider = document.getElementById("ch04_root_angle");
+    const horizonSlider = document.getElementById("ch04_horizon");
+    const radiusValue = document.getElementById("ch04_radius_value");
+    const angleValue = document.getElementById("ch04_angle_value");
+    const horizonValue = document.getElementById("ch04_horizon_value");
+    const status = document.getElementById("ch04_status");
+
+    if (!window.Plotly) {
+      status.innerHTML = "Plotly is not available. Check that assets/header.html loads Plotly.js once globally.";
+      return;
+    }
+
+    function linspace(a, b, n) {
+      const out = [];
+      for (let i = 0; i < n; i++) out.push(a + (b - a) * i / (n - 1));
+      return out;
+    }
+
+    function update() {
+      const r = parseFloat(radiusSlider.value);
+      const angleFrac = parseFloat(angleSlider.value);
+      const omega = Math.PI * angleFrac;
+      const horizon = parseInt(horizonSlider.value, 10);
+      const phi1 = 2 * Math.cos(omega) / r;
+      const phi2 = -1 / (r * r);
+
+      radiusValue.textContent = r.toFixed(2);
+      angleValue.textContent = angleFrac.toFixed(2);
+      horizonValue.textContent = String(horizon);
+
+      const causal = r > 1;
+      status.innerHTML =
+        "AR(2): X_t = " + phi1.toFixed(3) + " X_{t-1} + (" + phi2.toFixed(3) + ") X_{t-2} + W_t. " +
+        "Roots have radius " + r.toFixed(2) + ". " +
+        (causal ? "Causal/stable: roots are outside the unit circle." : "Not causal/stable in the forward direction: roots are inside the unit circle.");
+
+      const th = linspace(0, 2 * Math.PI, 240);
+      const unitX = th.map(t => Math.cos(t));
+      const unitY = th.map(t => Math.sin(t));
+      const rootX = [r * Math.cos(omega), r * Math.cos(-omega)];
+      const rootY = [r * Math.sin(omega), r * Math.sin(-omega)];
+
+      Plotly.newPlot("ch04_root_plot", [
+        {
+          x: unitX,
+          y: unitY,
+          mode: "lines",
+          name: "unit circle",
+          hoverinfo: "skip"
+        },
+        {
+          x: rootX,
+          y: rootY,
+          mode: "markers",
+          marker: {size: 12},
+          name: "AR roots"
+        }
+      ], {
+        title: "AR polynomial roots",
+        xaxis: {title: "Real part", range: [-2, 2], zeroline: true, scaleanchor: "y", scaleratio: 1},
+        yaxis: {title: "Imaginary part", range: [-2, 2], zeroline: true},
+        margin: {t: 50, r: 20, b: 50, l: 50},
+        showlegend: true
+      }, {responsive: true});
+
+      const psi = [];
+      for (let k = 0; k <= horizon; k++) {
+        if (k === 0) psi.push(1);
+        else if (k === 1) psi.push(phi1);
+        else psi.push(phi1 * psi[k - 1] + phi2 * psi[k - 2]);
+      }
+      const lags = psi.map((_, i) => i);
+
+      Plotly.newPlot("ch04_impulse_plot", [
+        {
+          x: lags,
+          y: psi,
+          mode: "lines+markers",
+          name: "psi weights"
+        },
+        {
+          x: [0, horizon],
+          y: [0, 0],
+          mode: "lines",
+          name: "zero",
+          hoverinfo: "skip"
+        }
+      ], {
+        title: "Causal impulse-response coefficients psi_j",
+        xaxis: {title: "lag j"},
+        yaxis: {title: "psi_j"},
+        margin: {t: 50, r: 20, b: 50, l: 60},
+        showlegend: false
+      }, {responsive: true});
+    }
+
+    radiusSlider.addEventListener("input", update);
+    angleSlider.addEventListener("input", update);
+    horizonSlider.addEventListener("input", update);
+    update();
+  });
+})();
+</script>
+
+::: {.callout-note}
+## What to observe
+Move the radius below and above $1$. When the roots are outside the unit circle, the impulse response decays. The closer the roots are to the unit circle, the slower the decay. The angle controls oscillation frequency.
+:::
+
+## 4.17 Python example: simulate AR, MA, and ARMA processes
+
+The following code simulates several classical processes. It uses only NumPy for the simulation so that the recursion is visible.
+
+```{python}
+#| label: py-ch04-simulate-processes
+#| echo: true
+#| message: false
+#| warning: false
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+
+n = 400
+burnin = 200
+total = n + burnin
+sigma = 1.0
+
+w = rng.normal(0, sigma, size=total)
+
+# AR(1): X_t = phi X_{t-1} + W_t
+phi_ar = 0.75
+x_ar1_full = np.zeros(total)
+
+for t in range(1, total):
+    x_ar1_full[t] = phi_ar * x_ar1_full[t - 1] + w[t]
+
+x_ar1 = x_ar1_full[burnin:]
+
+
+# MA(1): X_t = W_t + theta W_{t-1}
+theta_ma = 0.70
+x_ma1_full = np.zeros(total)
+
+for t in range(1, total):
+    x_ma1_full[t] = w[t] + theta_ma * w[t - 1]
+
+x_ma1 = x_ma1_full[burnin:]
+
+
+# ARMA(1,1): X_t = phi X_{t-1} + W_t + theta W_{t-1}
+phi_arma = 0.65
+theta_arma = 0.50
+x_arma11_full = np.zeros(total)
+
+for t in range(1, total):
+    x_arma11_full[t] = (
+        phi_arma * x_arma11_full[t - 1]
+        + w[t]
+        + theta_arma * w[t - 1]
+    )
+
+x_arma11 = x_arma11_full[burnin:]
+
+
+# Sanity check
+assert len(x_ar1) == n
+assert len(x_ma1) == n
+assert len(x_arma11) == n
+
+series = pd.DataFrame({
+    "AR(1)": x_ar1,
+    "MA(1)": x_ma1,
+    "ARMA(1,1)": x_arma11
+})
+
+series.head()
+```
+
+Plot the simulated paths.
+
+```{python}
+#| label: py-ch04-plot-simulated-processes
+#| echo: true
+#| message: false
+#| warning: false
+
+fig, axes = plt.subplots(3, 1, figsize=(9, 6), sharex=True)
+for ax, col in zip(axes, series.columns):
+    ax.plot(series[col].values)
+    ax.set_title(col)
+    ax.axhline(0, linewidth=0.8)
+plt.xlabel("time")
+plt.tight_layout()
+plt.show()
+```
+
+Even though all three processes are stationary in this example, they have different dependence patterns. The AR(1) path often has persistent runs above or below zero. The MA(1) path has shorter memory. The ARMA(1,1) path combines both effects.
+
+## 4.18 Python example: sample ACF from scratch
+
+The sample ACF helps reveal dependence patterns.
+
+```{python}
+#| label: py-ch04-acf-from-scratch
+#| echo: true
+#| message: false
+#| warning: false
+
+import numpy as np
+
+def sample_acf(x, max_lag):
+    x = np.asarray(x)
+    x = x - x.mean()
+    denom = np.sum(x * x)
+    acf = []
+    for h in range(max_lag + 1):
+        numer = np.sum(x[h:] * x[:len(x) - h])
+        acf.append(numer / denom)
+    return np.array(acf)
+
+max_lag = 30
+acf_table = pd.DataFrame({
+    col: sample_acf(series[col], max_lag)
+    for col in series.columns
+})
+acf_table.index.name = "lag"
+acf_table.head(10)
+```
+
+```{python}
+#| label: py-ch04-acf-plot
+#| echo: true
+#| message: false
+#| warning: false
+
+fig, axes = plt.subplots(3, 1, figsize=(9, 6), sharex=True)
+lags = np.arange(max_lag + 1)
+for ax, col in zip(axes, series.columns):
+    ax.stem(lags, acf_table[col].values)
+    ax.set_title(f"Sample ACF: {col}")
+    ax.axhline(0, linewidth=0.8)
+plt.xlabel("lag")
+plt.tight_layout()
+plt.show()
+```
+
+For the MA(1) process, the theoretical ACF is zero after lag $1$, but the sample ACF does not become exactly zero. This is sampling variation, not necessarily model failure.
+
+## 4.19 Python example: root checking
+
+AR and MA roots are central for causality and invertibility.
+
+For an AR($p$) model
+
+$$
+\phi(z)=1-\phi_1z-\cdots-\phi_pz^p.
+$$
+
+For an MA($q$) model
+
+$$
+\theta(z)=1+\theta_1z+\cdots+\theta_qz^q.
+$$
+
+In Python, `numpy.roots` expects coefficients in descending powers. The following helper functions compute roots of these polynomials.
+
+```{python}
+#| label: py-ch04-root-checking
+#| echo: true
+#| message: false
+#| warning: false
+
+import numpy as np
+
+def ar_roots(phi):
+    """Roots of phi(z)=1-phi1 z-...-phip z^p."""
+    phi = np.asarray(phi, dtype=float)
+    coeff_desc = np.r_[-phi[::-1], 1.0]
+    return np.roots(coeff_desc)
+
+def ma_roots(theta):
+    """Roots of theta(z)=1+theta1 z+...+thetaq z^q."""
+    theta = np.asarray(theta, dtype=float)
+    coeff_desc = np.r_[theta[::-1], 1.0]
+    return np.roots(coeff_desc)
+
+def outside_unit_circle(roots, tol=1e-10):
+    return np.all(np.abs(roots) > 1 + tol)
+
+examples = {
+    "AR(1), phi=0.75": ar_roots([0.75]),
+    "AR(1), phi=1.10": ar_roots([1.10]),
+    "MA(1), theta=0.70": ma_roots([0.70]),
+    "MA(1), theta=1.40": ma_roots([1.40]),
+}
+
+for name, roots in examples.items():
+    print(name)
+    print("  roots:", roots)
+    print("  moduli:", np.abs(roots))
+    print("  outside unit circle:", outside_unit_circle(roots))
+```
+
+Interpretation:
+
+- AR roots outside the unit circle imply causality.
+- MA roots outside the unit circle imply invertibility.
+- Roots near the unit circle imply slow decay and numerical sensitivity.
+
+## 4.20 Python example: compute $\psi$-weights recursively
+
+The following function computes the causal impulse-response coefficients of an ARMA model by matching coefficients in
+
+$$
+\phi(B)\psi(B)=\theta(B).
+$$
+
+```{python}
+#| label: py-ch04-psi-weights
+#| echo: true
+#| message: false
+#| warning: false
+
+import numpy as np
+
+def psi_weights(ar=None, ma=None, horizon=30):
+    """
+    Compute psi_0,...,psi_horizon for
+    phi(B) X_t = theta(B) W_t,
+    phi(B)=1 - ar[0]B - ...,
+    theta(B)=1 + ma[0]B + ... .
+    """
+    ar = np.asarray([] if ar is None else ar, dtype=float)
+    ma = np.asarray([] if ma is None else ma, dtype=float)
+    p = len(ar)
+    q = len(ma)
+    psi = np.zeros(horizon + 1)
+    psi[0] = 1.0
+    for k in range(1, horizon + 1):
+        theta_k = ma[k - 1] if k <= q else 0.0
+        ar_part = 0.0
+        for j in range(1, p + 1):
+            if k - j >= 0:
+                ar_part += ar[j - 1] * psi[k - j]
+        psi[k] = theta_k + ar_part
+    return psi
+
+psi_ar1 = psi_weights(ar=[0.75], ma=[], horizon=20)
+psi_ma1 = psi_weights(ar=[], ma=[0.70], horizon=20)
+psi_arma11 = psi_weights(ar=[0.65], ma=[0.50], horizon=20)
+
+pd.DataFrame({
+    "lag": np.arange(21),
+    "AR(1) psi": psi_ar1,
+    "MA(1) psi": psi_ma1,
+    "ARMA(1,1) psi": psi_arma11
+}).head(12)
+```
+
+```{python}
+#| label: py-ch04-psi-plot
+#| echo: true
+#| message: false
+#| warning: false
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(psi_ar1, marker="o", label="AR(1)")
+ax.plot(psi_ma1, marker="o", label="MA(1)")
+ax.plot(psi_arma11, marker="o", label="ARMA(1,1)")
+ax.axhline(0, linewidth=0.8)
+ax.set_xlabel("lag j")
+ax.set_ylabel("psi_j")
+ax.set_title("Impulse-response weights")
+ax.legend()
+plt.show()
+```
+
+The MA(1) impulse response cuts off immediately after lag $1$. The AR(1) impulse response decays geometrically. The ARMA(1,1) impulse response has a first coefficient affected by the MA term, then decays according to the AR coefficient.
+
+## 4.21 Python example: autocovariance from $\psi$-weights
+
+For a causal linear process,
+
+$$
+\gamma(h)=\sigma^2\sum_{j=0}^{\infty}\psi_j\psi_{j+h}.
+$$
+
+The following function approximates this by truncating the $\psi$ sequence.
+
+```{python}
+#| label: py-ch04-autocov-from-psi
+#| echo: true
+#| message: false
+#| warning: false
+
+def acf_from_psi(psi, max_lag, sigma2=1.0):
+    psi = np.asarray(psi, dtype=float)
+    gamma = []
+    for h in range(max_lag + 1):
+        gamma_h = sigma2 * np.sum(psi[:len(psi) - h] * psi[h:])
+        gamma.append(gamma_h)
+    gamma = np.array(gamma)
+    return gamma / gamma[0]
+
+long_psi_ar1 = psi_weights(ar=[0.75], horizon=300)
+acf_ar1_approx = acf_from_psi(long_psi_ar1, max_lag=20)
+acf_ar1_exact = 0.75 ** np.arange(21)
+
+pd.DataFrame({
+    "lag": np.arange(21),
+    "approx from psi": acf_ar1_approx,
+    "exact AR(1)": acf_ar1_exact
+}).head(10)
+```
+
+The approximation matches the exact AR(1) ACF very closely because the impulse response decays geometrically.
+
+## 4.22 Python example: fitting ARMA models with `statsmodels`
+
+In practice we estimate ARMA models from data. In `statsmodels`, ARMA models are often fit using the ARIMA class with `order=(p,0,q)`.
+
+```{python}
+#| label: py-ch04-fit-arma
+#| echo: true
+#| message: false
+#| warning: false
+
+from statsmodels.tsa.arima.model import ARIMA
+
+# Fit ARMA(1,1) to the simulated ARMA(1,1) data
+fit = ARIMA(x_arma11, order=(1, 0, 1), trend="n").fit()
+print(fit.summary())
+```
+
+Residual diagnostics are essential.
+
+```{python}
+#| label: py-ch04-residual-diagnostics
+#| echo: true
+#| message: false
+#| warning: false
+
+resid = fit.resid
+resid_acf = sample_acf(resid, 25)
+
+fig, axes = plt.subplots(2, 1, figsize=(9, 5))
+axes[0].plot(resid)
+axes[0].axhline(0, linewidth=0.8)
+axes[0].set_title("Residuals from fitted ARMA(1,1)")
+axes[1].stem(np.arange(26), resid_acf)
+axes[1].axhline(0, linewidth=0.8)
+axes[1].set_title("Residual ACF")
+axes[1].set_xlabel("lag")
+plt.tight_layout()
+plt.show()
+```
+
+If the fitted model captures the dependence, the residual ACF should look approximately like white noise.
+
+## 4.23 Python example: compare candidate model orders
+
+Information criteria provide one way to compare ARMA orders. The following code fits several small ARMA models and reports AIC and BIC.
+
+```{python}
+#| label: py-ch04-model-order-grid
+#| echo: true
+#| message: false
+#| warning: false
+
+results = []
+for p in range(4):
+    for q in range(4):
+        if p == 0 and q == 0:
+            continue
+        try:
+            model = ARIMA(x_arma11, order=(p, 0, q), trend="n").fit()
+            results.append({
+                "p": p,
+                "q": q,
+                "aic": model.aic,
+                "bic": model.bic
+            })
+        except Exception as err:
+            results.append({
+                "p": p,
+                "q": q,
+                "aic": np.nan,
+                "bic": np.nan
+            })
+
+order_table = pd.DataFrame(results).sort_values("aic")
+order_table.head(10)
+```
+
+This grid is not a substitute for diagnosis. A model with low AIC can still have residual autocorrelation, unstable parameters, or poor forecasting performance.
+
+## 4.24 Connection to machine learning
+
+ARMA models can be viewed as a simple and interpretable machine-learning architecture for sequential data.
+
+### AR as linear supervised learning on lag features
+
+An AR($p$) model is
+
+$$
+X_t=\phi_1X_{t-1}+\cdots+\phi_pX_{t-p}+W_t.
+$$
+
+This is linear regression with features
+
+$$
+(X_{t-1},X_{t-2},\dots,X_{t-p}).
+$$
+
+The difference from ordinary regression is that the features are generated from the same dependent time series, so validation and uncertainty require time-series methods.
+
+### MA as latent-shock modeling
+
+An MA($q$) model uses unobserved shocks:
+
+$$
+X_t=W_t+\theta_1W_{t-1}+\cdots+\theta_qW_{t-q}.
+$$
+
+The predictors $W_{t-j}$ are not directly observed. They must be inferred through model fitting.
+
+### ARMA as a linear recurrent system
+
+An ARMA model combines recurrence through $X_{t-j}$ and shock filtering through $W_{t-j}$. This makes it an ancestor of modern sequence models: it has hidden memory, impulse responses, and recursive prediction. RNNs, LSTMs, temporal convolutional networks, and state-space sequence models generalize these ideas in nonlinear and high-dimensional ways.
+
+::: {.callout-ai}
+## AI connection
+A modern AI model may learn complex nonlinear sequence representations, but the same questions remain:
+
+- What past information matters?
+- How long does memory persist?
+- Are residuals still dependent?
+- Is the model stable when rolled forward?
+- Does it generalize under time-aware validation?
+
+ARMA models give a mathematically transparent setting for learning these questions before moving to deep models.
+:::
+
+## 4.25 Common mistakes
+
+### Mistake 1: confusing stationarity with causality
+
+A stationary solution may exist even when the model is not causal. For forecasting, we usually need a causal representation because we cannot use future shocks.
+
+### Mistake 2: forgetting invertibility
+
+An MA model can be stationary for any parameter value, but not every parameter value gives a unique and stable innovation representation. Invertibility is needed for canonical estimation and interpretation.
+
+### Mistake 3: treating AR and MA roots the same way without checking signs
+
+AR and MA polynomials are written with different sign conventions:
+
+$$
+\phi(z)=1-\phi_1z-\cdots-\phi_pz^p,
+$$
+
+while
+
+$$
+\theta(z)=1+\theta_1z+\cdots+\theta_qz^q.
+$$
+
+When coding root checks, pay close attention to the coefficient order and signs.
+
+### Mistake 4: believing sample ACF cutoffs are exact
+
+The theoretical ACF of MA($q$) cuts off. The sample ACF only fluctuates around zero after lag $q$.
+
+### Mistake 5: fitting ARMA to nonstationary data
+
+ARMA models are for stationary data. If the time plot or ACF suggests trend, seasonality, or changing variance, consider transformation, detrending, differencing, ARIMA, SARIMA, or another model class.
+
+## 4.26 AI-assisted modeling activities
+
+AI tools are useful for this chapter because there is a lot of algebra. They are also risky because a small sign mistake changes the model.
+
+### Prompt 1: root conditions
+
+> I have the model $(1-0.6B+0.1B^2)X_t=(1+0.4B)W_t$. Explain how to check causality and invertibility. Show the polynomial roots and interpret whether they are outside the unit circle.
+
+Verification steps:
+
+1. Identify the AR polynomial $\phi(z)=1-0.6z+0.1z^2$.
+2. Identify the MA polynomial $\theta(z)=1+0.4z$.
+3. Compute roots numerically.
+4. Check moduli.
+5. State causal and invertible conclusions separately.
+
+### Prompt 2: impulse-response coefficients
+
+> Derive the first six $\psi$-weights for the ARMA(1,1) model $(1-\phi B)X_t=(1+\theta B)W_t$.
+
+A correct answer should give
+
+$$
+\psi_0=1,
+$$
+
+$$
+\psi_1=\phi+\theta,
+$$
+
+and
+
+$$
+\psi_k=\phi\psi_{k-1}\quad(k\ge2).
+$$
+
+### Prompt 3: code audit
+
+> The following Python function is supposed to compute AR roots. Check whether the coefficient signs and ordering are correct for $\phi(z)=1-\phi_1z-\cdots-\phi_pz^p$.
+
+Ask the AI to explain its reasoning, then test the function on AR(1), where the root is known to be $1/\phi$.
+
+### Prompt 4: model interpretation
+
+> I fitted an ARMA(2,1) model and obtained roots close to the unit circle. What does that mean for forecasting, impulse responses, and numerical stability?
+
+A good answer should mention slow decay, possible near-nonstationarity, larger forecast uncertainty, sensitivity to sample variation, and the need for residual and rolling forecast diagnostics.
+
+::: {.callout-warning}
+## AI safety rule for ARMA algebra
+Always test AI-generated formulas on AR(1) or MA(1), where you know the answer. If the formula fails the simple case, do not trust it for ARMA($p,q$).
+:::
+
+## 4.27 Mini project: ARMA process laboratory
+
+Create a short ARMA modeling report using either simulated data or a real stationary time series.
+
+Your report should include:
+
+1. **Data description.** What is the series? What is the time unit?
+2. **Stationarity check.** Show a time plot and sample ACF.
+3. **Candidate models.** Try at least three ARMA$(p,q)$ specifications.
+4. **Root checks.** For each fitted model, report AR and MA roots and say whether they satisfy the usual conditions.
+5. **Residual diagnostics.** Plot residuals and residual ACF.
+6. **Forecast comparison.** Compare one-step or multi-step forecast errors on a held-out time block.
+7. **Interpretation.** Explain the chosen model in terms of memory and shocks.
+8. **AI reflection.** Ask an AI assistant to critique your model choice. Include the critique and your response.
+
+## 4.28 Exercises
+
+### Conceptual exercises
+
+1. Define the backshift operator $B$ and compute $(1-B)^2X_t$.
+2. Explain the difference between an AR($p$) model and an MA($q$) model.
+3. Explain why an MA($q$) model is always weakly stationary.
+4. Explain why a causal AR(1) process has infinitely many MA coefficients.
+5. Define causality and invertibility in words.
+6. Explain why the roots of $\phi(z)$ control causality.
+7. Explain why the roots of $\theta(z)$ control invertibility.
+8. Explain why common factors in $\phi(B)$ and $\theta(B)$ create parameter redundancy.
+9. Describe the ACF signature of an MA($q$) model.
+10. Describe the ACF and PACF signatures of an AR($p$) model.
+
+### Mathematical exercises
+
+11. For MA(1), derive $\gamma(0)$, $\gamma(1)$, and $\rho(1)$.
+12. Show that $\theta$ and $1/\theta$ give the same lag-one ACF for MA(1).
+13. For AR(1), show that $|\phi|<1$ is equivalent to the AR root being outside the unit circle.
+14. For AR(1), derive the causal representation $X_t=\sum_{j=0}^{\infty}\phi^jW_{t-j}$.
+15. For AR(1), derive $\gamma(0)=\sigma^2/(1-\phi^2)$.
+16. For AR(1), derive $\rho(h)=\phi^{|h|}$.
+17. For ARMA(1,1), derive $\psi_0,\psi_1,\psi_2,\psi_3$.
+18. For AR(2), use coefficient matching to find $\psi_0,\dots,\psi_5$ in terms of $\phi_1$ and $\phi_2$.
+19. Let $\phi(z)=1-1.2z+0.35z^2$. Compute the roots and determine whether the AR(2) model is causal.
+20. Let $\theta(z)=1+1.5z$. Determine whether the corresponding MA(1) model is invertible.
+
+### Python exercises
+
+21. Write a function that simulates an AR($p$) process from a vector of AR coefficients.
+22. Write a function that simulates an MA($q$) process from a vector of MA coefficients.
+23. Write a function that computes AR roots and checks whether they are outside the unit circle.
+24. Write a function that computes MA roots and checks whether they are outside the unit circle.
+25. Simulate AR(1) processes with $\phi=0.2$, $0.8$, $-0.8$, and $1.0$. Compare the time plots and ACFs.
+26. Simulate MA(1) processes with $\theta=0.5$ and $\theta=2.0$. Compare their sample ACFs and discuss invertibility.
+27. Simulate an ARMA(1,1) model and estimate it using `statsmodels`.
+28. Fit several ARMA models to the same series and compare AIC, BIC, residual ACF, and forecast error.
+29. Use the $\psi$-weight recursion to approximate the ACF of an ARMA(1,1) model.
+30. Create a near-unit-root AR(1) process with $\phi=0.98$ and discuss why it can be hard to distinguish from nonstationarity in finite samples.
+
+### AI-assisted exercises
+
+31. Ask an AI assistant to derive the AR(1) causal representation. Check whether it states the condition $|\phi|<1$.
+32. Ask an AI assistant to explain invertibility for MA(1). Check whether it gives the root condition $|\theta|<1$.
+33. Ask an AI assistant to write Python code for AR roots. Test its answer on AR(1).
+34. Ask an AI assistant to compare AR(1) and MA(1) ACF behavior. Identify one missing caveat.
+35. Ask an AI assistant to recommend an ARMA model from an ACF/PACF plot. Then explain why that recommendation should be treated as a hypothesis rather than a conclusion.
+
+## 4.29 Chapter summary
+
+ARMA models are the central stationary linear models of classical time-series analysis. A linear process writes a time series as a weighted sum of white-noise shocks:
+
+$$
+X_t=\sum_{j=0}^{\infty}\psi_jW_{t-j}.
+$$
+
+An MA($q$) model has finite shock memory:
+
+$$
+X_t=W_t+\theta_1W_{t-1}+\cdots+\theta_qW_{t-q}.
+$$
+
+An AR($p$) model regresses the present on the past:
+
+$$
+X_t=\phi_1X_{t-1}+\cdots+\phi_pX_{t-p}+W_t.
+$$
+
+An ARMA($p,q$) model combines both:
+
+$$
+\phi(B)X_t=\theta(B)W_t.
+$$
+
+Causality concerns whether $X_t$ can be written using current and past shocks. Invertibility concerns whether $W_t$ can be recovered from current and past observations. Root conditions determine both.
+
+The impulse-response coefficients $\psi_j$ connect algebra to interpretation: they show how shocks propagate through time. The autocovariance formula
+
+$$
+\gamma(h)=\sigma^2\sum_{j=0}^{\infty}\psi_j\psi_{j+|h|}
+$$
+
+connects impulse responses to dependence diagnostics. These ideas prepare us for forecasting, ARIMA, SARIMA, spectral analysis, state-space models, and deep sequence models.
+
+## 4.30 Checklist
+
+Before moving on, make sure you can:
+
+- write AR, MA, and ARMA models using the backshift operator;
+- identify $\phi(B)$ and $\theta(B)$ from a model equation;
+- explain the meaning of causal and invertible representations;
+- apply root conditions for causality and invertibility;
+- derive the ACF of MA(1) and AR(1);
+- compute $\psi$-weights by coefficient matching;
+- simulate ARMA models in Python;
+- fit an ARMA model using `statsmodels`;
+- check residual ACF and root conditions;
+- use AI to check algebra and code while verifying simple special cases yourself.

@@ -1,0 +1,924 @@
+# Convolutional Models for Sequences
+
+::: {.hero}
+**Part VI. Deep Learning for Time Series and Sequence Data**  
+**Chapter goal:** understand convolutional neural networks for ordered data. We study one-dimensional convolution, causal convolution, dilation, receptive fields, temporal convolutional networks, multichannel sequence data, forecasting, classification, diagnostics, and AI-assisted model critique.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. define a one-dimensional convolutional layer for univariate and multivariate sequences;
+2. distinguish mathematical convolution from the cross-correlation operation used in most deep-learning libraries;
+3. explain why causal padding is required for forecasting;
+4. compute the receptive field of a stack of dilated convolutional layers;
+5. compare convolutional sequence models with AR models, moving-average filters, and feedforward window models;
+6. build a small temporal convolutional network in PyTorch;
+7. evaluate convolutional forecasts using chronological validation and baselines;
+8. identify leakage risks caused by padding, normalization, feature construction, and random windows;
+9. use AI tools to inspect convolutional model code while verifying causality and validation design independently.
+
+## 20.1 Motivation: local temporal patterns
+
+A sliding-window multilayer perceptron treats the input window
+
+$$
+(Y_{t-L+1},\ldots,Y_t)
+$$
+
+as a vector. This is useful, but it ignores a structural fact: nearby time points are usually related. A sequence often contains local motifs such as spikes, bursts, dips, oscillations, changes in slope, short cycles, or repeated shapes. A convolutional model learns filters that scan across time and detect such local patterns.
+
+In image data, a two-dimensional convolution scans a small filter over a grid. In sequence data, a one-dimensional convolution scans a small filter over time. For a univariate sequence $x_t$, a simple local filter might compute
+
+$$
+z_t=w_0x_t+w_1x_{t-1}+w_2x_{t-2}.
+$$
+
+This resembles an autoregression or a moving-average filter. The difference is that a convolutional neural network learns many filters, applies nonlinear activations, stacks layers, and can learn nonlinear temporal features.
+
+::: {.callout-note}
+## Convolutions connect classical and modern sequence modeling
+A linear causal convolution is a finite impulse-response filter. A temporal convolutional network is a nonlinear composition of many such filters. This makes CNNs a natural bridge between classical time-series filtering and modern deep learning.
+:::
+
+## 20.2 One-dimensional convolution
+
+Let $x=(x_1,\ldots,x_T)$ be a univariate sequence. A length-$K$ filter has weights
+
+$$
+\mathbf w=(w_0,w_1,\ldots,w_{K-1}).
+$$
+
+A **causal** one-dimensional convolution with dilation $d\ge 1$ is
+
+$$
+z_t=b+\sum_{j=0}^{K-1} w_j x_{t-dj}.
+$$
+
+The value $z_t$ depends only on $x_t,x_{t-d},x_{t-2d},\ldots$. It does not depend on future values $x_{t+1},x_{t+2},\ldots$. This is essential for forecasting.
+
+For indices $t-dj<1$, we must decide how to handle the missing past. Common choices are:
+
+- left zero padding;
+- left replication padding;
+- dropping early output times;
+- using an initial history from before the forecast period.
+
+In forecasting, padding must not introduce information from the future.
+
+### Cross-correlation versus mathematical convolution
+
+Many deep-learning libraries call the following operation convolution:
+
+$$
+z_t=b+\sum_{j=0}^{K-1} w_j x_{t+j}.
+$$
+
+Mathematically, this is closer to **cross-correlation**, because the filter is not reversed. In deep learning, this distinction is usually harmless because the filter weights are learned. For forecasting, the important issue is not whether the kernel is reversed; the important issue is whether the output uses future inputs.
+
+A safe causal forecasting layer should satisfy
+
+$$
+\widehat Y_{t+h}\text{ computed at forecast origin }t
+\quad\text{cannot depend on}\quad
+Y_{t+1},Y_{t+2},\ldots.
+$$
+
+## 20.3 Multichannel sequence convolution
+
+Many sequence problems are multivariate. Suppose
+
+$$
+\mathbf x_t=(x_{t,1},\ldots,x_{t,C})\in\mathbb R^C
+$$
+
+has $C$ input channels. A convolutional layer with $M$ output channels has filters
+
+$$
+W_{m,c,j},
+\qquad
+m=1,\ldots,M,
+\quad c=1,\ldots,C,
+\quad j=0,\ldots,K-1.
+$$
+
+The $m$-th output channel is
+
+$$
+z_{t,m}=b_m+
+\sum_{c=1}^C\sum_{j=0}^{K-1} W_{m,c,j}x_{t-dj,c}.
+$$
+
+The tensor of weights has shape
+
+$$
+M\times C\times K.
+$$
+
+A nonlinear activation, such as ReLU or GELU, is then applied:
+
+$$
+h_{t,m}=\sigma(z_{t,m}).
+$$
+
+This creates learned temporal features. Different output channels can learn different detectors: a rising-edge detector, a falling-edge detector, a short-cycle detector, a spike detector, or an interaction between variables.
+
+## 20.4 Stride, padding, and dilation
+
+Three parameters control the geometry of a convolutional layer.
+
+### Kernel size
+
+The kernel size $K$ is the number of time points used by one filter. Larger $K$ allows each layer to inspect a wider local pattern.
+
+### Stride
+
+Stride $s$ controls how far the filter moves between output positions. A stride of $s=1$ gives one output at each time. A stride larger than $1$ downsamples the sequence. For forecasting, stride $1$ is common inside the model; downsampling may be useful in encoder architectures.
+
+### Dilation
+
+Dilation $d$ spaces out the filter taps:
+
+$$
+z_t=b+w_0x_t+w_1x_{t-d}+w_2x_{t-2d}+\cdots+w_{K-1}x_{t-(K-1)d}.
+$$
+
+Dilation lets the model reach further into the past without increasing the number of parameters. This is the key idea behind many temporal convolutional networks.
+
+::: {.callout-tip}
+## Why dilation matters
+With $K=3$ and $d=1$, a layer uses $x_t,x_{t-1},x_{t-2}$. With $K=3$ and $d=8$, a layer uses $x_t,x_{t-8},x_{t-16}$. The number of weights is still only three, but the temporal reach is much larger.
+:::
+
+## 20.5 Interactive module: causal dilated convolution
+
+The interactive module below shows a causal dilated convolution. The selected output time $t_0$ depends on the input values
+
+$$
+x_{t_0},x_{t_0-d},x_{t_0-2d},\ldots,x_{t_0-(K-1)d}.
+$$
+
+Move the sliders and check that the highlighted input points never occur after $t_0$.
+
+<div class="interactive-card">
+  <h3>Interactive Module 20A: Causal Dilated Convolution</h3>
+  <p>The output at the selected time uses only the present and past input values.</p>
+
+  <div class="controls">
+    <label>
+      Kernel size $K$:
+      <input id="ch20_kernel" type="range" min="2" max="7" step="1" value="3">
+      <span id="ch20_kernel_value">3</span>
+    </label>
+
+    <label>
+      Dilation $d$:
+      <input id="ch20_dilation" type="range" min="1" max="10" step="1" value="2">
+      <span id="ch20_dilation_value">2</span>
+    </label>
+
+    <label>
+      Output time $t_0$:
+      <input id="ch20_time" type="range" min="0" max="95" step="1" value="45">
+      <span id="ch20_time_value">45</span>
+    </label>
+  </div>
+
+  <p id="ch20_kernel_output"></p>
+  <div id="ch20_conv_plot" style="width:100%; height:500px;"></div>
+</div>
+
+## 20.6 Receptive fields
+
+The **receptive field** of an output is the set of input times that can influence that output.
+
+For one causal dilated convolutional layer with kernel size $K$ and dilation $d$, the output $z_t$ depends on
+
+$$
+t,
+\quad t-d,
+\quad t-2d,
+\quad \ldots,
+\quad t-(K-1)d.
+$$
+
+The temporal width of this receptive field is
+
+$$
+R=1+(K-1)d.
+$$
+
+For a stack of $L$ causal convolutional layers with stride $1$, kernel size $K$, and dilations $d_1,\ldots,d_L$, the receptive-field width is
+
+$$
+R_L=1+(K-1)\sum_{\ell=1}^L d_\ell.
+$$
+
+### Proof idea
+
+The first layer can move backward by at most $(K-1)d_1$ time steps. The second layer can move backward by an additional $(K-1)d_2$ time steps relative to the first-layer features. Continuing through $L$ layers gives the maximum backward reach
+
+$$
+(K-1)d_1+\cdots+(K-1)d_L.
+$$
+
+Including the current time itself gives
+
+$$
+R_L=1+(K-1)\sum_{\ell=1}^L d_\ell.
+$$
+
+If the dilations double,
+
+$$
+d_\ell=2^{\ell-1},
+$$
+
+then
+
+$$
+R_L=1+(K-1)(2^L-1).
+$$
+
+This exponential growth is why dilated CNNs can model long histories efficiently.
+
+## 20.7 Interactive module: receptive-field growth
+
+The next module shows which relative lags can affect the final output at time $t$. A marker at relative lag $-12$ means that $x_{t-12}$ can influence the output.
+
+<div class="interactive-card">
+  <h3>Interactive Module 20B: Receptive Field of a TCN Stack</h3>
+
+  <div class="controls">
+    <label>
+      Layers $L$:
+      <input id="ch20_layers" type="range" min="1" max="7" step="1" value="4">
+      <span id="ch20_layers_value">4</span>
+    </label>
+
+    <label>
+      Kernel size $K$:
+      <input id="ch20_rf_kernel" type="range" min="2" max="6" step="1" value="3">
+      <span id="ch20_rf_kernel_value">3</span>
+    </label>
+
+    <label>
+      Constant dilation:
+      <input id="ch20_rf_dilation" type="range" min="1" max="8" step="1" value="2">
+      <span id="ch20_rf_dilation_value">2</span>
+    </label>
+
+    <label>
+      Dilation schedule:
+      <select id="ch20_rf_mode">
+        <option value="exp" selected>powers of two: 1, 2, 4, ...</option>
+        <option value="constant">constant dilation</option>
+      </select>
+    </label>
+  </div>
+
+  <p id="ch20_rf_output"></p>
+  <div id="ch20_rf_plot" style="width:100%; height:430px;"></div>
+</div>
+
+## 20.8 Temporal convolutional networks
+
+A **temporal convolutional network** or **TCN** is a neural architecture built from causal one-dimensional convolutional layers. A common TCN block has the form
+
+$$
+\mathbf H^{(\ell)}
+=
+\mathbf H^{(\ell-1)}+F_\ell(\mathbf H^{(\ell-1)}),
+$$
+
+where $F_\ell$ contains causal dilated convolutions, nonlinearities, normalization, and dropout. The addition is a residual connection.
+
+A simplified block is
+
+$$
+F_\ell(\mathbf H)
+=\operatorname{Dropout}
+\left(
+\sigma\left(\operatorname{Conv}_{K,d_\ell}(\mathbf H)\right)
+\right).
+$$
+
+Residual connections help optimization by giving gradients a direct path through the network. Dilations give the block a long memory. Dropout and weight decay help reduce overfitting.
+
+A TCN is usually:
+
+- **causal**, so no future values enter the forecast;
+- **convolutional**, so the same filter weights are reused across time;
+- **dilated**, so the receptive field grows quickly;
+- **residual**, so deep stacks are easier to train.
+
+## 20.9 CNNs versus AR models and filters
+
+A causal linear convolution
+
+$$
+z_t=\sum_{j=0}^{K-1}w_jx_{t-j}
+$$
+
+is mathematically similar to a finite-order autoregressive predictor or a finite impulse-response filter. However, a CNN differs in several ways.
+
+First, a CNN uses many filters. Instead of one scalar output, it creates feature channels:
+
+$$
+h_{t,1},h_{t,2},\ldots,h_{t,M}.
+$$
+
+Second, nonlinear activations make the model nonlinear:
+
+$$
+h_{t,m}=\sigma\left(b_m+\sum_{j=0}^{K-1}w_{m,j}x_{t-j}\right).
+$$
+
+Third, stacking layers creates hierarchical temporal features. A first layer may detect short-term rises and drops; later layers may combine these into longer patterns.
+
+Fourth, dilation lets the model use sparse long-range lags without the dense parameter count of a large fully connected window.
+
+::: {.callout-note}
+## Linear special case
+If all activations are the identity and there is only one output channel, a convolutional network collapses to a linear time-invariant filter. The nonlinear power of CNNs comes from multiple channels, nonlinear activations, and layer composition.
+:::
+
+## 20.10 Forecasting with convolutional models
+
+For forecasting, a convolutional model usually maps an input window to one or more future values:
+
+$$
+f_\theta:\mathbb R^{L\times C}\to\mathbb R^H.
+$$
+
+For a training set of forecast origins $t$, the empirical risk is
+
+$$
+J(\theta)=
+\frac{1}{N}\sum_{t\in\mathcal T_{\text{train}}}
+\ell\left(
+\widehat{\mathbf y}_t,
+\mathbf y_t
+\right),
+$$
+
+where
+
+$$
+\widehat{\mathbf y}_t=f_\theta(\mathbf X_t),
+\qquad
+\mathbf y_t=(Y_{t+1},\ldots,Y_{t+H}).
+$$
+
+For mean squared error,
+
+$$
+\ell(\widehat{\mathbf y}_t,\mathbf y_t)
+=
+\frac{1}{H}\sum_{h=1}^H
+(\widehat Y_{t+h|t}-Y_{t+h})^2.
+$$
+
+For probabilistic forecasting, the output layer can produce quantiles, distribution parameters, or simulation paths. For example, a quantile CNN can minimize pinball loss for several quantile levels.
+
+## 20.11 Python example: convolution from scratch
+
+The following code implements a causal dilated convolution directly. This makes the indexing visible.
+
+```{python}
+#| label: ch20-causal-convolution-from-scratch
+#| fig-cap: "A causal dilated convolution uses only current and past inputs."
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(7339)
+
+T = 96
+t = np.arange(T)
+x = (
+    np.sin(2 * np.pi * t / 24)
+    + 0.35 * np.sin(2 * np.pi * t / 6)
+    + 0.03 * t
+)
+
+kernel = np.array([0.60, 0.30, -0.25])
+dilation = 4
+
+def causal_dilated_conv_1d(x, kernel, dilation=1):
+    """Causal dilated convolution with left zero padding."""
+    T = len(x)
+    K = len(kernel)
+    y = np.zeros(T)
+    for time in range(T):
+        total = 0.0
+        for j in range(K):
+            idx = time - dilation * j
+            if idx >= 0:
+                total += kernel[j] * x[idx]
+        y[time] = total
+    return y
+
+y = causal_dilated_conv_1d(x, kernel, dilation=dilation)
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, x, label="input sequence")
+plt.plot(t, y, label="causal dilated convolution")
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Causal dilated convolution from scratch")
+plt.legend()
+plt.show()
+```
+
+The output $y_t$ is a filtered version of the input. Because the filter is causal, the value at time $t$ does not use $x_{t+1}$ or any later value.
+
+## 20.12 Python example: checking PyTorch `Conv1d`
+
+PyTorch uses tensors with shape
+
+$$
+\text{batch}\times\text{channels}\times\text{time}.
+$$
+
+The module `nn.Conv1d` does not automatically implement left-only causal padding. A common safe pattern is:
+
+1. add left padding manually;
+2. use `Conv1d` with `padding=0`;
+3. verify output length and causality.
+
+```{python}
+#| label: ch20-pytorch-causal-conv
+import torch
+from torch import nn
+torch.set_num_threads(1)
+
+class CausalConv1d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation=1):
+        super().__init__()
+        self.left_padding = dilation * (kernel_size - 1)
+        self.conv = nn.Conv1d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            dilation=dilation,
+            padding=0,
+            bias=False,
+        )
+
+    def forward(self, x):
+        # x shape: batch, channels, time
+        x_pad = nn.functional.pad(x, (self.left_padding, 0))
+        return self.conv(x_pad)
+
+# Build a one-filter layer and set weights equal to the NumPy kernel.
+torch.manual_seed(7339)
+layer = CausalConv1d(1, 1, kernel_size=3, dilation=dilation)
+with torch.no_grad():
+    # PyTorch Conv1d applies cross-correlation, so reverse the weights
+    # to match the causal formula y_t = sum_j kernel[j] x_{t-dj}.
+    layer.conv.weight[:] = torch.tensor(kernel[::-1].copy().reshape(1, 1, -1), dtype=torch.float32)
+
+x_tensor = torch.tensor(x.reshape(1, 1, -1), dtype=torch.float32)
+y_torch = layer(x_tensor).detach().numpy().reshape(-1)
+
+print("Output length:", len(y_torch))
+print("Maximum absolute difference from NumPy:", np.max(np.abs(y_torch - y)))
+```
+
+This direct comparison is a good habit. Before building a large architecture, verify that the low-level sequence geometry is correct.
+
+## 20.13 Causality test for a neural layer
+
+A practical way to test causality is to perturb future values and check whether earlier outputs change. Suppose we compare two inputs that agree up to time $t$ and differ after time $t$. A causal model should produce identical outputs up to time $t$.
+
+```{python}
+#| label: ch20-causality-test
+x1 = torch.tensor(x.reshape(1, 1, -1), dtype=torch.float32)
+x2 = x1.clone()
+x2[:, :, 60:] = x2[:, :, 60:] + 1000.0  # huge future perturbation
+
+with torch.no_grad():
+    y1 = layer(x1)
+    y2 = layer(x2)
+
+max_change_before_60 = (y1[:, :, :60] - y2[:, :, :60]).abs().max().item()
+max_change_after_60 = (y1[:, :, 60:] - y2[:, :, 60:]).abs().max().item()
+
+print("Max output change before time 60:", max_change_before_60)
+print("Max output change from time 60 onward:", max_change_after_60)
+```
+
+If the first number is not approximately zero, the layer is leaking future information.
+
+## 20.14 Building windows for CNN forecasting
+
+A CNN input window for a univariate series has shape
+
+$$
+1\times L,
+$$
+
+where the first dimension is the channel dimension. For a multivariate series with $C$ variables, the input has shape
+
+$$
+C\times L.
+$$
+
+A batch of $B$ examples has shape
+
+$$
+B\times C\times L.
+$$
+
+The target for a multi-step forecast has shape
+
+$$
+B\times H.
+$$
+
+The next example builds a synthetic data set and converts it into CNN windows.
+
+```{python}
+#| label: ch20-window-dataset
+from torch.utils.data import Dataset, DataLoader
+
+np.random.seed(7339)
+T = 520
+t = np.arange(T)
+y_series = (
+    0.003 * t
+    + np.sin(2 * np.pi * t / 24)
+    + 0.45 * np.sin(2 * np.pi * t / 7)
+    + 0.25 * np.random.randn(T)
+)
+
+L = 48
+H = 6
+
+class WindowDataset(Dataset):
+    def __init__(self, values, input_length, horizon):
+        self.values = np.asarray(values, dtype=np.float32)
+        self.input_length = input_length
+        self.horizon = horizon
+
+    def __len__(self):
+        return len(self.values) - self.input_length - self.horizon + 1
+
+    def __getitem__(self, idx):
+        x_window = self.values[idx:idx + self.input_length]
+        y_window = self.values[idx + self.input_length:idx + self.input_length + self.horizon]
+        # Conv1d expects channels before time.
+        x_window = x_window.reshape(1, -1)
+        return torch.tensor(x_window), torch.tensor(y_window)
+
+# Chronological split before scaling.
+train_end = 360
+val_end = 440
+
+train_values = y_series[:train_end]
+train_mean = train_values.mean()
+train_std = train_values.std()
+
+y_scaled = (y_series - train_mean) / train_std
+
+train_ds = WindowDataset(y_scaled[:train_end], L, H)
+val_ds = WindowDataset(y_scaled[train_end - L:val_end], L, H)
+test_ds = WindowDataset(y_scaled[val_end - L:], L, H)
+
+x_batch, y_batch = train_ds[0]
+print("One input shape:", tuple(x_batch.shape))
+print("One target shape:", tuple(y_batch.shape))
+print("Number of training windows:", len(train_ds))
+```
+
+The validation and test segments include $L$ previous observations so that the first validation/test windows have enough history. The mean and standard deviation are still computed only from the training period.
+
+## 20.15 A small TCN forecaster
+
+The following model uses causal dilated convolutional blocks followed by a linear output layer. The model maps a history window of length $L$ to a horizon of length $H$.
+
+```{python}
+#| label: ch20-tcn-model-definition
+class TCNBlock(nn.Module):
+    def __init__(self, channels, kernel_size, dilation, dropout=0.05):
+        super().__init__()
+        self.conv1 = CausalConv1d(channels, channels, kernel_size, dilation)
+        self.act1 = nn.ReLU()
+        self.dropout1 = nn.Dropout(dropout)
+        self.conv2 = CausalConv1d(channels, channels, kernel_size, dilation)
+        self.act2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(dropout)
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.act1(out)
+        out = self.dropout1(out)
+        out = self.conv2(out)
+        out = self.act2(out)
+        out = self.dropout2(out)
+        return residual + out
+
+class SmallTCNForecaster(nn.Module):
+    def __init__(self, input_channels=1, hidden_channels=8, horizon=6, kernel_size=3):
+        super().__init__()
+        self.input_projection = nn.Conv1d(input_channels, hidden_channels, kernel_size=1)
+        self.blocks = nn.Sequential(
+            TCNBlock(hidden_channels, kernel_size, dilation=1),
+            TCNBlock(hidden_channels, kernel_size, dilation=2),
+            TCNBlock(hidden_channels, kernel_size, dilation=4),
+            TCNBlock(hidden_channels, kernel_size, dilation=8),
+        )
+        self.head = nn.Linear(hidden_channels, horizon)
+
+    def forward(self, x):
+        # x shape: batch, channels, time
+        h = self.input_projection(x)
+        h = self.blocks(h)
+        last_hidden = h[:, :, -1]
+        return self.head(last_hidden)
+
+model = SmallTCNForecaster(horizon=H)
+with torch.no_grad():
+    test_output = model(x_batch.unsqueeze(0))
+print("Model output shape for one example:", tuple(test_output.shape))
+```
+
+The final hidden vector at the last input time is used to predict the future horizon. This is a sequence-to-vector forecasting architecture.
+
+## 20.16 Training example
+
+The next code block trains the TCN for a small number of epochs. In a larger project, students should tune model size, dropout, learning rate, and input length using the validation set.
+
+```{python}
+#| label: ch20-tcn-training
+#| fig-cap: "Training and validation loss for a small TCN forecaster."
+torch.manual_seed(7339)
+
+train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_ds, batch_size=64, shuffle=False)
+
+model = SmallTCNForecaster(horizon=H)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-4)
+loss_fn = nn.MSELoss()
+
+def evaluate(loader):
+    model.eval()
+    losses = []
+    with torch.no_grad():
+        for xb, yb in loader:
+            pred = model(xb)
+            loss = loss_fn(pred, yb)
+            losses.append(loss.item())
+    return float(np.mean(losses))
+
+train_losses = []
+val_losses = []
+
+for epoch in range(15):
+    model.train()
+    batch_losses = []
+    for xb, yb in train_loader:
+        optimizer.zero_grad()
+        pred = model(xb)
+        loss = loss_fn(pred, yb)
+        loss.backward()
+        optimizer.step()
+        batch_losses.append(loss.item())
+    train_losses.append(float(np.mean(batch_losses)))
+    val_losses.append(evaluate(val_loader))
+
+plt.figure(figsize=(8, 4))
+plt.plot(train_losses, label="training loss")
+plt.plot(val_losses, label="validation loss")
+plt.xlabel("epoch")
+plt.ylabel("MSE")
+plt.title("TCN training curve")
+plt.legend()
+plt.show()
+
+print("Best validation MSE:", min(val_losses))
+```
+
+Training loss alone is not enough. A useful model should improve validation loss and beat simple baselines.
+
+## 20.17 Baseline comparison
+
+A basic multi-step persistence baseline predicts that all future values equal the last observed value:
+
+$$
+\widehat Y_{t+h|t}=Y_t,
+\qquad h=1,\ldots,H.
+$$
+
+```{python}
+#| label: ch20-baseline-comparison
+def collect_predictions(loader):
+    model.eval()
+    preds = []
+    targets = []
+    last_values = []
+    with torch.no_grad():
+        for xb, yb in loader:
+            preds.append(model(xb).numpy())
+            targets.append(yb.numpy())
+            last_values.append(xb[:, 0, -1].numpy())
+    return np.vstack(preds), np.vstack(targets), np.concatenate(last_values)
+
+test_loader = DataLoader(test_ds, batch_size=64, shuffle=False)
+pred_scaled, target_scaled, last_scaled = collect_predictions(test_loader)
+
+# Unscale values.
+pred = pred_scaled * train_std + train_mean
+target = target_scaled * train_std + train_mean
+last = last_scaled * train_std + train_mean
+baseline = np.repeat(last.reshape(-1, 1), H, axis=1)
+
+rmse_tcn = np.sqrt(np.mean((pred - target) ** 2, axis=0))
+rmse_base = np.sqrt(np.mean((baseline - target) ** 2, axis=0))
+
+for h in range(H):
+    print(f"Horizon {h+1}: TCN RMSE={rmse_tcn[h]:.3f}, persistence RMSE={rmse_base[h]:.3f}")
+```
+
+The goal is not merely to train a CNN. The goal is to show that the CNN adds predictive value relative to strong baselines.
+
+```{python}
+#| label: ch20-horizon-rmse-plot
+#| fig-cap: "Horizon-wise RMSE comparison between the TCN and persistence baseline."
+plt.figure(figsize=(8, 4))
+plt.plot(np.arange(1, H + 1), rmse_tcn, marker="o", label="TCN")
+plt.plot(np.arange(1, H + 1), rmse_base, marker="o", label="persistence baseline")
+plt.xlabel("forecast horizon")
+plt.ylabel("RMSE")
+plt.title("Horizon-wise test error")
+plt.legend()
+plt.show()
+```
+
+## 20.18 Multivariate CNN forecasting
+
+For multivariate data, the input window is
+
+$$
+\mathbf X_t\in\mathbb R^{C\times L}.
+$$
+
+A convolutional filter can mix variables and lags at the same time:
+
+$$
+z_{t,m}=b_m+
+\sum_{c=1}^C\sum_{j=0}^{K-1}W_{m,c,j}x_{t-j,c}.
+$$
+
+This is useful when future demand depends on temperature, calendar variables, promotion indicators, traffic conditions, or sensor measurements.
+
+However, exogenous variables require careful treatment. Some covariates are known in advance, such as day of week or scheduled holidays. Others are unknown at forecast time, such as future temperature unless a weather forecast is provided. A model must not use future covariates that would not be available in practice.
+
+::: {.callout-warning}
+## Known future versus unknown future covariates
+Calendar features are often known for future horizons. Future target values are not known. Future weather may be known only through a weather forecast, not through observed future weather. CNN input design must respect this distinction.
+:::
+
+## 20.19 CNNs for classification and anomaly detection
+
+Convolutional sequence models are not only for forecasting. They are also useful for classification and anomaly detection.
+
+For sequence classification, the model maps
+
+$$
+f_\theta:\mathbb R^{C\times L}\to\{1,\ldots,M\}.
+$$
+
+Examples include:
+
+- classifying electrocardiogram segments;
+- detecting machine faults from vibration signals;
+- recognizing activities from accelerometer data;
+- identifying regimes from financial or climate sequences.
+
+For anomaly detection, a CNN can be trained to reconstruct normal windows or predict the next observations. Large reconstruction or prediction errors may indicate abnormal behavior. The threshold should be calibrated on validation data, not chosen after looking at the test anomalies.
+
+## 20.20 Diagnostics and failure modes
+
+A CNN sequence model can fail for several reasons.
+
+### Receptive field too short
+
+If the true dependence uses lags outside the receptive field, the model cannot use them. Increase $L$, add layers, increase dilation, or include known seasonal features.
+
+### Receptive field too sparse
+
+Large dilation can skip important local information. A model with dilations $1,2,4,8$ may work well, but a model using only $d=16$ might miss short-term patterns.
+
+### Leakage through padding
+
+Symmetric padding can use future values. For forecasting, prefer explicit left padding or carefully verified causal layers.
+
+### Leakage through normalization
+
+Do not compute scaling constants using validation or test periods. Fit preprocessing on the training period only.
+
+### Bad validation design
+
+Randomly splitting overlapping windows can place nearly identical windows in both training and test sets. Use chronological validation and rolling-origin evaluation.
+
+### Overfitting small data
+
+CNNs can overfit short sequences. Use smaller models, dropout, weight decay, early stopping, and baselines.
+
+## 20.21 AI-assisted modeling activity
+
+::: {.callout-ai}
+## AI-assisted causality audit
+Ask an AI assistant:
+
+> Here is my PyTorch `Conv1d` code for time-series forecasting. Audit it for future leakage. Check padding, target construction, scaling, train-validation split, and use of future covariates. Explain how to test each issue in code.
+
+Then verify the answer by writing at least one causality test like the perturbation test in Section 20.13.
+:::
+
+::: {.callout-ai}
+## AI-assisted receptive-field calculation
+Use the following prompt:
+
+> My TCN has kernel size $K=3$ and dilations $1,2,4,8,16$. Compute the receptive-field width. Then explain what historical lags may affect the final output.
+
+Check the calculation manually using
+
+$$
+R_L=1+(K-1)\sum_{\ell=1}^L d_\ell.
+$$
+:::
+
+::: {.callout-ai}
+## AI-assisted model critique
+Ask an AI assistant to critique a CNN forecasting report. Require it to answer these questions:
+
+1. What baseline does the CNN beat?
+2. Is the validation chronological?
+3. Is the receptive field large enough for the claimed seasonal structure?
+4. Are all future covariates known at forecast time?
+5. Does the model include uncertainty or only point forecasts?
+
+Reject any suggestion that changes architecture before checking leakage and baselines.
+:::
+
+## 20.22 Common mistakes
+
+1. **Using ordinary symmetric padding for forecasting.** This can leak future information.
+2. **Forgetting the shape convention.** PyTorch `Conv1d` expects batch, channels, time.
+3. **Making the receptive field too small.** The model cannot learn dependencies it cannot see.
+4. **Using large dilation too early.** Sparse filters can miss local patterns.
+5. **Skipping baselines.** A CNN must beat naive, seasonal naive, and simple ML baselines.
+6. **Randomly splitting overlapping windows.** This creates misleadingly good test results.
+7. **Using future covariates incorrectly.** Only use covariates available at forecast time.
+8. **Assuming CNNs automatically handle nonstationarity.** Trend, scale changes, and regime shifts still require diagnostics.
+9. **Training too large a model on too little data.** Deep models can memorize local windows.
+10. **Reporting only aggregate RMSE.** Horizon-wise error often reveals where the model fails.
+
+## 20.23 Exercises
+
+1. For a causal convolution with $K=5$ and $d=3$, list all input times used to compute $z_t$.
+2. Prove that a one-layer causal convolution with no activation is a finite impulse-response filter.
+3. For $K=3$ and dilations $1,2,4,8$, compute the receptive-field width.
+4. Suppose a series has a weekly seasonal pattern with daily observations. Design a TCN receptive field that can see at least four weeks of history.
+5. In PyTorch, explain why the input shape should be `batch, channels, time` rather than `batch, time, channels`.
+6. Write a causality test for a convolutional model by perturbing future inputs.
+7. Modify the Python example to use $H=12$. How does horizon-wise RMSE change?
+8. Replace ReLU with GELU or Tanh. Does validation loss improve?
+9. Add a seasonal naive baseline and compare it with the TCN.
+10. For multivariate forecasting, classify each covariate in your data as known future, observed past only, or unavailable.
+
+## 20.24 Mini project
+
+Build a convolutional forecasting model for a real or simulated sequence.
+
+Your report should include:
+
+1. a forecasting question and horizon;
+2. a plot of the raw series and at least one diagnostic plot;
+3. a baseline forecast, preferably naive and seasonal naive;
+4. a causal CNN or TCN model;
+5. a calculation of the model's receptive field;
+6. a chronological train-validation-test split;
+7. scaling fit on the training period only;
+8. horizon-wise error comparison;
+9. a causality audit of your padding and feature construction;
+10. an AI-assisted critique section where you verify or reject the assistant's suggestions.
+
+## 20.25 Checklist
+
+Before moving to recurrent networks, make sure you can answer these questions.
+
+- What is the difference between causal and noncausal convolution?
+- What shape does `Conv1d` expect in PyTorch?
+- What is dilation, and why does it increase the receptive field?
+- How do you compute the receptive field of a TCN stack?
+- What future information is available at forecast time?
+- Does your model beat naive and seasonal naive baselines?
+- Did you split windows chronologically?
+- Was scaling fit on the training period only?
+- Can you test whether future inputs affect earlier outputs?
+- Can you explain your CNN as a nonlinear time-domain filter?

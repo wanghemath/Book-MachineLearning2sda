@@ -1,0 +1,993 @@
+# Discrete Fourier Transform, FFT, and the Periodogram
+
+::: {.hero}
+**Part IV. Frequency-Domain and Multiresolution Methods**  
+**Chapter goal:** move from the population spectral density of Chapter 12 to finite-sample spectral estimation. We develop the discrete Fourier transform as a change of basis, the fast Fourier transform as an efficient algorithm, the periodogram as a sample spectrum, and smoothed periodograms as practical estimators of dominant frequencies.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. represent a finite time series as a vector in a complex Fourier basis;
+2. define Fourier frequencies and explain why they are natural for data of length $n$;
+3. derive the discrete Fourier transform from orthogonal projection;
+4. use Parseval's identity to connect time-domain energy and frequency-domain energy;
+5. define the periodogram and interpret it as variance assigned to frequencies;
+6. explain why the raw periodogram is noisy and why smoothing is needed;
+7. compute DFTs and periodograms using direct formulas and the FFT;
+8. recognize leakage, resolution limits, and aliasing in finite samples;
+9. use the periodogram to propose periodic structure, then verify it by time-domain modeling;
+10. use AI tools to help interpret spectral evidence while checking scaling, leakage, and sampling assumptions.
+
+## 13.1 From population spectrum to sample spectrum
+
+In Chapter 12 we studied the **spectral density** $f(\omega)$ of a stationary process. It is a population quantity satisfying
+
+$$
+\gamma(h)=\int_{-1/2}^{1/2} e^{2\pi i\omega h} f(\omega)\,d\omega,
+$$
+
+and, when $\sum_h |\gamma(h)|<\infty$,
+
+$$
+f(\omega)=\sum_{h=-\infty}^{\infty}\gamma(h)e^{-2\pi i\omega h}.
+$$
+
+In practice, we do not observe the entire process. We observe one finite realization
+
+$$
+x_0,x_1,\ldots,x_{n-1}.
+$$
+
+The main problem of this chapter is:
+
+> Given $x_0,\ldots,x_{n-1}$, how can we estimate where the variance of the series lives in frequency?
+
+There are two closely related answers.
+
+First, estimate the autocovariance $\gamma(h)$ by the sample autocovariance $\widehat{\gamma}(h)$ and plug it into the Fourier-series formula for $f(\omega)$.
+
+Second, compute the discrete Fourier transform of the observed sequence and square its magnitude. This gives the **periodogram**.
+
+At the Fourier frequencies $\omega_k=k/n$, these two approaches are essentially the same, up to details of normalization and centering. The periodogram is the computationally natural form because the fast Fourier transform computes it extremely quickly.
+
+::: {.callout-note}
+## Population versus sample
+The spectral density $f(\omega)$ is a property of the data-generating process. The periodogram $I(\omega_k)$ is computed from one finite sample. It is a noisy finite-sample object, not the true spectrum itself.
+:::
+
+## 13.2 Fourier frequencies
+
+For a sample of length $n$, the natural discrete frequencies are
+
+$$
+\omega_k=\frac{k}{n}, \qquad k=0,1,\ldots,n-1.
+$$
+
+The corresponding complex exponential sequence is
+
+$$
+e_k(t)=\exp(2\pi i\omega_k t)=\exp\left(2\pi i\frac{kt}{n}\right),
+\qquad t=0,1,\ldots,n-1.
+$$
+
+These frequencies are natural because each sequence $e_k(t)$ completes exactly $k$ cycles over a block of length $n$. Also,
+
+$$
+e_k(t+n)=e_k(t),
+$$
+
+so these functions are periodic on the observed sample grid.
+
+For real-valued time series, the positive and negative frequencies are paired. Since
+
+$$
+\exp(2\pi i(1-\omega)t)=\exp(-2\pi i\omega t),
+$$
+
+the frequencies above $1/2$ correspond to negative frequencies. Therefore, one-sided periodogram plots usually show only
+
+$$
+0\leq \omega\leq \frac{1}{2}.
+$$
+
+The upper endpoint $1/2$ is the Nyquist frequency.
+
+### Period interpretation
+
+If a periodogram has a peak at $\omega=0.05$, the corresponding period is
+
+$$
+\frac{1}{0.05}=20
+$$
+
+time steps per cycle.
+
+If the data are monthly and a peak occurs at $\omega=1/12$, the period is $12$ months. If the data are daily and a peak occurs at $\omega=1/7$, the period is $7$ days.
+
+## 13.3 The Fourier basis as an orthonormal basis
+
+Let $\mathbb{C}^n$ be the vector space of complex-valued sequences of length $n$. Define the inner product
+
+$$
+\langle a,b\rangle=\sum_{t=0}^{n-1} a_t\overline{b_t}.
+$$
+
+For $k=0,1,\ldots,n-1$, define
+
+$$
+\phi_k(t)=\frac{1}{\sqrt n}\exp\left(2\pi i\frac{kt}{n}\right).
+$$
+
+Then $\{\phi_0,\phi_1,\ldots,\phi_{n-1}\}$ is an orthonormal basis of $\mathbb{C}^n$. Indeed,
+
+$$
+\langle \phi_j,\phi_k\rangle
+=\frac{1}{n}\sum_{t=0}^{n-1}\exp\left(2\pi i\frac{(j-k)t}{n}\right).
+$$
+
+If $j=k$, every term is $1$, so the sum is $1$. If $j\neq k$, this is a finite geometric series with ratio not equal to $1$, and the sum is $0$.
+
+Thus every finite sequence $x=(x_0,\ldots,x_{n-1})$ has the expansion
+
+$$
+x=\sum_{k=0}^{n-1} c_k\phi_k,
+$$
+
+where
+
+$$
+c_k=\langle x,\phi_k\rangle
+=\frac{1}{\sqrt n}\sum_{t=0}^{n-1}x_t\exp\left(-2\pi i\frac{kt}{n}\right).
+$$
+
+These coefficients $c_k$ are the unitary discrete Fourier transform coefficients.
+
+::: {.callout-important}
+## DFT as coordinates
+The DFT is not mysterious. It is the coordinate vector of $x$ in the Fourier basis. It tells us how much of each sinusoidal basis direction is present in the observed sequence.
+:::
+
+## 13.4 DFT conventions and scaling
+
+Different books and software packages use slightly different normalizations. The mathematics is the same, but the scaling changes.
+
+A common unnormalized DFT is
+
+$$
+D_k=\sum_{t=0}^{n-1}x_t\exp\left(-2\pi i\frac{kt}{n}\right).
+$$
+
+The inverse transform is
+
+$$
+x_t=\frac{1}{n}\sum_{k=0}^{n-1}D_k\exp\left(2\pi i\frac{kt}{n}\right).
+$$
+
+The unitary coefficient from the previous section is
+
+$$
+c_k=\frac{D_k}{\sqrt n}.
+$$
+
+Some time-series texts use the scaled coefficient
+
+$$
+X(\omega_k)=\frac{1}{n}D_k
+=\frac{1}{n}\sum_{t=0}^{n-1}x_t\exp(-2\pi i\omega_k t).
+$$
+
+In this chapter, when we define the periodogram, we use
+
+$$
+I(\omega_k)=\frac{1}{n}|D_k|^2=|c_k|^2.
+$$
+
+With this convention, Parseval's identity becomes particularly simple:
+
+$$
+\sum_{t=0}^{n-1}|x_t|^2
+=\sum_{k=0}^{n-1}I(\omega_k).
+$$
+
+If the data are centered, then
+
+$$
+\frac{1}{n}\sum_{t=0}^{n-1}(x_t-\bar x)^2
+=\frac{1}{n}\sum_{k=0}^{n-1}I(\omega_k).
+$$
+
+Thus the periodogram divides the sample energy, or variance after centering, across Fourier frequencies.
+
+### Python: direct DFT versus NumPy FFT
+
+```{python}
+#| label: ch13-direct-dft-vs-fft
+#| fig-cap: "Direct DFT and FFT give the same coefficients up to numerical precision."
+#| warning: false
+#| message: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+n = 32
+t = np.arange(n)
+x = 1.2 * np.cos(2 * np.pi * 4 * t / n) + 0.5 * rng.normal(size=n)
+x = x - x.mean()
+
+# Direct DFT matrix: D_k = sum_t x_t exp(-2 pi i k t / n)
+k = np.arange(n)
+W = np.exp(-2j * np.pi * np.outer(k, t) / n)
+D_direct = W @ x
+
+# NumPy FFT uses the same unnormalized convention.
+D_fft = np.fft.fft(x)
+
+print("maximum absolute difference:", np.max(np.abs(D_direct - D_fft)))
+
+freq = np.fft.fftfreq(n, d=1)
+periodogram = (np.abs(D_fft) ** 2) / n
+
+plt.figure(figsize=(9, 4))
+plt.stem(freq[: n // 2 + 1], periodogram[: n // 2 + 1])
+plt.xlabel("frequency")
+plt.ylabel("periodogram")
+plt.title("One-sided periodogram from the FFT")
+plt.show()
+```
+
+## 13.5 The periodogram
+
+The **periodogram** at Fourier frequency $\omega_k=k/n$ is
+
+$$
+I(\omega_k)=\frac{1}{n}\left|\sum_{t=0}^{n-1}x_t e^{-2\pi i\omega_k t}\right|^2.
+$$
+
+Equivalently, writing the real and imaginary components,
+
+$$
+\sum_{t=0}^{n-1}x_t e^{-2\pi i\omega_k t}
+=\sum_{t=0}^{n-1}x_t\cos(2\pi\omega_k t)
+-i\sum_{t=0}^{n-1}x_t\sin(2\pi\omega_k t).
+$$
+
+Therefore,
+
+$$
+I(\omega_k)
+=\frac{1}{n}\left(\sum_{t=0}^{n-1}x_t\cos(2\pi\omega_k t)\right)^2
++\frac{1}{n}\left(\sum_{t=0}^{n-1}x_t\sin(2\pi\omega_k t)\right)^2.
+$$
+
+This formula shows the regression interpretation: the periodogram is large at a frequency if the data have a strong projection onto the sine and cosine waves at that frequency.
+
+### Centering and the zero frequency
+
+The frequency $\omega_0=0$ corresponds to the constant basis vector. Since
+
+$$
+D_0=\sum_{t=0}^{n-1}x_t=n\bar x,
+$$
+
+the zero-frequency periodogram is
+
+$$
+I(0)=n\bar x^2.
+$$
+
+If the mean is not removed, the zero-frequency spike may dominate the plot. For spectral analysis of fluctuations around a mean, we usually center the data first.
+
+::: {.callout-warning}
+## Center before interpreting peaks
+A strong mean or trend can create large low-frequency power. Before interpreting the periodogram, ask whether you should center, detrend, difference, or otherwise remove deterministic structure.
+:::
+
+### Python: periodogram of a hidden periodic signal
+
+```{python}
+#| label: ch13-periodogram-hidden-cycle
+#| fig-cap: "The periodogram reveals the hidden frequency of a noisy sinusoidal signal."
+#| warning: false
+#| message: false
+
+rng = np.random.default_rng(2026)
+n = 240
+t = np.arange(n)
+true_period = 30
+true_freq = 1 / true_period
+
+x = 1.5 * np.cos(2 * np.pi * true_freq * t + 0.6) + 0.8 * rng.normal(size=n)
+x_centered = x - x.mean()
+
+D = np.fft.rfft(x_centered)
+freq = np.fft.rfftfreq(n, d=1)
+I = np.abs(D) ** 2 / n
+
+# Ignore frequency zero when searching for a periodic peak.
+peak_idx = 1 + np.argmax(I[1:])
+peak_freq = freq[peak_idx]
+peak_period = 1 / peak_freq
+
+print("True period:", true_period)
+print("Estimated peak frequency:", round(peak_freq, 4))
+print("Estimated peak period:", round(peak_period, 2))
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, x)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Noisy periodic signal")
+plt.show()
+
+plt.figure(figsize=(10, 4))
+plt.plot(freq[1:], I[1:])
+plt.axvline(true_freq, linestyle="--", label="true frequency")
+plt.axvline(peak_freq, linestyle=":", label="largest periodogram peak")
+plt.xlabel("frequency")
+plt.ylabel("periodogram")
+plt.title("Periodogram")
+plt.legend()
+plt.show()
+```
+
+## 13.6 The periodogram and sample autocovariance
+
+For centered data, define a circular sample autocovariance
+
+$$
+\widetilde{\gamma}(h)=\frac{1}{n}\sum_{t=0}^{n-1}x_t x_{t+h \;\mathrm{mod}\; n}.
+$$
+
+Then the periodogram can be written as the discrete Fourier transform of $\widetilde{\gamma}(h)$:
+
+$$
+I(\omega_k)=\sum_{h=0}^{n-1}\widetilde{\gamma}(h)e^{-2\pi i\omega_k h}.
+$$
+
+This is the finite-sample analog of
+
+$$
+f(\omega)=\sum_{h=-\infty}^{\infty}\gamma(h)e^{-2\pi i\omega h}.
+$$
+
+The usual non-circular sample autocovariance is
+
+$$
+\widehat{\gamma}(h)=\frac{1}{n}\sum_{t=0}^{n-1-h}(x_{t+h}-\bar x)(x_t-\bar x),
+\qquad h\geq 0.
+$$
+
+Using $\widehat{\gamma}(h)$ in a finite Fourier sum gives another form of spectral estimate. At Fourier frequencies, the periodogram is the most common computational object.
+
+## 13.7 Why the raw periodogram is noisy
+
+The periodogram is asymptotically unbiased under suitable regularity conditions, but it is not a consistent estimator of $f(\omega)$ without smoothing. Informally:
+
+- as $n$ grows, the frequency grid becomes denser;
+- the expected periodogram approaches the true spectrum;
+- but the variance of the periodogram at a fixed frequency does not vanish.
+
+This means the raw periodogram remains jagged even for long series. It is useful for detecting strong peaks, but it is usually too variable for estimating a smooth spectral density.
+
+A common remedy is to average nearby periodogram values:
+
+$$
+\widehat f(\omega_k)=\sum_{j=-m}^{m} a_j I(\omega_{k+j}),
+$$
+
+where $a_j\geq 0$ and $\sum_{j=-m}^{m}a_j=1$.
+
+The window width controls a bias-variance tradeoff:
+
+- more smoothing decreases variance but blurs narrow peaks;
+- less smoothing preserves sharp peaks but leaves high variance.
+
+### Python: smoothing a periodogram
+
+```{python}
+#| label: ch13-smoothed-periodogram
+#| fig-cap: "A smoothed periodogram reduces variance but blurs sharp spectral features."
+#| warning: false
+#| message: false
+
+rng = np.random.default_rng(1)
+n = 512
+t = np.arange(n)
+
+# AR(1)-like smooth process plus a periodic component.
+phi = 0.85
+w = rng.normal(size=n)
+y = np.zeros(n)
+for i in range(1, n):
+    y[i] = phi * y[i-1] + w[i]
+
+x = y + 1.5 * np.cos(2 * np.pi * (1/40) * t)
+x = x - x.mean()
+
+freq = np.fft.rfftfreq(n, d=1)
+I = np.abs(np.fft.rfft(x)) ** 2 / n
+
+# Simple moving-average smoother over frequencies.
+width = 9
+kernel = np.ones(width) / width
+I_smooth = np.convolve(I, kernel, mode="same")
+
+plt.figure(figsize=(10, 4))
+plt.plot(freq[1:], I[1:], alpha=0.5, label="raw periodogram")
+plt.plot(freq[1:], I_smooth[1:], linewidth=2, label="smoothed periodogram")
+plt.xlabel("frequency")
+plt.ylabel("spectral power")
+plt.title("Raw versus smoothed periodogram")
+plt.legend()
+plt.show()
+```
+
+## 13.8 The fast Fourier transform
+
+The direct DFT formula requires computing
+
+$$
+D_k=\sum_{t=0}^{n-1}x_t e^{-2\pi i kt/n}
+$$
+
+for $k=0,1,\ldots,n-1$. This involves about $n^2$ complex multiplications. For large $n$, this is expensive.
+
+The **fast Fourier transform** is an algorithm that computes the same DFT coefficients in approximately
+
+$$
+O(n\log n)
+$$
+
+operations.
+
+The key idea is to exploit symmetry. When $n$ is even, split the DFT into even and odd time indices:
+
+$$
+D_k
+=\sum_{t=0}^{n-1}x_t e^{-2\pi i kt/n}
+=\sum_{m=0}^{n/2-1}x_{2m} e^{-2\pi i k(2m)/n}
++\sum_{m=0}^{n/2-1}x_{2m+1} e^{-2\pi i k(2m+1)/n}.
+$$
+
+This becomes
+
+$$
+D_k
+=\sum_{m=0}^{n/2-1}x_{2m} e^{-2\pi i km/(n/2)}
++e^{-2\pi i k/n}\sum_{m=0}^{n/2-1}x_{2m+1} e^{-2\pi i km/(n/2)}.
+$$
+
+The two sums are DFTs of length $n/2$. Thus a DFT of length $n$ can be computed using two DFTs of length $n/2$ plus a small amount of recombination. Repeating the split gives the FFT.
+
+::: {.callout-note}
+## Algorithm, not a new transform
+The FFT does not define a new mathematical transform. It is a fast algorithm for computing the DFT.
+:::
+
+### Python: timing direct DFT and FFT
+
+```{python}
+#| label: ch13-fft-speed
+#| warning: false
+#| message: false
+
+import time
+
+rng = np.random.default_rng(42)
+
+for n in [128, 256, 512]:
+    x = rng.normal(size=n)
+    t = np.arange(n)
+    k = np.arange(n)
+
+    start = time.perf_counter()
+    W = np.exp(-2j * np.pi * np.outer(k, t) / n)
+    D_direct = W @ x
+    direct_time = time.perf_counter() - start
+
+    start = time.perf_counter()
+    D_fft = np.fft.fft(x)
+    fft_time = time.perf_counter() - start
+
+    error = np.max(np.abs(D_direct - D_fft))
+    print(f"n={n:4d}  direct={direct_time:.4f}s  fft={fft_time:.6f}s  error={error:.2e}")
+```
+
+## 13.9 Spectral leakage and finite-sample resolution
+
+The Fourier basis frequencies are exactly $k/n$. What happens if the true signal has frequency not exactly equal to one of these grid frequencies?
+
+Suppose
+
+$$
+x_t=A\cos(2\pi\omega_0 t)
+$$
+
+where $\omega_0$ is not equal to $k/n$ for any integer $k$. Then the energy cannot be placed into one Fourier bin. It spreads into neighboring bins. This is called **spectral leakage**.
+
+Leakage is caused by observing a finite window of a signal. Mathematically, truncating a signal in time corresponds to spreading its spectrum in frequency.
+
+A common practical remedy is to multiply the data by a taper or window before applying the DFT. For example, a Hann taper is
+
+$$
+w_t=\frac{1}{2}\left(1-\cos\left(\frac{2\pi t}{n-1}\right)\right).
+$$
+
+Then we analyze $w_t x_t$ rather than $x_t$ directly. Tapering reduces edge discontinuities, which often reduces leakage far away from the main peak, but it also widens the main lobe.
+
+### Python: leakage and tapering
+
+```{python}
+#| label: ch13-leakage-windowing
+#| fig-cap: "A frequency not aligned with the Fourier grid leaks energy into nearby bins; tapering changes the leakage pattern."
+#| warning: false
+#| message: false
+
+n = 128
+t = np.arange(n)
+
+# Not an integer number of cycles over the sample.
+cycles = 10.5
+omega0 = cycles / n
+x = np.cos(2 * np.pi * omega0 * t)
+x = x - x.mean()
+
+hann = 0.5 * (1 - np.cos(2 * np.pi * t / (n - 1)))
+x_hann = hann * x
+
+freq = np.fft.rfftfreq(n, d=1)
+I_raw = np.abs(np.fft.rfft(x)) ** 2 / n
+I_hann = np.abs(np.fft.rfft(x_hann)) ** 2 / n
+
+plt.figure(figsize=(10, 4))
+plt.plot(freq, I_raw / I_raw.max(), label="raw, normalized")
+plt.plot(freq, I_hann / I_hann.max(), label="Hann tapered, normalized")
+plt.axvline(omega0, linestyle="--", label="true frequency")
+plt.xlim(0, 0.18)
+plt.xlabel("frequency")
+plt.ylabel("normalized periodogram")
+plt.title("Spectral leakage and tapering")
+plt.legend()
+plt.show()
+```
+
+## 13.10 Interactive HTML: DFT and periodogram explorer
+
+This interactive example lets you combine two sinusoids and noise, then view the time series and its one-sided periodogram. It uses the global Plotly.js import from the book header.
+
+::: {.interactive}
+## DFT and periodogram explorer
+
+Adjust the two frequencies, amplitudes, and noise level. Frequencies are measured in cycles per time step. The periodogram should peak near the frequencies used to generate the signal, but finite-sample effects and noise can make the picture imperfect.
+
+<div class="control-grid">
+  <label>Sample size n
+    <input id="ch13-n" type="range" min="64" max="256" step="32" value="160">
+    <span id="ch13-n-val">160</span>
+  </label>
+  <label>Frequency 1
+    <input id="ch13-f1" type="range" min="0.01" max="0.49" step="0.01" value="0.08">
+    <span id="ch13-f1-val">0.08</span>
+  </label>
+  <label>Amplitude 1
+    <input id="ch13-a1" type="range" min="0" max="4" step="0.1" value="2.0">
+    <span id="ch13-a1-val">2.0</span>
+  </label>
+  <label>Frequency 2
+    <input id="ch13-f2" type="range" min="0.01" max="0.49" step="0.01" value="0.21">
+    <span id="ch13-f2-val">0.21</span>
+  </label>
+  <label>Amplitude 2
+    <input id="ch13-a2" type="range" min="0" max="4" step="0.1" value="1.0">
+    <span id="ch13-a2-val">1.0</span>
+  </label>
+  <label>Noise level
+    <input id="ch13-noise" type="range" min="0" max="3" step="0.1" value="0.6">
+    <span id="ch13-noise-val">0.6</span>
+  </label>
+</div>
+
+<div id="ch13-time-plot" style="width:100%;height:390px;"></div>
+<div id="ch13-periodogram-plot" style="width:100%;height:390px;"></div>
+
+<script>
+(function(){
+  function gaussianNoise(seedState){
+    var u = 0, v = 0;
+    while (u === 0) u = random(seedState);
+    while (v === 0) v = random(seedState);
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  }
+
+  function random(state){
+    state.value = (1664525 * state.value + 1013904223) % 4294967296;
+    return state.value / 4294967296;
+  }
+
+  function dftPeriodogram(x){
+    var n = x.length;
+    var half = Math.floor(n / 2);
+    var freqs = [];
+    var power = [];
+    for (var k = 0; k <= half; k++){
+      var re = 0;
+      var im = 0;
+      for (var t = 0; t < n; t++){
+        var angle = -2 * Math.PI * k * t / n;
+        re += x[t] * Math.cos(angle);
+        im += x[t] * Math.sin(angle);
+      }
+      freqs.push(k / n);
+      power.push((re * re + im * im) / n);
+    }
+    return {freqs: freqs, power: power};
+  }
+
+  function getNumber(id){
+    return Number(document.getElementById(id).value);
+  }
+
+  function update(){
+    if (typeof Plotly === "undefined") return;
+
+    var n = getNumber("ch13-n");
+    var f1 = getNumber("ch13-f1");
+    var a1 = getNumber("ch13-a1");
+    var f2 = getNumber("ch13-f2");
+    var a2 = getNumber("ch13-a2");
+    var noise = getNumber("ch13-noise");
+
+    document.getElementById("ch13-n-val").textContent = n.toFixed(0);
+    document.getElementById("ch13-f1-val").textContent = f1.toFixed(2);
+    document.getElementById("ch13-a1-val").textContent = a1.toFixed(1);
+    document.getElementById("ch13-f2-val").textContent = f2.toFixed(2);
+    document.getElementById("ch13-a2-val").textContent = a2.toFixed(1);
+    document.getElementById("ch13-noise-val").textContent = noise.toFixed(1);
+
+    var seedState = {value: 7339};
+    var t = [];
+    var x = [];
+    for (var i = 0; i < n; i++){
+      var val = a1 * Math.cos(2 * Math.PI * f1 * i + 0.4) +
+                a2 * Math.sin(2 * Math.PI * f2 * i + 1.0) +
+                noise * gaussianNoise(seedState);
+      t.push(i);
+      x.push(val);
+    }
+
+    var mean = x.reduce(function(a,b){return a+b;}, 0) / n;
+    var xc = x.map(function(v){return v - mean;});
+    var spec = dftPeriodogram(xc);
+
+    Plotly.newPlot("ch13-time-plot", [{
+      x: t,
+      y: x,
+      mode: "lines",
+      name: "series"
+    }], {
+      title: "Simulated time series",
+      xaxis: {title: "time"},
+      yaxis: {title: "value"},
+      margin: {t: 45, r: 20, b: 45, l: 55}
+    }, {responsive: true});
+
+    Plotly.newPlot("ch13-periodogram-plot", [{
+      x: spec.freqs.slice(1),
+      y: spec.power.slice(1),
+      type: "bar",
+      name: "periodogram"
+    }], {
+      title: "One-sided periodogram of centered data",
+      xaxis: {title: "frequency", range: [0, 0.5]},
+      yaxis: {title: "power"},
+      margin: {t: 45, r: 20, b: 45, l: 55},
+      shapes: [
+        {type: "line", x0: f1, x1: f1, y0: 0, y1: 1, yref: "paper", line: {dash: "dash"}},
+        {type: "line", x0: f2, x1: f2, y0: 0, y1: 1, yref: "paper", line: {dash: "dot"}}
+      ],
+      annotations: [
+        {x: f1, y: 1, yref: "paper", text: "f1", showarrow: false, yanchor: "bottom"},
+        {x: f2, y: 0.9, yref: "paper", text: "f2", showarrow: false, yanchor: "bottom"}
+      ]
+    }, {responsive: true});
+  }
+
+  ["ch13-n", "ch13-f1", "ch13-a1", "ch13-f2", "ch13-a2", "ch13-noise"].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("input", update);
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", update);
+  } else {
+    update();
+  }
+})();
+</script>
+:::
+
+## 13.11 Detecting a period is not the same as proving a model
+
+The periodogram is a powerful exploratory tool. A large peak suggests that a sinusoidal component may be present. But a peak alone is not a complete model.
+
+A responsible workflow is:
+
+1. center, detrend, or difference if necessary;
+2. inspect the periodogram;
+3. identify candidate frequencies;
+4. translate frequencies into periods;
+5. fit a time-domain model using sine and cosine regressors;
+6. inspect residuals using time plots, ACF, and diagnostics;
+7. compare with baseline forecasts.
+
+### Python: peak detection followed by sinusoidal regression
+
+```{python}
+#| label: ch13-periodogram-to-regression
+#| fig-cap: "A periodogram peak can be converted into sine/cosine regressors and checked by residual diagnostics."
+#| warning: false
+#| message: false
+
+rng = np.random.default_rng(9)
+n = 365
+t = np.arange(n)
+
+# A synthetic daily series with a weekly component and a mild trend.
+x = 0.005 * t + 1.8 * np.cos(2 * np.pi * t / 7 + 0.3) + rng.normal(scale=0.7, size=n)
+
+# Remove a linear trend before period search.
+Z_trend = np.column_stack([np.ones(n), t])
+trend_hat = Z_trend @ np.linalg.lstsq(Z_trend, x, rcond=None)[0]
+r = x - trend_hat
+
+freq = np.fft.rfftfreq(n, d=1)
+I = np.abs(np.fft.rfft(r - r.mean())) ** 2 / n
+peak_idx = 1 + np.argmax(I[1:])
+omega_hat = freq[peak_idx]
+period_hat = 1 / omega_hat
+
+print("periodogram peak frequency:", round(omega_hat, 4))
+print("periodogram peak period:", round(period_hat, 2))
+
+# Fit trend plus sine/cosine at the detected frequency.
+Z = np.column_stack([
+    np.ones(n),
+    t,
+    np.cos(2 * np.pi * omega_hat * t),
+    np.sin(2 * np.pi * omega_hat * t),
+])
+beta = np.linalg.lstsq(Z, x, rcond=None)[0]
+fitted = Z @ beta
+resid = x - fitted
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, x, label="observed", alpha=0.7)
+plt.plot(t, fitted, label="trend + detected cycle", linewidth=2)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Time-domain verification of a spectral peak")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 4))
+plt.plot(freq[1:], I[1:])
+plt.axvline(omega_hat, linestyle="--", label="detected frequency")
+plt.xlabel("frequency")
+plt.ylabel("periodogram")
+plt.title("Periodogram of detrended residuals")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 3))
+plt.plot(t, resid)
+plt.axhline(0, linewidth=1)
+plt.xlabel("time")
+plt.ylabel("residual")
+plt.title("Residuals after fitting detected cycle")
+plt.show()
+```
+
+## 13.12 Periodogram for stochastic processes
+
+For a stationary stochastic process, the periodogram is random. Even if the true spectrum is smooth, the observed periodogram can be very irregular.
+
+For example, white noise has a flat spectral density. But the periodogram of one white-noise realization is not flat. It has random spikes. Those spikes do not necessarily indicate meaningful periodicity.
+
+This is one of the most common mistakes in spectral analysis: overinterpreting peaks from a short noisy sequence.
+
+### Python: white noise has random periodogram peaks
+
+```{python}
+#| label: ch13-white-noise-periodogram
+#| fig-cap: "A white-noise series has a flat spectrum in theory, but its finite-sample periodogram is noisy."
+#| warning: false
+#| message: false
+
+rng = np.random.default_rng(21)
+n = 256
+x = rng.normal(size=n)
+x = x - x.mean()
+
+freq = np.fft.rfftfreq(n, d=1)
+I = np.abs(np.fft.rfft(x)) ** 2 / n
+
+plt.figure(figsize=(10, 4))
+plt.plot(freq[1:], I[1:])
+plt.xlabel("frequency")
+plt.ylabel("periodogram")
+plt.title("Periodogram of one white-noise realization")
+plt.show()
+```
+
+::: {.callout-tip}
+## Interpretation rule
+A periodogram peak is a hypothesis generator. It says: "This frequency may matter." It does not, by itself, prove that the process contains a deterministic cycle.
+:::
+
+## 13.13 Connection with linear filters
+
+A linear filter transforms a time series by
+
+$$
+y_t=\sum_{j=-\infty}^{\infty}a_j x_{t-j}.
+$$
+
+In the frequency domain, filtering is multiplication. If the input has spectral density $f_x(\omega)$, then under suitable conditions the output has spectral density
+
+$$
+f_y(\omega)=|A(\omega)|^2 f_x(\omega),
+$$
+
+where
+
+$$
+A(\omega)=\sum_j a_j e^{-2\pi i\omega j}
+$$
+
+is the frequency response of the filter.
+
+This explains why moving averages smooth time series. A simple moving average suppresses high-frequency variation and preserves low-frequency variation. In the next chapter, we will use this idea to study filters and wavelets.
+
+## 13.14 AI-assisted spectral analysis
+
+AI tools are useful for planning and checking spectral analysis, but they should not replace mathematical verification.
+
+### Good AI uses
+
+Ask an AI assistant to:
+
+- translate a periodogram peak into a candidate period;
+- suggest whether centering, detrending, or differencing is appropriate;
+- explain why a raw periodogram is jagged;
+- generate code for a DFT or FFT calculation;
+- compare possible causes of a spectral peak;
+- design a residual diagnostic checklist.
+
+### Risky AI uses
+
+Do not ask an AI assistant to simply “find the true period” without providing:
+
+- the sampling interval;
+- whether the data have missing observations;
+- whether the data were detrended or differenced;
+- whether the peak aligns with a Fourier frequency;
+- whether there is leakage or aliasing;
+- whether the peak appears in independent validation data.
+
+### Prompt template: spectral interpretation
+
+> I have a time series sampled every [time unit]. After centering/detrending, the periodogram has peaks near frequencies [list]. Convert these to periods, propose possible interpretations, and list mathematical checks I should perform before treating them as real cycles.
+
+### Prompt template: code review
+
+> Review this FFT periodogram code. Check the scaling convention, whether I centered the data, whether the one-sided frequency axis is correct, and whether my interpretation of the peak frequency is valid.
+
+### AI verification checklist
+
+When AI suggests a frequency-domain conclusion, verify:
+
+1. Was the data centered?
+2. Was trend removed if needed?
+3. Is the sampling interval known?
+4. Is the frequency below the Nyquist frequency?
+5. Is the peak stable under reasonable smoothing?
+6. Is the peak stable under different windows or train/test splits?
+7. Does a sine/cosine regression at that frequency improve residual diagnostics?
+8. Does the conclusion make sense in the application domain?
+
+## 13.15 Common mistakes
+
+1. **Forgetting to center the data.** The zero-frequency component can dominate the periodogram.
+2. **Interpreting trend as periodicity.** Strong trend creates low-frequency power.
+3. **Confusing frequency and period.** Frequency is cycles per time step; period is time steps per cycle.
+4. **Ignoring the sampling interval.** A frequency in cycles per observation must be converted to cycles per day, week, month, or second.
+5. **Overinterpreting raw periodogram peaks.** White noise can produce random peaks.
+6. **Forgetting leakage.** If the true frequency is not on the Fourier grid, energy spreads across bins.
+7. **Using the FFT as if it were a model.** The FFT is a computational transform, not a probabilistic model.
+8. **Comparing periodograms with different scaling conventions.** Always check how the software defines the DFT and periodogram.
+9. **Ignoring missing or irregular sampling.** The standard DFT assumes evenly spaced observations.
+10. **Skipping residual diagnostics.** A detected frequency should be checked in a fitted model.
+
+## 13.16 Mini project: spectral diagnosis of hidden seasonality
+
+Choose a real or simulated time series with at least 200 observations. Suitable examples include electricity demand, temperature, bike sharing, web traffic, or financial volatility proxies.
+
+Your report should include:
+
+1. a time plot and a short description of visible structure;
+2. a justification for centering, detrending, differencing, or transforming;
+3. a one-sided periodogram;
+4. a smoothed periodogram;
+5. the top three nonzero frequency peaks and their periods;
+6. a time-domain regression using sine/cosine terms for one selected frequency;
+7. residual diagnostics;
+8. a paragraph explaining whether the spectral evidence is convincing.
+
+Optional extension: compare the periodogram before and after differencing. Explain which frequencies become stronger or weaker.
+
+## 13.17 Exercises
+
+### Conceptual exercises
+
+1. Explain why the Fourier frequencies for a sample of length $n$ are $k/n$.
+2. Prove that the vectors
+   $$
+   \phi_k(t)=n^{-1/2}e^{2\pi i kt/n}
+   $$
+   form an orthonormal basis of $\mathbb C^n$.
+3. Derive the inverse DFT formula from the Fourier-basis expansion.
+4. Explain Parseval's identity in words.
+5. Why does centering remove the zero-frequency spike?
+6. Why is the periodogram a natural sample analog of the spectral density?
+7. Why is the raw periodogram not usually a consistent estimator of the spectral density?
+8. Explain the bias-variance tradeoff in periodogram smoothing.
+9. What is spectral leakage? Why does it occur?
+10. Why is the FFT an algorithm rather than a new mathematical transform?
+
+### Computational exercises
+
+1. Write your own direct DFT function and compare it with `np.fft.fft`.
+2. Simulate a signal with two frequencies and use the periodogram to recover them.
+3. Add increasing amounts of noise and study how peak detection changes.
+4. Simulate white noise 100 times and record the largest periodogram peak each time.
+5. Compare raw and smoothed periodograms for an AR(1) process with $\phi=0.9$.
+6. Generate a sinusoid whose frequency is not on the Fourier grid. Demonstrate leakage.
+7. Apply a Hann taper and compare the result with the untapered periodogram.
+8. Fit sine/cosine regressors at the largest periodogram frequency and inspect residuals.
+9. Compare the periodogram of a random walk with the periodogram of its first difference.
+10. Use rolling windows to see whether a dominant frequency changes over time.
+
+### Theory exercises
+
+1. Let $D_k$ be the unnormalized DFT. Show that
+   $$
+   \sum_{t=0}^{n-1}|x_t|^2=\frac{1}{n}\sum_{k=0}^{n-1}|D_k|^2.
+   $$
+2. Show that if $x_t=\cos(2\pi k_0t/n)$ for an integer $k_0$, then the periodogram has nonzero energy only at the paired frequencies $k_0/n$ and $1-k_0/n$, apart from special cases.
+3. Suppose $x_t$ is white noise with variance $\sigma^2$. What should the population spectral density look like? How does one finite periodogram differ?
+4. Let $y_t=(x_t+x_{t-1})/2$. Derive the frequency response $A(\omega)$ of this moving-average filter.
+5. Explain why the moving average in Exercise 4 suppresses high frequencies.
+
+## 13.18 Chapter checklist
+
+Before moving to filtering and wavelets, make sure you can:
+
+- [ ] define Fourier frequencies $\omega_k=k/n$;
+- [ ] derive the DFT as a projection onto the Fourier basis;
+- [ ] explain the difference between $D_k$, $c_k$, and $X(\omega_k)$ scaling conventions;
+- [ ] compute a periodogram using the FFT;
+- [ ] interpret frequency peaks as candidate periods;
+- [ ] explain why the periodogram is noisy;
+- [ ] smooth a periodogram and explain the bias-variance tradeoff;
+- [ ] identify spectral leakage;
+- [ ] verify a spectral peak with a time-domain regression;
+- [ ] use AI assistance while checking centering, scaling, leakage, and sampling assumptions.
+
+## 13.19 Looking ahead
+
+The DFT and periodogram decompose a finite sequence into global sine and cosine components. This is powerful when periodic behavior is stable over time. But many modern sequence-data problems involve local changes: a burst, a regime shift, a transient oscillation, a sudden anomaly, or a frequency that evolves over time.
+
+The next chapter studies filtering and wavelets. Filters modify the spectrum, while wavelets localize patterns in both time and frequency. Together, they extend the Fourier viewpoint toward multiresolution analysis and modern signal-processing tools for time series.

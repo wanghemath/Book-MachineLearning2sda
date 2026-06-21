@@ -1,0 +1,794 @@
+# Attention and Transformer Models for Time Series and Sequence Data
+
+::: {.hero}
+**Part VI. Deep Learning for Time Series and Sequence Data**  
+**Chapter goal:** understand self-attention and transformer models as modern sequence-learning architectures. We study scaled dot-product attention, causal masking, positional encoding, multi-head attention, transformer blocks, forecasting architectures, Python implementation, leakage-aware validation, and AI-assisted model critique.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain why attention was introduced as an alternative to fixed-window, convolutional, and recurrent sequence summaries;
+2. compute scaled dot-product attention from query, key, and value matrices;
+3. construct a causal mask for forecasting so that time $t$ cannot use future values $t+1,t+2,\ldots$;
+4. describe sinusoidal and learned positional encodings and explain why a transformer needs position information;
+5. derive the structure of a multi-head self-attention layer;
+6. distinguish encoder-style and decoder-style transformer forecasting models;
+7. implement a small transformer forecaster in PyTorch using chronological data splits;
+8. diagnose common errors in transformer forecasting, including leakage, inappropriate masking, overparameterization, and poor baselines;
+9. use AI tools to review attention-based sequence-model code while independently checking the mathematics and validation design.
+
+## 22.1 Motivation: why attention?
+
+The previous chapters considered several ways to summarize the past.
+
+A feature-based model uses a fixed design vector such as
+
+$$
+\mathbf z_t=(y_t,y_{t-1},\ldots,y_{t-L+1},\text{calendar features},\text{covariates}).
+$$
+
+A convolutional model scans local filters over a window. A recurrent model processes the sequence recursively through a hidden state
+
+$$
+\mathbf h_t = F_\Theta(\mathbf x_t,\mathbf h_{t-1}).
+$$
+
+These architectures are useful, but they impose a particular way to compress history. In an RNN, information from the remote past must pass through many recurrence steps. In a convolutional model, information is organized by local receptive fields. Attention takes another viewpoint: for each time point, the model learns which other time points should be used directly.
+
+The central operation is a weighted average. For a query time $t$, attention produces weights
+
+$$
+\alpha_{t,s}\geq 0,
+\qquad
+\sum_s \alpha_{t,s}=1,
+$$
+
+and forms a context vector
+
+$$
+\mathbf c_t=\sum_s \alpha_{t,s}\mathbf v_s.
+$$
+
+Here $\mathbf v_s$ is a value vector associated with time $s$. The weights are not fixed. They depend on the data through learned query and key vectors.
+
+::: {.callout-note}
+## Forecasting intuition
+For forecasting, attention can learn patterns such as: “the current value should look at yesterday,” “the current value should look at the same hour last week,” or “the current value should look at the most recent shock.” Causal attention enforces that a prediction made at time $t$ cannot use information from times greater than $t$.
+:::
+
+## 22.2 Tokens, embeddings, queries, keys, and values
+
+Suppose a sequence has length $T$ and each observation is represented by
+
+$$
+\mathbf x_t\in\mathbb R^{d_x},
+\qquad t=1,\ldots,T.
+$$
+
+A transformer first maps each observation to a model-dimensional vector
+
+$$
+\mathbf e_t = E_\Theta(\mathbf x_t)\in\mathbb R^{d_{\text{model}}}.
+$$
+
+For a univariate time series, this embedding could be a linear projection
+
+$$
+\mathbf e_t=W_e y_t+\mathbf b_e,
+$$
+
+where $W_e\in\mathbb R^{d_{\text{model}}\times 1}$. For multivariate time series, the input may include past targets, exogenous variables, static features, calendar features, and missingness indicators.
+
+Self-attention constructs three matrices:
+
+$$
+Q = X W_Q,
+\qquad
+K = X W_K,
+\qquad
+V = X W_V,
+$$
+
+where
+
+$$
+X=\begin{bmatrix}
+\mathbf e_1^T\\
+\mathbf e_2^T\\
+\vdots\\
+\mathbf e_T^T
+\end{bmatrix}\in\mathbb R^{T\times d_{\text{model}}}.
+$$
+
+The rows of $Q,K,V$ are query, key, and value vectors:
+
+$$
+\mathbf q_t,
+\quad
+\mathbf k_t,
+\quad
+\mathbf v_t.
+$$
+
+The score between query time $t$ and key time $s$ is the dot product
+
+$$
+\operatorname{score}(t,s)=\mathbf q_t^T\mathbf k_s.
+$$
+
+Large positive scores mean that time $t$ finds time $s$ relevant. Large negative scores mean that time $s$ is suppressed.
+
+## 22.3 Scaled dot-product attention
+
+The basic attention map is
+
+$$
+\operatorname{Attention}(Q,K,V)
+=
+\operatorname{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V,
+$$
+
+where $d_k$ is the key dimension. The score matrix is
+
+$$
+S=\frac{QK^T}{\sqrt{d_k}}\in\mathbb R^{T\times T}.
+$$
+
+For each query time $t$, row $t$ of $S$ is converted to a probability vector by the softmax function:
+
+$$
+\alpha_{t,s}
+=
+\frac{\exp(S_{t,s})}{\sum_{r=1}^T \exp(S_{t,r})}.
+$$
+
+The output at time $t$ is
+
+$$
+\mathbf c_t
+=
+\sum_{s=1}^T \alpha_{t,s}\mathbf v_s.
+$$
+
+The division by $\sqrt{d_k}$ stabilizes the scale of the dot products. If the components of $\mathbf q_t$ and $\mathbf k_s$ have roughly unit variance and are weakly dependent, then the dot product has variance proportional to $d_k$. Scaling keeps the softmax from saturating too early.
+
+::: {.callout-warning}
+## Numerical stability
+In code, softmax should be computed after subtracting the row maximum:
+
+$$
+\operatorname{softmax}(\mathbf z)_j
+=\frac{\exp(z_j-\max_k z_k)}{\sum_r \exp(z_r-\max_k z_k)}.
+$$
+
+This does not change the result but prevents overflow.
+:::
+
+## 22.4 Causal masking for forecasting
+
+For sequence forecasting, the model must not look into the future. A causal attention layer uses the mask
+
+$$
+M_{t,s}=\begin{cases}
+0, & s\leq t,\\
+-\infty, & s>t.
+\end{cases}
+$$
+
+The causal attention weights are
+
+$$
+\alpha_{t,s}
+=
+\operatorname{softmax}\left(\frac{\mathbf q_t^T\mathbf k_s}{\sqrt{d_k}}+M_{t,s}\right).
+$$
+
+Therefore,
+
+$$
+\alpha_{t,s}=0
+\qquad
+\text{whenever }s>t.
+$$
+
+This is the mathematical mechanism behind autoregressive transformers. The model may attend to the past and present, but not the future.
+
+::: {.callout-important}
+## Leakage check
+A model can have excellent validation error for the wrong reason if masking is incorrect. For one-step-ahead forecasting, the input available at time $t$ should contain information known at or before time $t$. The label $y_{t+1}$ must not be included in the input features or attention keys.
+:::
+
+## 22.5 Interactive module: causal attention heatmap
+
+This module constructs a deterministic sequence and an attention matrix. The control parameters are not learned; they are used to visualize how causal masking, temperature, and locality affect attention. The selected query row shows which past times the model uses to form the context value.
+
+<div class="interactive-card">
+  <h3>Interactive Module 22.1: Causal Self-Attention Heatmap</h3>
+  <p class="small-note">Change the sequence length, selected query time, temperature, locality decay, and mask type. The future should receive zero attention under the causal mask.</p>
+
+  <div class="control-grid">
+    <label>Sequence length $T$
+      <input id="ch22_attn_len" type="range" min="8" max="40" step="1" value="24">
+      <span id="ch22_attn_len_value">24</span>
+    </label>
+
+    <label>Selected query time $t$
+      <input id="ch22_attn_query" type="range" min="1" max="24" step="1" value="16">
+      <span id="ch22_attn_query_value">16</span>
+    </label>
+
+    <label>Temperature $\tau$
+      <input id="ch22_attn_temperature" type="range" min="0.25" max="3" step="0.05" value="1.00">
+      <span id="ch22_attn_temperature_value">1.00</span>
+    </label>
+
+    <label>Locality decay
+      <input id="ch22_attn_decay" type="range" min="2" max="20" step="1" value="7">
+      <span id="ch22_attn_decay_value">7</span>
+    </label>
+
+    <label>Mask
+      <select id="ch22_attn_mask">
+        <option value="causal" selected>causal forecasting mask</option>
+        <option value="none">no mask</option>
+      </select>
+    </label>
+  </div>
+
+  <p id="ch22_attention_output" class="small-note"></p>
+  <div id="ch22_attention_heatmap" style="width:100%; height:500px;"></div>
+  <div id="ch22_attention_weights" style="width:100%; height:380px;"></div>
+</div>
+
+## 22.6 Positional information
+
+Self-attention by itself is permutation-equivariant. If the input tokens are rearranged, attention rearranges with them. But time series and language are ordered. Therefore a transformer needs position information.
+
+One classical choice is sinusoidal positional encoding. For position $t$ and dimension $j$, define
+
+$$
+\operatorname{PE}(t,2j)=\sin\left(\frac{t}{10000^{2j/d_{\text{model}}}}\right),
+$$
+
+$$
+\operatorname{PE}(t,2j+1)=\cos\left(\frac{t}{10000^{2j/d_{\text{model}}}}\right).
+$$
+
+The input to attention becomes
+
+$$
+\widetilde{\mathbf e}_t=\mathbf e_t+\operatorname{PE}(t).
+$$
+
+The low-index positional components vary rapidly, and the high-index components vary slowly. Together, they provide a multi-scale representation of position.
+
+Other common choices include learned positional embeddings, relative position biases, rotary position embeddings, and time-feature embeddings. For time series, calendar features such as hour of day, day of week, month, holiday indicator, or age of observation are also common.
+
+## 22.7 Interactive module: sinusoidal positional encoding
+
+This module visualizes sinusoidal positional features and their similarity to a reference position. The similarity curve helps explain why positional encodings give attention a notion of distance and order.
+
+<div class="interactive-card">
+  <h3>Interactive Module 22.2: Positional Encoding Explorer</h3>
+  <p class="small-note">Change the model dimension, reference position, and component index. The lower components oscillate faster; higher components vary more slowly.</p>
+
+  <div class="control-grid">
+    <label>Sequence length
+      <input id="ch22_pos_len" type="range" min="24" max="160" step="4" value="80">
+      <span id="ch22_pos_len_value">80</span>
+    </label>
+
+    <label>Model dimension $d_{\text{model}}$
+      <select id="ch22_pos_dim">
+        <option value="8">8</option>
+        <option value="16" selected>16</option>
+        <option value="32">32</option>
+      </select>
+    </label>
+
+    <label>Reference position
+      <input id="ch22_pos_ref" type="range" min="0" max="79" step="1" value="30">
+      <span id="ch22_pos_ref_value">30</span>
+    </label>
+
+    <label>Component pair $j$
+      <input id="ch22_pos_freq" type="range" min="0" max="7" step="1" value="2">
+      <span id="ch22_pos_freq_value">2</span>
+    </label>
+  </div>
+
+  <p id="ch22_pos_output" class="small-note"></p>
+  <div id="ch22_pos_signal" style="width:100%; height:420px;"></div>
+  <div id="ch22_pos_similarity" style="width:100%; height:380px;"></div>
+</div>
+
+## 22.8 Multi-head attention
+
+A single attention head computes one representation of relevance. Multi-head attention computes several attention maps in parallel:
+
+$$
+\operatorname{head}_h
+=
+\operatorname{Attention}(QW_Q^{(h)},KW_K^{(h)},VW_V^{(h)}),
+$$
+
+for $h=1,\ldots,H$. The heads are concatenated and projected:
+
+$$
+\operatorname{MHA}(Q,K,V)
+=
+\operatorname{Concat}(\operatorname{head}_1,\ldots,\operatorname{head}_H)W_O.
+$$
+
+Different heads can specialize in different structures: short-lag dependence, seasonal lag dependence, event response, local smoothing, or long-range similarity. In practice, these interpretations are suggestive rather than guaranteed. Attention weights are useful diagnostics, but they are not always faithful explanations of the model's decision.
+
+## 22.9 Transformer block
+
+A standard transformer block contains two main sublayers:
+
+1. multi-head self-attention;
+2. a position-wise feedforward network.
+
+With residual connections and layer normalization, one common schematic is
+
+$$
+Z^{(1)}=\operatorname{LayerNorm}(X+\operatorname{MHA}(X,X,X)),
+$$
+
+$$
+Z^{(2)}=\operatorname{LayerNorm}(Z^{(1)}+\operatorname{FFN}(Z^{(1)})).
+$$
+
+The feedforward network is applied independently at every time step:
+
+$$
+\operatorname{FFN}(\mathbf z)
+=W_2\sigma(W_1\mathbf z+\mathbf b_1)+\mathbf b_2.
+$$
+
+The residual path helps optimization. Layer normalization stabilizes scale. Dropout regularizes the model.
+
+## 22.10 Forecasting architectures
+
+There are several ways to use transformers for time-series forecasting.
+
+**Encoder-style window forecasting.** Given an input window
+
+$$
+y_{t-L+1},\ldots,y_t,
+$$
+
+the model encodes the window and predicts
+
+$$
+\widehat{\mathbf y}_{t+1:t+H}
+=
+(\widehat y_{t+1},\ldots,\widehat y_{t+H}).
+$$
+
+This is similar to the MLP, CNN, and RNN window workflows, but the encoder block is attention-based.
+
+**Autoregressive decoder forecasting.** The model predicts one token at a time using a causal mask. For a sequence model,
+
+$$
+p(y_{1:T})=\prod_{t=1}^T p(y_t\mid y_{1:t-1}).
+$$
+
+This is the same factorization used by autoregressive language models. For time series, the output distribution may be Gaussian, Student-$t$, negative binomial, quantile-based, or another task-appropriate distribution.
+
+**Encoder-decoder forecasting.** An encoder summarizes historical context, and a decoder generates the forecast horizon. This is useful when future-known covariates such as calendar features, planned prices, or weather forecasts are available.
+
+::: {.callout-tip}
+## Practical recommendation
+For an applied forecasting project, begin with naive, seasonal naive, ARIMA/SARIMA, and feature-based baselines. Then compare a small transformer against these baselines using rolling-origin validation. A transformer that beats a random split but not a seasonal naive baseline is not useful.
+:::
+
+## 22.11 Computational cost and long sequences
+
+Full self-attention stores a $T\times T$ score matrix. Therefore the memory and time cost scale roughly as
+
+$$
+O(T^2 d_{\text{model}}).
+$$
+
+This is expensive for long time series. Several strategies reduce the cost:
+
+- downsample or patch the sequence;
+- use local attention windows;
+- use sparse attention patterns;
+- use low-rank or kernel approximations;
+- combine attention with convolution or state-space layers;
+- use hierarchical representations.
+
+The right choice depends on the data frequency, forecast horizon, latency constraints, and whether the model needs very long context.
+
+## 22.12 Python example: scaled dot-product attention from scratch
+
+The following code implements causal scaled dot-product attention using only NumPy. Notice how the future weights become zero after masking.
+
+```{python}
+#| label: ch22-scaled-dot-product-attention
+#| fig-cap: "Causal self-attention matrix computed from scratch."
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(22)
+T = 12
+D = 6
+
+# Synthetic embedded sequence.
+t = np.arange(T)
+X_embed = np.column_stack([
+    np.sin(2 * np.pi * t / 6),
+    np.cos(2 * np.pi * t / 6),
+    t / T,
+    (t >= 7).astype(float),
+    rng.normal(scale=0.1, size=T),
+    np.ones(T),
+])
+
+Wq = rng.normal(scale=0.4, size=(D, D))
+Wk = rng.normal(scale=0.4, size=(D, D))
+Wv = rng.normal(scale=0.4, size=(D, D))
+
+Q = X_embed @ Wq
+K = X_embed @ Wk
+V = X_embed @ Wv
+
+scores = Q @ K.T / np.sqrt(D)
+causal_mask = np.triu(np.ones((T, T), dtype=bool), k=1)
+scores_masked = scores.copy()
+scores_masked[causal_mask] = -1e9
+
+def row_softmax(A):
+    B = A - A.max(axis=1, keepdims=True)
+    E = np.exp(B)
+    return E / E.sum(axis=1, keepdims=True)
+
+A = row_softmax(scores_masked)
+C = A @ V
+
+print("Attention shape:", A.shape)
+print("Context shape:", C.shape)
+print("Largest future attention weight:", A[causal_mask].max())
+
+plt.figure(figsize=(6, 4.8))
+plt.imshow(A, aspect="auto", origin="lower")
+plt.colorbar(label="attention weight")
+plt.xlabel("key time")
+plt.ylabel("query time")
+plt.title("Causal self-attention weights")
+plt.show()
+```
+
+## 22.13 Python example: positional encoding
+
+The next example constructs sinusoidal positional encodings and plots two components.
+
+```{python}
+#| label: ch22-positional-encoding
+#| fig-cap: "Selected sinusoidal positional encoding components."
+def sinusoidal_positional_encoding(length, d_model):
+    positions = np.arange(length)[:, None]
+    dims = np.arange(d_model)[None, :]
+    angle_rates = 1 / np.power(10000, (2 * (dims // 2)) / d_model)
+    angles = positions * angle_rates
+    pe = np.zeros((length, d_model))
+    pe[:, 0::2] = np.sin(angles[:, 0::2])
+    pe[:, 1::2] = np.cos(angles[:, 1::2])
+    return pe
+
+L = 100
+d_model = 16
+pe = sinusoidal_positional_encoding(L, d_model)
+
+plt.figure(figsize=(8, 3.5))
+plt.plot(pe[:, 0], label="PE dimension 0")
+plt.plot(pe[:, 1], label="PE dimension 1")
+plt.plot(pe[:, 6], label="PE dimension 6")
+plt.xlabel("position")
+plt.ylabel("encoding value")
+plt.title("Sinusoidal positional encoding")
+plt.legend()
+plt.show()
+
+ref = 30
+similarity = pe @ pe[ref] / np.sqrt(d_model)
+print("Most similar positions to reference, excluding itself:")
+order = np.argsort(-similarity)
+print([int(i) for i in order if i != ref][:5])
+```
+
+## 22.14 Python example: PyTorch multi-head attention
+
+PyTorch includes a multi-head attention layer. The example below uses a causal mask. The mask has shape $T\times T$ and is `True` exactly where attention is not allowed.
+
+```{python}
+#| label: ch22-pytorch-multihead-attention
+import torch
+import torch.nn as nn
+
+torch.set_num_threads(1)
+torch.manual_seed(22)
+B = 3       # batch size
+T = 10      # sequence length
+d_model = 16
+n_heads = 4
+
+x = torch.randn(B, T, d_model)
+attn = nn.MultiheadAttention(
+    embed_dim=d_model,
+    num_heads=n_heads,
+    batch_first=True,
+)
+
+causal_mask = torch.triu(torch.ones(T, T, dtype=torch.bool), diagonal=1)
+out, weights = attn(x, x, x, attn_mask=causal_mask, need_weights=True)
+
+print("input shape:", tuple(x.shape))
+print("output shape:", tuple(out.shape))
+print("attention weight shape:", tuple(weights.shape))
+print("mask true means future positions are hidden:")
+print(causal_mask.int())
+```
+
+## 22.15 Python example: a small transformer forecaster
+
+Now we build a small encoder-style transformer forecaster. The model receives a window of length $L$ and predicts the next $H$ values. This example is intentionally small so that the code emphasizes structure rather than performance.
+
+```{python}
+#| label: ch22-windowed-transformer-data
+#| fig-cap: "Synthetic sequence for transformer forecasting."
+from sklearn.preprocessing import StandardScaler
+
+rng = np.random.default_rng(222)
+T_total = 520
+t = np.arange(T_total)
+
+y = (
+    0.006 * t
+    + 1.2 * np.sin(2 * np.pi * t / 24)
+    + 0.55 * np.sin(2 * np.pi * t / 7)
+    + 0.9 * (t >= 320)
+    + rng.normal(scale=0.25, size=T_total)
+)
+
+L = 36
+H = 6
+X_windows, Y_windows, origins = [], [], []
+for start in range(T_total - L - H + 1):
+    X_windows.append(y[start:start + L])
+    Y_windows.append(y[start + L:start + L + H])
+    origins.append(start + L - 1)
+
+X_windows = np.asarray(X_windows)
+Y_windows = np.asarray(Y_windows)
+origins = np.asarray(origins)
+
+train_mask = origins < 360
+test_mask = origins >= 360
+
+x_scaler = StandardScaler()
+y_scaler = StandardScaler()
+
+X_train = x_scaler.fit_transform(X_windows[train_mask])
+X_test = x_scaler.transform(X_windows[test_mask])
+Y_train = y_scaler.fit_transform(Y_windows[train_mask])
+Y_test = y_scaler.transform(Y_windows[test_mask])
+
+plt.figure(figsize=(8, 3.5))
+plt.plot(t, y, label="observed")
+plt.axvline(360, linestyle="--", label="forecast-origin split")
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Synthetic sequence for transformer forecasting")
+plt.legend()
+plt.show()
+
+print("Training windows:", X_train.shape)
+print("Test windows:", X_test.shape)
+```
+
+```{python}
+#| label: ch22-small-transformer-model
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+
+torch.set_num_threads(1)
+torch.manual_seed(222)
+
+def make_loader(X, Y, batch_size=32, shuffle=False):
+    X_tensor = torch.tensor(X, dtype=torch.float32).unsqueeze(-1)
+    Y_tensor = torch.tensor(Y, dtype=torch.float32)
+    return DataLoader(TensorDataset(X_tensor, Y_tensor), batch_size=batch_size, shuffle=shuffle)
+
+train_loader = make_loader(X_train, Y_train, shuffle=True)
+test_loader = make_loader(X_test, Y_test, shuffle=False)
+
+class SmallTransformerForecaster(nn.Module):
+    def __init__(self, input_dim=1, d_model=24, nhead=4, num_layers=1, horizon=6, max_len=128):
+        super().__init__()
+        self.input_proj = nn.Linear(input_dim, d_model)
+        pe = sinusoidal_positional_encoding(max_len, d_model)
+        self.register_buffer("pe", torch.tensor(pe, dtype=torch.float32).unsqueeze(0))
+        layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=48,
+            dropout=0.0,
+            batch_first=True,
+        )
+        self.encoder = nn.TransformerEncoder(layer, num_layers=num_layers)
+        self.head = nn.Sequential(
+            nn.Linear(d_model, 32),
+            nn.ReLU(),
+            nn.Linear(32, horizon),
+        )
+
+    def forward(self, x):
+        # x: batch x length x input_dim
+        z = self.input_proj(x)
+        z = z + self.pe[:, :z.shape[1], :]
+        z = self.encoder(z)
+        last_state = z[:, -1, :]
+        return self.head(last_state)
+
+model = SmallTransformerForecaster(horizon=H)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+loss_fn = nn.MSELoss()
+
+def evaluate(loader):
+    model.eval()
+    total, n = 0.0, 0
+    with torch.no_grad():
+        for xb, yb in loader:
+            pred = model(xb)
+            loss = loss_fn(pred, yb)
+            total += loss.item() * len(xb)
+            n += len(xb)
+    return total / n
+
+for epoch in range(8):
+    model.train()
+    for xb, yb in train_loader:
+        optimizer.zero_grad()
+        pred = model(xb)
+        loss = loss_fn(pred, yb)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+    if epoch in {0, 3, 7}:
+        print(f"epoch {epoch+1:02d} | train MSE={evaluate(train_loader):.4f} | test MSE={evaluate(test_loader):.4f}")
+```
+
+```{python}
+#| label: ch22-transformer-vs-baseline
+#| fig-cap: "One held-out transformer forecast compared with a seasonal naive baseline."
+model.eval()
+with torch.no_grad():
+    x_last = torch.tensor(X_test[-1:], dtype=torch.float32).unsqueeze(-1)
+    pred_scaled = model(x_last).numpy()
+
+pred = y_scaler.inverse_transform(pred_scaled)[0]
+true = y_scaler.inverse_transform(Y_test[-1:])[0]
+input_original = x_scaler.inverse_transform(X_test[-1:])[0]
+
+# Seasonal naive baseline using lag 24 when available.
+seasonal_naive = input_original[-24:-24 + H]
+if len(seasonal_naive) < H:
+    seasonal_naive = np.repeat(input_original[-1], H)
+
+rmse_transformer = np.sqrt(np.mean((pred - true) ** 2))
+rmse_naive = np.sqrt(np.mean((seasonal_naive - true) ** 2))
+print("Transformer RMSE on displayed window:", round(float(rmse_transformer), 3))
+print("Seasonal naive RMSE on displayed window:", round(float(rmse_naive), 3))
+
+history_x = np.arange(L)
+future_x = np.arange(L, L + H)
+
+plt.figure(figsize=(8, 3.5))
+plt.plot(history_x, input_original, label="input window")
+plt.plot(future_x, true, marker="o", label="true future")
+plt.plot(future_x, pred, marker="o", label="transformer forecast")
+plt.plot(future_x, seasonal_naive, marker="o", label="seasonal naive")
+plt.axvline(L - 1, linestyle="--")
+plt.xlabel("relative time")
+plt.ylabel("value")
+plt.title("Held-out multi-step forecast")
+plt.legend()
+plt.show()
+```
+
+## 22.16 Diagnostics and interpretation
+
+A transformer forecast should be judged as part of a forecasting workflow, not as an isolated deep-learning demonstration.
+
+Key diagnostics include:
+
+- comparison against naive, seasonal naive, ARIMA/SARIMA, and feature-based ML baselines;
+- horizon-wise error curves;
+- residual plots over time;
+- error stratified by regime, season, or magnitude;
+- stability over rolling-origin backtests;
+- sensitivity to input length $L$ and horizon $H$;
+- evidence that masking and chronological splits prevent leakage.
+
+Attention heatmaps can be useful for debugging. For example, if a model always attends only to the most recent value, a simpler autoregressive or convolutional model may suffice. If it attends to future positions in a forecasting task, the model is leaking.
+
+## 22.17 AI-assisted model critique
+
+::: {.callout-ai}
+## AI-assisted study box
+Give an AI assistant a transformer forecasting script and ask it to check the following. Then verify every answer yourself.
+
+1. Which tensors represent known inputs and which tensors represent labels?
+2. Is the train/test split chronological?
+3. Is the scaler fit only on training data?
+4. Does the attention mask forbid future information when needed?
+5. What baseline should be used before claiming improvement?
+6. What is the forecast horizon, and how is horizon-wise error computed?
+7. Is the model size appropriate for the number of training windows?
+8. What failure mode is most likely for this data set?
+:::
+
+A useful prompt is:
+
+> I am training a transformer for time-series forecasting. Please inspect the code for data leakage, incorrect tensor shapes, missing causal masks, and inappropriate validation. For each issue, quote the line or operation that causes the problem and propose a corrected version. Do not judge the model only by training loss.
+
+## 22.18 Common mistakes
+
+1. **Forgetting position information.** Self-attention needs a way to know order.
+2. **Using future values by accident.** Incorrect masks or window construction can leak labels.
+3. **Random train-test splits.** Random splits destroy the forecasting interpretation.
+4. **Comparing only with weak baselines.** A transformer should beat seasonal naive and strong feature-based models before it is considered useful.
+5. **Using too large a model.** A transformer can overfit small time-series data sets quickly.
+6. **Treating attention as proof of causality.** Attention weights show model-internal weighting, not causal explanation.
+7. **Ignoring horizon-wise performance.** A model may do well at $h=1$ and poorly at $h=H$.
+8. **Confusing encoder and decoder masks.** Encoder-style window forecasting may not need an internal causal mask if the input window contains only known history. Autoregressive decoding does need causal masking.
+
+## 22.19 Exercises
+
+1. Compute the scaled dot-product attention matrix for a sequence of length $T=4$ with $d_k=2$ using given query and key matrices. Then apply a causal mask.
+2. Prove that adding the same constant to every score in one row of the attention matrix does not change the softmax weights.
+3. Explain why self-attention without positional encoding is permutation-equivariant.
+4. Implement sinusoidal positional encoding for $d_{\text{model}}=8$ and plot all components for $T=100$.
+5. Modify the NumPy attention example so that each query attends only to the previous $w$ time steps. Compare this local attention mask with the full causal mask.
+6. Train the small transformer forecaster with $L=24,36,72$. Compare horizon-wise RMSE.
+7. Replace the transformer with an MLP, CNN, or LSTM using the same windows and split. Which model wins?
+8. For a data set with strong weekly seasonality, design input features that make the transformer aware of the day of week.
+9. Construct an example where a transformer overfits the training data but fails on a rolling-origin test.
+10. Write an AI-assisted critique report that identifies at least three possible leakage points in a transformer forecasting pipeline.
+
+## 22.20 Mini project
+
+Choose a univariate or multivariate time series with at least one seasonal or regime-like structure. Build a transformer-based forecasting workflow.
+
+Your report should include:
+
+1. a description of the data and forecasting target;
+2. a chronological train/validation/test design;
+3. at least three baselines, including naive or seasonal naive;
+4. a transformer model with clear input length $L$, horizon $H$, model dimension, number of heads, and number of layers;
+5. horizon-wise error metrics;
+6. one attention or representation diagnostic;
+7. a discussion of whether the transformer is justified compared with simpler models;
+8. an AI-assisted critique section where you state what an AI tool suggested and how you verified or corrected it.
+
+## 22.21 Checklist
+
+Before moving on, make sure you can answer the following questions.
+
+- What are $Q$, $K$, and $V$?
+- Why do we divide $QK^T$ by $\sqrt{d_k}$?
+- What does a causal mask do mathematically?
+- Why does a transformer need position information?
+- How does multi-head attention differ from single-head attention?
+- What are the main components of a transformer block?
+- When does an encoder-style forecast model need a causal mask?
+- How should a transformer forecast be validated?
+- What baselines should be used before claiming improvement?
+- What can and cannot be concluded from attention weights?

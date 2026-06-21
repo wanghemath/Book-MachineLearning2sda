@@ -1,0 +1,1139 @@
+# Exploratory Data Analysis for Time Series
+
+::: {.hero}
+**Part I. Time Series as Dependent Data**  
+**Chapter goal:** learn how to turn a raw ordered sequence into mathematical hypotheses, diagnostic plots, transformed series, and reproducible modeling decisions before fitting ARMA, ARIMA, Prophet, or neural sequence models.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain why exploratory data analysis for time series is different from EDA for independent tabular data;
+2. decompose a series into trend, seasonal, cyclic, and residual components;
+3. use transformations, detrending, differencing, seasonal differencing, and smoothing to reveal dependence structure;
+4. compute and interpret rolling summaries, lag plots, sample autocovariance, and sample autocorrelation;
+5. connect visual patterns to candidate mathematical models such as trend-plus-stationary-noise, random walk, seasonal ARIMA, and nonlinear sequence models;
+6. implement a complete EDA workflow in Python using reproducible code;
+7. use AI tools as hypothesis generators and diagnostic critics, not as black-box model selectors.
+
+## 2.1 Why EDA comes before modeling
+
+A time series is one observed path
+
+$$
+x_1,x_2,\dots,x_n
+$$
+
+from an underlying stochastic process
+
+$$
+\{X_t:t\in T\}.
+$$
+
+Before fitting a model, we need to ask what kind of structure is visible in the sample path. In ordinary tabular machine learning, exploratory analysis often focuses on distributions of columns, missing values, pairwise scatterplots, and correlations among features. For time series, order is central. A histogram of the values may be useful, but it does not show whether large values cluster in time, whether the mean changes, whether variance grows, whether there is seasonality, or whether the series contains abrupt regime changes.
+
+A practical time-series EDA workflow asks questions such as:
+
+- Is the level roughly constant, or does it drift over time?
+- Does variability appear constant, or does the variance increase with the level?
+- Are there repeating seasonal patterns?
+- Are there outliers, missing blocks, or structural breaks?
+- Does the current value depend on previous values?
+- Is the dependence short-range, long-range, seasonal, nonlinear, or regime-dependent?
+- What simple baseline forecast should every advanced model beat?
+
+EDA is therefore not separate from theory. It is the first step in choosing a mathematical model.
+
+::: {.callout-note}
+## Guiding principle
+Exploratory analysis should not merely produce attractive plots. It should produce **candidate assumptions**. Each plot should help answer: what model class is plausible, and what model class is probably inappropriate?
+:::
+
+## 2.2 The basic decomposition model
+
+A useful starting point is the additive decomposition
+
+$$
+X_t = \mu_t + Y_t,
+$$
+
+where $\mu_t$ is a deterministic mean structure and $Y_t$ is a zero-mean stochastic component. The deterministic component may include trend and seasonality:
+
+$$
+\mu_t = T_t + S_t.
+$$
+
+Thus,
+
+$$
+X_t = T_t + S_t + Y_t.
+$$
+
+A common parametric version is
+
+$$
+X_t = \beta_0 + \beta_1 t
++ \sum_{j=1}^m \left[a_j\cos(2\pi\omega_j t)+b_j\sin(2\pi\omega_j t)\right]
++Y_t.
+$$
+
+Here:
+
+- $\beta_0+\beta_1t$ represents a linear trend;
+- the sine and cosine terms represent periodic structure;
+- $Y_t$ represents the residual time-dependent process.
+
+The purpose of EDA is to decide whether a model like this is plausible and, if so, how to estimate or remove $T_t$ and $S_t$ so that the remaining component behaves more like a stationary process.
+
+::: {.callout-important}
+## Deterministic structure versus stochastic dependence
+A seasonal pattern can come from a deterministic mean function, from stochastic dependence at seasonal lags, or from both. EDA helps separate these possibilities, but final model choice requires residual diagnostics and validation.
+:::
+
+## 2.3 Additive and multiplicative structure
+
+The additive model
+
+$$
+X_t=T_t+S_t+Y_t
+$$
+
+works well when the seasonal amplitude and noise scale are roughly constant over time.
+
+Sometimes the seasonal amplitude grows with the level of the series. Then a multiplicative decomposition may be more appropriate:
+
+$$
+X_t = T_t S_t E_t.
+$$
+
+If all values are positive, taking logarithms turns this into an additive structure:
+
+$$
+\log X_t = \log T_t + \log S_t + \log E_t.
+$$
+
+This is the first example of a broader principle: transformations are not cosmetic. They change the scale on which a model's assumptions are supposed to hold.
+
+## 2.4 Time plots and rolling summaries
+
+The first plot is usually the time plot:
+
+$$
+t \mapsto x_t.
+$$
+
+A time plot helps detect trend, seasonality, outliers, missing values, and changes in variability. But a time plot alone is subjective, so it is often paired with rolling summaries. For a window size $m$, the rolling mean is
+
+$$
+\widehat\mu_t^{(m)} = \frac{1}{m}\sum_{j=0}^{m-1}x_{t-j},
+$$
+
+and the rolling variance is
+
+$$
+\widehat\sigma_t^{2,(m)}
+=\frac{1}{m-1}\sum_{j=0}^{m-1}\left(x_{t-j}-\widehat\mu_t^{(m)}\right)^2.
+$$
+
+If the rolling mean changes substantially, a stationary constant-mean model may be inappropriate. If the rolling variance grows or shrinks systematically, a variance-stabilizing transformation may be needed.
+
+::: {.callout-tip}
+## What to look for in the first plot
+A slowly changing center suggests trend. Repeated peaks and valleys suggest seasonality. Bursts of volatility suggest nonconstant variance. A sudden jump suggests a structural break or intervention. Isolated extreme values suggest outliers or data-quality issues.
+:::
+
+## 2.5 Transformations and variance stabilization
+
+A transformation is often used when variability depends on the level. Common transformations include:
+
+$$
+Z_t = \log(X_t), \qquad X_t>0,
+$$
+
+$$
+Z_t = \sqrt{X_t}, \qquad X_t\ge 0,
+$$
+
+and the Box-Cox family
+
+$$
+Z_t^{(\lambda)} =
+\begin{cases}
+\dfrac{X_t^\lambda-1}{\lambda}, & \lambda\ne 0,\\[6pt]
+\log X_t, & \lambda=0.
+\end{cases}
+$$
+
+Transformations should be chosen based on the scientific meaning of the data as well as diagnostic behavior. For example, a log transform is natural for growth data because differences on the log scale approximate relative changes:
+
+$$
+\log X_t-\log X_{t-1}=\log\left(\frac{X_t}{X_{t-1}}\right).
+$$
+
+For financial prices, this motivates log returns.
+
+## 2.6 Detrending by regression
+
+Suppose the observed series is
+
+$$
+X_t = \mu_t + Y_t,
+$$
+
+where $Y_t$ is a zero-mean stationary process and $\mu_t$ is a deterministic trend. If the trend is linear, then
+
+$$
+\mu_t = \beta_0 + \beta_1 t.
+$$
+
+The regression model is
+
+$$
+x_t = \beta_0+\beta_1t+e_t.
+$$
+
+More generally, let
+
+$$
+z_t = \begin{bmatrix}1 & z_{t1} & z_{t2} & \cdots & z_{tq}\end{bmatrix}^T
+$$
+
+and
+
+$$
+x_t = z_t^T\beta + e_t.
+$$
+
+Stacking the observations gives
+
+$$
+x = Z\beta + e.
+$$
+
+The ordinary least-squares estimator is
+
+$$
+\widehat\beta=(Z^TZ)^{-1}Z^Tx,
+$$
+
+when $Z^TZ$ is invertible. The fitted trend is
+
+$$
+\widehat\mu = Z\widehat\beta,
+$$
+
+and the detrended residuals are
+
+$$
+e_t = x_t-\widehat\mu_t.
+$$
+
+In time-series modeling, these residuals are not automatically independent. The regression is used to estimate deterministic structure, but the residuals must still be checked for autocorrelation.
+
+::: {.callout-warning}
+## Regression assumptions are often violated
+Classical regression inference assumes independent errors. Time-series residuals often remain correlated. The fitted trend may still be useful, but standard errors and $p$-values from ordinary regression can be misleading unless dependence is addressed.
+:::
+
+## 2.7 Seasonal regression with Fourier features
+
+A deterministic seasonal component with period $s$ can be represented using sine and cosine terms. For one harmonic,
+
+$$
+S_t=a\cos\left(\frac{2\pi t}{s}\right)+b\sin\left(\frac{2\pi t}{s}\right).
+$$
+
+For $K$ harmonics,
+
+$$
+S_t=\sum_{k=1}^K\left[a_k\cos\left(\frac{2\pi kt}{s}\right)+b_k\sin\left(\frac{2\pi kt}{s}\right)\right].
+$$
+
+This lets us fit seasonality using linear regression, because the unknown parameters are the coefficients $a_k$ and $b_k$, not the nonlinear phase directly.
+
+This idea connects three parts of the course:
+
+1. exploratory seasonal regression in this chapter;
+2. spectral analysis and Fourier transforms later;
+3. Prophet-style additive models and Fourier seasonal features in automated forecasting.
+
+## 2.8 Differencing
+
+Another way to remove trend is differencing. The first difference is
+
+$$
+\nabla x_t = x_t-x_{t-1}.
+$$
+
+Using the backshift operator $B$, defined by
+
+$$
+Bx_t=x_{t-1},
+$$
+
+we can write
+
+$$
+\nabla = 1-B.
+$$
+
+The second difference is
+
+$$
+\nabla^2x_t = \nabla(\nabla x_t)
+= x_t-2x_{t-1}+x_{t-2}.
+$$
+
+In general,
+
+$$
+\nabla^d=(1-B)^d.
+$$
+
+Differencing removes polynomial trends. If $x_t$ contains a deterministic polynomial trend of degree $d$, then the $d$-th difference removes that trend up to a constant.
+
+For example, if
+
+$$
+x_t=\beta_0+\beta_1t+y_t,
+$$
+
+then
+
+$$
+\nabla x_t = \beta_1 + y_t-y_{t-1}.
+$$
+
+The intercept $\beta_0$ is removed and the slope becomes the mean level of the differenced series.
+
+## 2.9 Seasonal differencing
+
+For seasonal data with period $s$, the seasonal difference is
+
+$$
+\nabla_s x_t = x_t-x_{t-s}=(1-B^s)x_t.
+$$
+
+For monthly data with yearly seasonality, $s=12$. For hourly data with daily seasonality, $s=24$. Seasonal differencing removes repeated seasonal levels when the same season in adjacent cycles is comparable.
+
+A model may use both ordinary and seasonal differencing:
+
+$$
+(1-B)^d(1-B^s)^D X_t.
+$$
+
+This expression appears later in SARIMA models.
+
+## 2.10 Detrending versus differencing
+
+Detrending and differencing are not the same operation.
+
+### Detrending
+
+If
+
+$$
+x_t=\mu_t+y_t,
+$$
+
+then detrending estimates $\mu_t$ and studies
+
+$$
+e_t=x_t-\widehat\mu_t.
+$$
+
+This attempts to preserve the stochastic component $y_t$.
+
+### Differencing
+
+Differencing forms
+
+$$
+\nabla x_t=\nabla\mu_t+\nabla y_t.
+$$
+
+This can remove the trend, but it also changes the stochastic component. For example, if $y_t$ is white noise, then
+
+$$
+\nabla y_t = y_t-y_{t-1}
+$$
+
+is no longer white noise. It has negative lag-one autocorrelation.
+
+::: {.callout-important}
+## Differencing can create dependence
+Differencing is powerful, but over-differencing can introduce artificial dependence. Use time plots, ACF/PACF, residual diagnostics, and forecast validation to decide how much differencing is appropriate.
+:::
+
+## 2.11 Smoothing as filtering
+
+Smoothing reduces short-term noise to reveal slower structure. A simple moving average smoother is
+
+$$
+\widetilde x_t = \frac{1}{m}\sum_{j=0}^{m-1}x_{t-j}.
+$$
+
+More generally, a linear smoother is a filter
+
+$$
+\widetilde x_t=\sum_j a_j x_{t-j}.
+$$
+
+Smoothing is useful for visualization, but it should be used carefully. A smoothed curve is not the original data. It can blur abrupt changes, shift peaks, and create edge effects.
+
+Exponential smoothing uses recursively decaying weights:
+
+$$
+\ell_t = \alpha x_t+(1-\alpha)\ell_{t-1}, \qquad 0<\alpha<1.
+$$
+
+Large $\alpha$ reacts quickly to new observations; small $\alpha$ produces stronger smoothing.
+
+## 2.12 Lag plots and autocorrelation
+
+A lag plot compares $x_t$ with $x_{t-h}$ for a fixed lag $h$. If the points show a strong linear pattern, then the series has dependence at lag $h$.
+
+For a zero-mean stationary process, the autocovariance at lag $h$ is
+
+$$
+\gamma(h)=\operatorname{Cov}(X_t,X_{t-h}).
+$$
+
+The autocorrelation is
+
+$$
+\rho(h)=\frac{\gamma(h)}{\gamma(0)}.
+$$
+
+Given data $x_1,\dots,x_n$, the sample mean is
+
+$$
+\bar x = \frac{1}{n}\sum_{t=1}^n x_t,
+$$
+
+and a common sample autocovariance estimate is
+
+$$
+\widehat\gamma(h)=\frac{1}{n}\sum_{t=h+1}^n (x_t-\bar x)(x_{t-h}-\bar x).
+$$
+
+The sample autocorrelation is
+
+$$
+\widehat\rho(h)=\frac{\widehat\gamma(h)}{\widehat\gamma(0)}.
+$$
+
+The ACF plot is one of the most important EDA tools in classical time-series analysis. A slowly decaying ACF often suggests nonstationarity or trend. Spikes at seasonal lags suggest seasonal dependence. A sharp cutoff after lag $q$ may suggest an MA($q$) model, while a geometrically decaying pattern may suggest an AR model.
+
+## 2.13 A practical EDA decision map
+
+The following table summarizes common patterns and possible next steps.
+
+| Observed pattern | Possible interpretation | Useful next step |
+|---|---|---|
+| Changing mean | Trend, drift, intervention, regime change | Detrend, difference, or use state-space trend model |
+| Increasing variance | Multiplicative noise, growth scale | Try log or Box-Cox transform |
+| Repeated pattern every $s$ periods | Seasonality | Seasonal plot, Fourier features, seasonal differencing |
+| Slow ACF decay | Trend, random walk, long memory | Difference, detrend, test stationarity |
+| Significant ACF at lag $s,2s,3s$ | Seasonal dependence | SARIMA or seasonal features |
+| Outliers | Data error, rare event, intervention | Flag, explain, robust model, intervention variable |
+| Abrupt level shift | Change point, new regime | Segment data or use regime-switching/state-space model |
+| Nonlinear lag structure | Nonlinear dynamics | Feature ML, tree models, neural sequence models |
+
+::: {.callout-tip}
+## EDA output
+At the end of EDA, you should be able to write a paragraph such as: “The raw series has a rising level and yearly seasonality. A log transform stabilizes variance. After first and seasonal differencing, the ACF decays quickly but has a remaining lag-one spike. I will compare seasonal naive, SARIMA, and an ML model with Fourier and lag features.”
+:::
+
+## 2.14 Interactive demonstration: trend, seasonality, smoothing, and differencing
+
+Use the interactive below to create synthetic data with trend and seasonality. Then compare the raw series, a moving-average smoother, a fitted trend, and differenced versions.
+
+::: {.callout-tip}
+## How to use this widget
+Increase the trend slope and watch the ACF decay more slowly. Increase seasonal amplitude and look for repeating structure. Increase the smoothing window to reveal trend, but notice that smoothing does not create a stationary series. Compare first differencing and seasonal differencing.
+:::
+
+<div class="interactive-card">
+<div class="controls">
+<label>Trend slope
+<input id="ch02_slope" type="range" min="-0.05" max="0.08" step="0.005" value="0.02">
+</label>
+<label>Seasonal amplitude
+<input id="ch02_amp" type="range" min="0" max="5" step="0.25" value="2.00">
+</label>
+<label>Period
+<input id="ch02_period" type="range" min="6" max="60" step="1" value="24">
+</label>
+<label>Noise scale
+<input id="ch02_noise" type="range" min="0.1" max="2.5" step="0.1" value="0.7">
+</label>
+<label>Smoothing window
+<input id="ch02_smooth" type="range" min="3" max="60" step="1" value="15">
+</label>
+<label>Transformation
+<select id="ch02_transform">
+<option value="none">None</option>
+<option value="logshift">Log after positive shift</option>
+</select>
+</label>
+<label>View
+<select id="ch02_view">
+<option value="raw">Raw + smoother + fitted trend</option>
+<option value="detrended">Detrended residual</option>
+<option value="diff1">First difference</option>
+<option value="seasdiff">Seasonal difference</option>
+</select>
+</label>
+</div>
+<div id="ch02_eda_plot" style="height:380px;"></div>
+<div id="ch02_eda_acf" style="height:310px;"></div>
+<p class="caption">Plotly.js is loaded once globally from <code>assets/header.html</code>. This chapter does not include another Plotly script tag.</p>
+</div>
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function normal(seed){
+    seed.state = (1664525 * seed.state + 1013904223) >>> 0;
+    const u1 = Math.max(seed.state / 4294967296, 1e-12);
+    seed.state = (1664525 * seed.state + 1013904223) >>> 0;
+    const u2 = Math.max(seed.state / 4294967296, 1e-12);
+    return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+  }
+  function simulate(n, slope, amp, period, noise){
+    const seed = {state: 2402};
+    const y = [];
+    let ar = 0;
+    for(let t=0; t<n; t++){
+      ar = 0.55*ar + normal(seed);
+      const season = amp*Math.sin(2*Math.PI*t/period) + 0.5*amp*Math.cos(4*Math.PI*t/period);
+      const value = 4 + slope*t + season + noise*ar;
+      y.push(value);
+    }
+    return y;
+  }
+  function movingAverage(y, m){
+    const out = [];
+    for(let i=0; i<y.length; i++){
+      let s = 0, c = 0;
+      for(let j=Math.max(0, i-m+1); j<=i; j++){ s += y[j]; c++; }
+      out.push(s/c);
+    }
+    return out;
+  }
+  function linTrend(y){
+    const n = y.length;
+    const tx = (n-1)/2;
+    const ybar = y.reduce((a,b)=>a+b,0)/n;
+    let num = 0, den = 0;
+    for(let t=0; t<n; t++){
+      num += (t-tx)*(y[t]-ybar);
+      den += (t-tx)*(t-tx);
+    }
+    const b1 = den === 0 ? 0 : num/den;
+    const b0 = ybar - b1*tx;
+    return Array.from({length:n}, (_,t)=>b0+b1*t);
+  }
+  function diff(y, lag){
+    const out = [];
+    for(let t=lag; t<y.length; t++) out.push(y[t]-y[t-lag]);
+    return out;
+  }
+  function acf(y, maxLag){
+    const n = y.length;
+    const mu = y.reduce((a,b)=>a+b,0)/n;
+    const den = y.reduce((a,b)=>a+(b-mu)*(b-mu),0);
+    const out = [];
+    for(let h=0; h<=maxLag; h++){
+      let num = 0;
+      for(let t=h; t<n; t++) num += (y[t]-mu)*(y[t-h]-mu);
+      out.push(den === 0 ? 0 : num/den);
+    }
+    return out;
+  }
+  function stemTrace(values){
+    const xs=[], ys=[];
+    for(let i=0; i<values.length; i++){
+      xs.push(i, i, null);
+      ys.push(0, values[i], null);
+    }
+    return {x:xs, y:ys, mode:'lines', name:'ACF stems', hoverinfo:'skip'};
+  }
+  function maybeTransform(y, mode){
+    if(mode !== 'logshift') return y.slice();
+    const minv = Math.min.apply(null, y);
+    const shift = minv <= 0 ? 1 - minv : 0;
+    return y.map(v => Math.log(v + shift));
+  }
+  function draw(){
+    if(!window.Plotly || !$('ch02_eda_plot')) return;
+    const n = 240;
+    const slope = Number($('ch02_slope').value);
+    const amp = Number($('ch02_amp').value);
+    const period = Number($('ch02_period').value);
+    const noise = Number($('ch02_noise').value);
+    const smooth = Number($('ch02_smooth').value);
+    const transform = $('ch02_transform').value;
+    const view = $('ch02_view').value;
+    let y = simulate(n, slope, amp, period, noise);
+    y = maybeTransform(y, transform);
+    const t = Array.from({length:y.length}, (_,i)=>i+1);
+    const trend = linTrend(y);
+    const smoother = movingAverage(y, smooth);
+    let traces = [];
+    let display = y;
+    let title = 'Raw series with smoother and fitted linear trend';
+    if(view === 'raw'){
+      traces = [
+        {x:t, y:y, mode:'lines', name:'series'},
+        {x:t, y:smoother, mode:'lines', name:'moving average'},
+        {x:t, y:trend, mode:'lines', name:'fitted trend', line:{dash:'dash'}}
+      ];
+    } else if(view === 'detrended'){
+      display = y.map((v,i)=>v-trend[i]);
+      traces = [{x:t, y:display, mode:'lines', name:'detrended residual'}];
+      title = 'Detrended residual: x_t - fitted trend';
+    } else if(view === 'diff1'){
+      display = diff(y, 1);
+      traces = [{x:Array.from({length:display.length},(_,i)=>i+2), y:display, mode:'lines', name:'first difference'}];
+      title = 'First difference: x_t - x_{t-1}';
+    } else {
+      const lag = Math.max(1, Math.round(period));
+      display = diff(y, lag);
+      traces = [{x:Array.from({length:display.length},(_,i)=>i+lag+1), y:display, mode:'lines', name:'seasonal difference'}];
+      title = 'Seasonal difference: x_t - x_{t-s}';
+    }
+    Plotly.react('ch02_eda_plot', traces, {
+      title:title,
+      margin:{t:45,r:20,b:45,l:55},
+      xaxis:{title:'time'},
+      yaxis:{title: transform === 'logshift' ? 'transformed value' : 'value'},
+      legend:{orientation:'h'}
+    }, {responsive:true});
+    const maxLag = Math.min(50, Math.floor(display.length/4));
+    const r = acf(display, maxLag);
+    const ci = 1.96/Math.sqrt(display.length);
+    Plotly.react('ch02_eda_acf', [
+      stemTrace(r),
+      {x:Array.from({length:maxLag+1},(_,i)=>i), y:r, mode:'markers', name:'sample ACF'},
+      {x:[0,maxLag], y:[ci,ci], mode:'lines', name:'approx. 95% bounds', line:{dash:'dash'}},
+      {x:[0,maxLag], y:[-ci,-ci], mode:'lines', showlegend:false, line:{dash:'dash'}}
+    ], {
+      title:'Sample ACF for current view',
+      margin:{t:45,r:20,b:45,l:55},
+      xaxis:{title:'lag'},
+      yaxis:{title:'correlation', range:[-1,1]}
+    }, {responsive:true});
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    ['ch02_slope','ch02_amp','ch02_period','ch02_noise','ch02_smooth','ch02_transform','ch02_view'].forEach(function(id){
+      const el=$(id); if(el) el.addEventListener('input', draw);
+    });
+    draw();
+  });
+})();
+</script>
+
+## 2.15 Python example: simulate a series for EDA
+
+We first create a synthetic series with trend, seasonality, and correlated residual noise. The goal is not only to plot it, but to recover the structure through EDA.
+
+```{python}
+#| label: ch02-simulate-series
+#| code-fold: false
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+
+
+def simulate_eda_series(n=240, period=24, beta0=5.0, beta1=0.025,
+                        amplitude=2.0, phi=0.55, sigma=0.7, rng=rng):
+    """Trend + seasonal mean + AR(1)-type residual noise."""
+    t = np.arange(n)
+    trend = beta0 + beta1 * t
+    seasonal = amplitude * np.sin(2 * np.pi * t / period) + 0.5 * amplitude * np.cos(4 * np.pi * t / period)
+
+    w = rng.normal(0.0, sigma, size=n)
+    y = np.zeros(n)
+    for i in range(1, n):
+        y[i] = phi * y[i-1] + w[i]
+
+    x = trend + seasonal + y
+    return pd.DataFrame({
+        "time": t,
+        "x": x,
+        "trend": trend,
+        "seasonal": seasonal,
+        "residual_process": y,
+    })
+
+
+df = simulate_eda_series()
+df.head()
+```
+
+```{python}
+#| label: ch02-time-plot
+#| fig-width: 9
+#| fig-height: 4
+
+plt.figure(figsize=(10, 4))
+plt.plot(df["time"], df["x"], linewidth=1)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Raw time plot")
+plt.show()
+```
+
+The visible pattern suggests a deterministic component. We should not immediately fit an ARMA model to the raw data because ARMA models assume stationarity.
+
+## 2.16 Python example: rolling mean and rolling variance
+
+Rolling summaries provide a more stable view of time-varying level and scale.
+
+```{python}
+#| label: ch02-rolling-summary
+#| fig-width: 9
+#| fig-height: 5
+
+window = 24
+roll_mean = df["x"].rolling(window=window, min_periods=1).mean()
+roll_std = df["x"].rolling(window=window, min_periods=2).std()
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+axes[0].plot(df["time"], df["x"], linewidth=0.8, label="series")
+axes[0].plot(df["time"], roll_mean, linewidth=2, label=f"rolling mean, m={window}")
+axes[0].set_ylabel("value")
+axes[0].set_title("Rolling mean")
+axes[0].legend()
+
+axes[1].plot(df["time"], roll_std, linewidth=2)
+axes[1].set_xlabel("time")
+axes[1].set_ylabel("rolling std")
+axes[1].set_title("Rolling standard deviation")
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+## Interpretation
+The rolling mean is not a model by itself. It is a diagnostic smoother. Its purpose is to help identify slow structure that should be modeled or removed.
+:::
+
+## 2.17 Python example: detrending with ordinary least squares
+
+We now fit the linear trend model
+
+$$
+x_t=\beta_0+\beta_1t+e_t.
+$$
+
+The code below computes the OLS estimator directly from the normal equation.
+
+```{python}
+#| label: ch02-ols-detrending
+
+x = df["x"].to_numpy()
+t = df["time"].to_numpy()
+
+Z = np.column_stack([np.ones_like(t), t])
+beta_hat = np.linalg.inv(Z.T @ Z) @ Z.T @ x
+fitted_trend = Z @ beta_hat
+residual_linear = x - fitted_trend
+
+beta_hat
+```
+
+```{python}
+#| label: ch02-detrend-plot
+#| fig-width: 9
+#| fig-height: 5
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+axes[0].plot(t, x, linewidth=1, label="observed")
+axes[0].plot(t, fitted_trend, linewidth=2, label="fitted linear trend")
+axes[0].set_title("OLS trend fit")
+axes[0].set_ylabel("value")
+axes[0].legend()
+
+axes[1].plot(t, residual_linear, linewidth=1)
+axes[1].axhline(0, linestyle="--", linewidth=1)
+axes[1].set_title("Residual after linear detrending")
+axes[1].set_xlabel("time")
+axes[1].set_ylabel("residual")
+
+plt.tight_layout()
+plt.show()
+```
+
+The residual still has seasonal structure because we only removed a linear trend. This is a common EDA discovery: removing one component may reveal another.
+
+## 2.18 Python example: detrending and deseasonalizing with Fourier features
+
+Now include Fourier features for a known period $s=24$:
+
+$$
+x_t = \beta_0+\beta_1t+a_1\cos\left(\frac{2\pi t}{s}\right)
++b_1\sin\left(\frac{2\pi t}{s}\right)+e_t.
+$$
+
+We include two harmonics because the simulated data contains a second harmonic.
+
+```{python}
+#| label: ch02-fourier-regression
+
+period = 24
+K = 2
+cols = [np.ones_like(t), t]
+for k in range(1, K + 1):
+    cols.append(np.cos(2 * np.pi * k * t / period))
+    cols.append(np.sin(2 * np.pi * k * t / period))
+
+Z_fourier = np.column_stack(cols)
+beta_fourier = np.linalg.lstsq(Z_fourier, x, rcond=None)[0]
+fitted_mean = Z_fourier @ beta_fourier
+residual_fourier = x - fitted_mean
+
+pd.Series(beta_fourier, index=["intercept", "time", "cos1", "sin1", "cos2", "sin2"])
+```
+
+```{python}
+#| label: ch02-fourier-deseasonalize-plot
+#| fig-width: 9
+#| fig-height: 5
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+axes[0].plot(t, x, linewidth=1, label="observed")
+axes[0].plot(t, fitted_mean, linewidth=2, label="fitted trend + seasonality")
+axes[0].set_title("Regression with trend and Fourier seasonal features")
+axes[0].set_ylabel("value")
+axes[0].legend()
+
+axes[1].plot(t, residual_fourier, linewidth=1)
+axes[1].axhline(0, linestyle="--", linewidth=1)
+axes[1].set_title("Residual after detrending and deseasonalizing")
+axes[1].set_xlabel("time")
+axes[1].set_ylabel("residual")
+
+plt.tight_layout()
+plt.show()
+```
+
+After removing deterministic trend and seasonality, the residual should be checked for autocorrelation. If the residuals still have dependence, we may model them with ARMA or another dependent-error model.
+
+## 2.19 Python example: sample ACF from scratch
+
+The sample ACF helps us see whether dependence remains after transformation or detrending.
+
+```{python}
+#| label: ch02-acf-function
+
+def sample_acf(values, max_lag=40):
+    values = np.asarray(values, dtype=float)
+    values = values - values.mean()
+    denom = np.sum(values**2)
+    acf_values = []
+    for h in range(max_lag + 1):
+        numer = np.sum(values[h:] * values[:len(values) - h])
+        acf_values.append(numer / denom)
+    return np.array(acf_values)
+
+
+def plot_acf_stems(values, max_lag=40, title="Sample ACF"):
+    r = sample_acf(values, max_lag=max_lag)
+    lags = np.arange(max_lag + 1)
+    bound = 1.96 / np.sqrt(len(values))
+    plt.figure(figsize=(9, 3.8))
+    plt.axhline(0, linewidth=1)
+    plt.axhline(bound, linestyle="--", linewidth=1)
+    plt.axhline(-bound, linestyle="--", linewidth=1)
+    plt.vlines(lags, 0, r, linewidth=1)
+    plt.scatter(lags, r, s=18)
+    plt.xlabel("lag")
+    plt.ylabel("ACF")
+    plt.title(title)
+    plt.ylim(-1, 1)
+    plt.show()
+
+plot_acf_stems(x, max_lag=60, title="ACF of raw series")
+plot_acf_stems(residual_fourier, max_lag=60, title="ACF after trend + seasonal regression")
+```
+
+::: {.callout-important}
+## Why the residual ACF matters
+A beautiful fitted trend curve does not mean the model is complete. If residuals are autocorrelated, then there is still predictable structure in the data.
+:::
+
+## 2.20 Python example: differencing and seasonal differencing
+
+Now compare first differencing and seasonal differencing.
+
+```{python}
+#| label: ch02-differencing-code
+
+def difference(values, lag=1):
+    values = np.asarray(values, dtype=float)
+    return values[lag:] - values[:-lag]
+
+first_diff = difference(x, lag=1)
+seasonal_diff = difference(x, lag=period)
+combined_diff = difference(first_diff, lag=period)
+
+len(x), len(first_diff), len(seasonal_diff), len(combined_diff)
+```
+
+```{python}
+#| label: ch02-differencing-plot
+#| fig-width: 9
+#| fig-height: 7
+
+fig, axes = plt.subplots(4, 1, figsize=(10, 8), sharex=False)
+axes[0].plot(x, linewidth=1)
+axes[0].set_title("Raw series")
+axes[1].plot(first_diff, linewidth=1)
+axes[1].set_title("First difference")
+axes[2].plot(seasonal_diff, linewidth=1)
+axes[2].set_title(f"Seasonal difference, lag={period}")
+axes[3].plot(combined_diff, linewidth=1)
+axes[3].set_title("First difference followed by seasonal difference")
+for ax in axes:
+    ax.axhline(0, linestyle="--", linewidth=1)
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+#| label: ch02-differencing-acfs
+#| fig-width: 9
+#| fig-height: 4
+
+plot_acf_stems(first_diff, max_lag=60, title="ACF of first difference")
+plot_acf_stems(seasonal_diff, max_lag=60, title="ACF of seasonal difference")
+plot_acf_stems(combined_diff, max_lag=60, title="ACF of combined difference")
+```
+
+The point is not that one transformation is always best. The point is that each transformation creates a different object. The EDA question is: which transformed object has a dependence pattern that we can model and validate?
+
+## 2.21 Python example: smoothing
+
+Smoothing can reveal slow trend but should not be confused with making a series stationary.
+
+```{python}
+#| label: ch02-smoothing
+#| fig-width: 9
+#| fig-height: 4
+
+s = pd.Series(x)
+ma_12 = s.rolling(window=12, min_periods=1).mean()
+ma_24 = s.rolling(window=24, min_periods=1).mean()
+ewma = s.ewm(alpha=0.12, adjust=False).mean()
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, x, linewidth=0.7, label="observed")
+plt.plot(t, ma_12, linewidth=2, label="moving average, m=12")
+plt.plot(t, ma_24, linewidth=2, label="moving average, m=24")
+plt.plot(t, ewma, linewidth=2, linestyle="--", label="exponential smoothing, alpha=0.12")
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Smoothing for exploratory visualization")
+plt.legend()
+plt.show()
+```
+
+## 2.22 Python example: lag plots
+
+Lag plots reveal dependence geometrically. For an AR(1)-like residual, the lag-one plot often shows a linear pattern.
+
+```{python}
+#| label: ch02-lag-plots
+#| fig-width: 8
+#| fig-height: 7
+
+res = residual_fourier
+fig, axes = plt.subplots(2, 2, figsize=(8, 8))
+for ax, lag in zip(axes.ravel(), [1, 2, 12, 24]):
+    ax.scatter(res[:-lag], res[lag:], s=16, alpha=0.7)
+    ax.set_xlabel(f"e[t-{lag}]")
+    ax.set_ylabel("e[t]")
+    ax.set_title(f"Lag plot, h={lag}")
+plt.tight_layout()
+plt.show()
+```
+
+## 2.23 A reproducible EDA checklist in Python
+
+The following function creates a compact EDA report for a univariate sequence. It is intentionally simple. Later chapters will replace pieces of this with more formal tests and models.
+
+```{python}
+#| label: ch02-eda-report-function
+
+def quick_eda_report(values, period=None, max_lag=40):
+    values = pd.Series(np.asarray(values, dtype=float)).dropna()
+    report = {
+        "n": len(values),
+        "mean": values.mean(),
+        "std": values.std(),
+        "min": values.min(),
+        "max": values.max(),
+        "acf_lag_1": sample_acf(values, max_lag=1)[1] if len(values) > 2 else np.nan,
+    }
+    if period is not None and len(values) > period:
+        report[f"acf_lag_{period}"] = sample_acf(values, max_lag=period)[period]
+    return pd.Series(report)
+
+pd.DataFrame({
+    "raw": quick_eda_report(x, period=period),
+    "trend_seasonal_residual": quick_eda_report(residual_fourier, period=period),
+    "first_diff": quick_eda_report(first_diff, period=period),
+    "seasonal_diff": quick_eda_report(seasonal_diff, period=period),
+})
+```
+
+A report like this does not replace plots, but it helps make EDA reproducible and comparable across transformations.
+
+## 2.24 Connection to machine learning features
+
+Classical EDA naturally creates features for machine learning models. Suppose we want to predict $x_{t+1}$. Candidate features include:
+
+$$
+x_t,x_{t-1},\dots,x_{t-L+1},
+$$
+
+rolling summaries such as
+
+$$
+\frac{1}{m}\sum_{j=0}^{m-1}x_{t-j},
+$$
+
+calendar indicators, and Fourier features such as
+
+$$
+\cos\left(\frac{2\pi kt}{s}\right),\qquad
+\sin\left(\frac{2\pi kt}{s}\right).
+$$
+
+A feature-based ML model might use
+
+$$
+\widehat x_{t+1}=f\left(x_t,x_{t-1},\dots,\text{rolling mean},\text{Fourier features},\text{calendar features}\right).
+$$
+
+This connects EDA to later chapters on feature-based ML, CNNs, RNNs, and transformers. Deep models can learn features, but human-designed exploratory features remain valuable baselines and diagnostic tools.
+
+## 2.25 AI-assisted study: use AI to generate hypotheses, not conclusions
+
+AI tools can accelerate EDA when used carefully. They are especially useful for creating diagnostic checklists, identifying possible causes of a pattern, and translating visual observations into candidate models. They are dangerous when they choose a final model without seeing the data, validation design, and residual diagnostics.
+
+::: {.callout-ai}
+## AI-assisted EDA prompt
+Use this prompt after you have created a time plot, rolling mean, rolling variance, and ACF.
+
+> I am doing exploratory data analysis for a univariate time series. The time plot shows [describe trend/seasonality/outliers]. The rolling variance shows [describe scale]. The ACF shows [describe decay/spikes]. Give me five plausible data-generating explanations. For each explanation, give: (1) the mathematical form, (2) one diagnostic plot to check, (3) one transformation or preprocessing step, (4) one simple baseline forecast, and (5) one way this explanation could be wrong. Do not select a final model yet.
+:::
+
+::: {.callout-ai}
+## AI code-checking prompt
+After writing code, ask:
+
+> Check this time-series EDA code for leakage, misuse of random train-test splitting, incorrect differencing alignment, missing inverse transformation, and misleading interpretation of smoothed data. Explain each issue in terms of the time index.
+:::
+
+## 2.26 Mini case study: from raw data to modeling plan
+
+Imagine a daily demand series with weekly seasonality and a slowly increasing level. A good EDA summary might be:
+
+1. The raw time plot shows an upward trend and repeated weekly peaks.
+2. Rolling variance is roughly stable after a log transform.
+3. The ACF decays slowly in the raw series and has spikes at lags 7, 14, and 21.
+4. First differencing reduces trend, but weekly spikes remain.
+5. Seasonal differencing at lag 7 reduces the seasonal pattern.
+6. Candidate baselines: naive, seasonal naive, and rolling mean.
+7. Candidate models: SARIMA, Prophet-style additive model, and lag-feature gradient boosting.
+8. Validation should use rolling-origin or blocked time splits, not random splitting.
+
+This is the level of reasoning expected before fitting a model.
+
+## 2.27 Mathematical summary
+
+| Concept | Formula | Purpose |
+|---|---:|---|
+| Additive decomposition | $X_t=T_t+S_t+Y_t$ | Separate trend, seasonality, residual dependence |
+| Regression trend | $x=Z\beta+e$ | Estimate deterministic mean structure |
+| OLS estimate | $\widehat\beta=(Z^TZ)^{-1}Z^Tx$ | Fit trend or seasonal features |
+| Fourier seasonality | $\sum_k a_k\cos(2\pi kt/s)+b_k\sin(2\pi kt/s)$ | Model periodic mean components |
+| First difference | $\nabla x_t=x_t-x_{t-1}$ | Remove linear stochastic or deterministic drift |
+| Seasonal difference | $\nabla_s x_t=x_t-x_{t-s}$ | Remove seasonal level pattern |
+| Moving average smoother | $\widetilde x_t=m^{-1}\sum_{j=0}^{m-1}x_{t-j}$ | Reveal slow structure |
+| Exponential smoother | $\ell_t=\alpha x_t+(1-\alpha)\ell_{t-1}$ | Smooth with decaying memory |
+| Sample ACF | $\widehat\rho(h)=\widehat\gamma(h)/\widehat\gamma(0)$ | Diagnose serial dependence |
+
+## 2.28 Common mistakes
+
+1. **Treating smoothing as modeling.** A smoother helps visualization; it is not automatically a forecast model.
+2. **Removing trend and ignoring residual dependence.** Detrended residuals can still be autocorrelated.
+3. **Over-differencing.** Too much differencing can introduce artificial negative autocorrelation.
+4. **Ignoring scale.** If variability grows with the level, a log or Box-Cox transform may be necessary.
+5. **Confusing deterministic seasonality with seasonal dependence.** Fourier regression and seasonal AR terms solve different problems.
+6. **Using future information in feature construction.** Centered rolling averages can leak future values if used for forecasting features.
+7. **Letting AI choose a final model from a verbal description only.** AI can suggest hypotheses, but diagnostics and validation decide.
+
+## 2.29 Exercises
+
+### Conceptual exercises
+
+1. Explain the difference between detrending and differencing using the model $x_t=\mu_t+y_t$.
+2. Suppose $x_t=\beta_0+\beta_1t+y_t$. Compute $\nabla x_t$ and identify what happened to the intercept and slope.
+3. Suppose $x_t$ has monthly seasonality. Write the seasonal difference operator.
+4. Explain why a log transform can stabilize variance for multiplicative models.
+5. Give one example where smoothing is helpful and one example where smoothing could be misleading.
+
+### Mathematical exercises
+
+1. Prove that the second difference of a linear function is zero.
+2. Show that if $y_t$ is white noise with variance $\sigma^2$, then $z_t=y_t-y_{t-1}$ has $\operatorname{Cov}(z_t,z_{t-1})=-\sigma^2$.
+3. Derive the least-squares normal equation $Z^TZ\widehat\beta=Z^Tx$.
+4. Show that $A\cos(2\pi\omega t+\phi)$ can be written as $a\cos(2\pi\omega t)+b\sin(2\pi\omega t)$.
+5. For a moving-average smoother with weights $a_0,\dots,a_{m-1}$, what condition on the weights preserves a constant mean?
+
+### Computational exercises
+
+1. Simulate a series with a quadratic trend and white-noise errors. Compare first and second differencing.
+2. Simulate a multiplicative seasonal series. Apply a log transform and compare rolling variance before and after transformation.
+3. Write your own function for seasonal differencing and test it on a period-12 series.
+4. Fit a regression model with trend and Fourier seasonal features. Plot residuals and their ACF.
+5. Create lag plots for lags 1, 2, 7, and 14 for a daily seasonal series. Interpret the visual patterns.
+6. Build a compact EDA report for a real data set and write a modeling plan.
+
+### AI-assisted exercise
+
+Use an AI assistant to critique your EDA report. Your final submission should include:
+
+1. your original EDA summary;
+2. the AI's proposed concerns;
+3. which concerns you verified with code;
+4. which concerns you rejected and why;
+5. your revised modeling plan.
+
+## 2.30 Chapter checklist
+
+Before moving to Chapter 3, make sure you can do the following without notes:
+
+- write the additive decomposition $X_t=T_t+S_t+Y_t$;
+- explain when a log transform is useful;
+- compute and interpret first and seasonal differences;
+- fit a trend using least squares;
+- fit deterministic seasonality using sine and cosine features;
+- compute a sample ACF from scratch;
+- explain why over-differencing can introduce dependence;
+- create a time-series EDA report that leads to a modeling plan;
+- use an AI assistant to generate hypotheses while preserving mathematical verification.
+
+## Further reading
+
+Classical exploratory analysis, detrending, differencing, smoothing, and autocorrelation diagnostics are developed in @shumway2017time and @brockwell2016introduction. Forecasting workflows and practical decomposition ideas are expanded in @hyndman2021forecasting. The Fourier-feature approach also connects to automated additive forecasting models such as @taylor2018forecasting.

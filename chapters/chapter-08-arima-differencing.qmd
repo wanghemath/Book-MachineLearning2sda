@@ -1,0 +1,1075 @@
+# ARIMA Models and Differencing
+
+::: {.hero}
+**Part III. Nonstationary and Seasonal Models**  
+**Chapter goal:** learn how to model nonstationary time series by transforming them into stationary series. We develop differencing operators, integrated processes, ARIMA models, model identification after differencing, forecasting on the original scale, diagnostics, and AI-assisted checks for under-differencing and over-differencing.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain why many real time series are nonstationary and why ARMA models cannot be applied directly;
+2. use the backshift operator $B$ and the difference operator $\nabla=1-B$;
+3. define ARIMA($p,d,q$) models and interpret $p$, $d$, and $q$;
+4. distinguish deterministic trends from stochastic trends;
+5. identify when first or second differencing is appropriate;
+6. recognize over-differencing and under-differencing from time plots and ACF behavior;
+7. use ACF and PACF of the differenced series to propose $p$ and $q$;
+8. fit ARIMA models in Python and diagnose residuals;
+9. transform forecasts of differenced data back to forecasts of the original series;
+10. use AI tools to critique a proposed ARIMA workflow while verifying all mathematical and diagnostic claims.
+
+## 8.1 Why ARIMA is needed
+
+So far, the core linear model class has been ARMA($p,q$):
+
+$$
+\phi(B)X_t=\theta(B)W_t,
+$$
+
+where $\{X_t\}$ is assumed stationary. This assumption is powerful because it lets us summarize dependence using a time-invariant autocovariance function
+
+$$
+\gamma(h)=\operatorname{Cov}(X_{t+h},X_t),
+$$
+
+and a time-invariant autocorrelation function
+
+$$
+\rho(h)=\frac{\gamma(h)}{\gamma(0)}.
+$$
+
+However, many real time series are not stationary. A stock index, cumulative sales, population count, temperature anomaly, ridership total, or electricity demand series may have trend, changing level, seasonality, or structural changes. Applying a stationary ARMA model directly to such a series often produces misleading forecasts and misleading standard errors.
+
+ARIMA models solve one important kind of nonstationarity by **differencing**. Instead of assuming $X_t$ itself is stationary, we assume that a differenced version of $X_t$ is stationary.
+
+::: {.callout-note}
+## Core idea
+An ARIMA model is an ARMA model applied after differencing:
+
+$$
+\nabla^d X_t \quad \text{is modeled as ARMA}(p,q).
+$$
+:::
+
+This idea is simple but subtle. Differencing can remove trend, but it also changes the dependence structure. Choosing the differencing order $d$ is therefore a modeling decision, not a mechanical preprocessing step.
+
+## 8.2 Backshift and difference operators
+
+The **backshift operator** $B$ acts on a time series by shifting it one time step backward:
+
+$$
+BX_t=X_{t-1}.
+$$
+
+The first difference operator is
+
+$$
+\nabla X_t=X_t-X_{t-1}=(1-B)X_t.
+$$
+
+The second difference is
+
+$$
+\nabla^2X_t=\nabla(\nabla X_t)=(1-B)^2X_t.
+$$
+
+Expanding gives
+
+$$
+\nabla^2X_t=X_t-2X_{t-1}+X_{t-2}.
+$$
+
+More generally,
+
+$$
+\nabla^dX_t=(1-B)^dX_t.
+$$
+
+Using the binomial theorem,
+
+$$
+(1-B)^d = \sum_{j=0}^{d} {d \choose j}(-1)^j B^j,
+$$
+
+so
+
+$$
+\nabla^dX_t=\sum_{j=0}^{d}{d \choose j}(-1)^jX_{t-j}.
+$$
+
+For example,
+
+$$
+\nabla^3X_t=X_t-3X_{t-1}+3X_{t-2}-X_{t-3}.
+$$
+
+In practice, we rarely use $d>2$ for ordinary nonseasonal differencing. Large $d$ can create artificial negative autocorrelation and unnecessarily complex models.
+
+::: {.callout-warning}
+## Practical warning
+Differencing is not harmless. It removes low-frequency behavior, but it also changes the stochastic part of the series. Over-differencing can turn a simple signal into a noisier signal with avoidable moving-average structure.
+:::
+
+## 8.3 Deterministic trend versus stochastic trend
+
+A common model for a nonstationary-looking series is
+
+$$
+X_t=\mu_t+Y_t,
+$$
+
+where $\mu_t$ is a deterministic trend and $Y_t$ is stationary. For example,
+
+$$
+X_t=\beta_0+\beta_1t+Y_t.
+$$
+
+Then
+
+$$
+\nabla X_t=X_t-X_{t-1}
+=\beta_1+Y_t-Y_{t-1}.
+$$
+
+If $Y_t$ is stationary, then $Y_t-Y_{t-1}$ is also stationary. Therefore, the first difference is stationary around mean $\beta_1$.
+
+But there is another kind of nonstationarity: a **stochastic trend**. The random walk is the basic example:
+
+$$
+X_t=X_{t-1}+W_t,
+$$
+
+where $W_t\sim WN(0,\sigma^2)$. Then
+
+$$
+\nabla X_t=W_t,
+$$
+
+which is stationary white noise. The original process is nonstationary because
+
+$$
+\operatorname{Var}(X_t)=t\sigma^2
+$$
+
+when $X_0=0$.
+
+These two cases can look similar in a time plot but have different interpretations.
+
+| Type | Example | What differencing does | Interpretation |
+|---|---|---|---|
+| Deterministic trend | $X_t=\beta_0+\beta_1t+Y_t$ | removes the linear trend | series fluctuates around a deterministic path |
+| Stochastic trend | $X_t=X_{t-1}+W_t$ | removes the unit root | shocks have permanent effects |
+
+::: {.callout-tip}
+## Modeling interpretation
+A deterministic trend says the long-run path is predictable up to stationary noise. A stochastic trend says shocks accumulate and permanently change the level.
+:::
+
+## 8.4 Integrated processes
+
+A process $X_t$ is called **integrated of order $d$**, written $X_t\sim I(d)$, if
+
+$$
+\nabla^d X_t
+$$
+
+is stationary, while $\nabla^{d-1}X_t$ is not stationary.
+
+Examples:
+
+1. White noise is $I(0)$.
+2. A stationary ARMA process is $I(0)$.
+3. A random walk is $I(1)$.
+4. A process whose second difference is stationary but whose first difference is not stationary is $I(2)$.
+
+The notation $I(d)$ is about the number of differences needed to reach stationarity. It is not a statement that the original series has finite variance for all time. In fact, many integrated processes are nonstationary and have variance that grows with time.
+
+## 8.5 Definition of ARIMA($p,d,q$)
+
+A time series $\{X_t\}$ is an ARIMA($p,d,q$) process if
+
+$$
+Y_t=\nabla^dX_t=(1-B)^dX_t
+$$
+
+is an ARMA($p,q$) process. That is,
+
+$$
+\phi(B)Y_t=\theta(B)W_t,
+$$
+
+where
+
+$$
+\phi(B)=1-\phi_1B-\cdots-\phi_pB^p,
+$$
+
+and
+
+$$
+\theta(B)=1+\theta_1B+\cdots+\theta_qB^q.
+$$
+
+Substituting $Y_t=(1-B)^dX_t$ gives the ARIMA equation
+
+$$
+\phi(B)(1-B)^dX_t=\theta(B)W_t.
+$$
+
+If the differenced series has a nonzero mean, we write
+
+$$
+\phi(B)(1-B)^dX_t=\alpha+\theta(B)W_t.
+$$
+
+The three orders have different meanings:
+
+| Symbol | Meaning | Role |
+|---|---|---|
+| $p$ | autoregressive order | dependence on past differenced values |
+| $d$ | differencing order | number of nonseasonal differences needed for stationarity |
+| $q$ | moving-average order | dependence on past shocks/innovations |
+
+::: {.callout-note}
+## ARMA as a special case
+ARMA($p,q$) is the same as ARIMA($p,0,q$). ARIMA extends ARMA by allowing integrated nonstationarity.
+:::
+
+## 8.6 Basic examples
+
+### Example 1: White noise
+
+If
+
+$$
+X_t=W_t,
+$$
+
+then $X_t$ is ARIMA($0,0,0$). No differencing is needed.
+
+### Example 2: Random walk
+
+If
+
+$$
+X_t=X_{t-1}+W_t,
+$$
+
+then
+
+$$
+(1-B)X_t=W_t.
+$$
+
+Thus $X_t$ is ARIMA($0,1,0$).
+
+### Example 3: Random walk with drift
+
+If
+
+$$
+X_t=\delta+X_{t-1}+W_t,
+$$
+
+then
+
+$$
+\nabla X_t=\delta+W_t.
+$$
+
+This is ARIMA($0,1,0$) with drift. The $h$-step forecast from time $n$ is
+
+$$
+\widehat X_{n+h|n}=X_n+h\widehat\delta.
+$$
+
+### Example 4: ARIMA($1,1,0$)
+
+If
+
+$$
+\nabla X_t=\phi \nabla X_{t-1}+W_t,
+$$
+
+then
+
+$$
+(1-\phi B)(1-B)X_t=W_t.
+$$
+
+This is ARIMA($1,1,0$). The first differences behave like an AR(1) process.
+
+### Example 5: ARIMA($0,1,1$)
+
+If
+
+$$
+\nabla X_t=W_t+\theta W_{t-1},
+$$
+
+then
+
+$$
+(1-B)X_t=(1+\theta B)W_t.
+$$
+
+This is ARIMA($0,1,1$). Some exponential smoothing models are closely related to ARIMA($0,1,1$).
+
+## 8.7 Differencing a deterministic trend
+
+Suppose
+
+$$
+X_t=\beta_0+\beta_1t+Y_t,
+$$
+
+where $Y_t$ is stationary. Then
+
+$$
+\nabla X_t=\beta_1+(Y_t-Y_{t-1}).
+$$
+
+This is stationary if $Y_t$ is stationary. But notice that the noise structure has changed. If $Y_t$ is white noise, then
+
+$$
+Y_t-Y_{t-1}=W_t-W_{t-1},
+$$
+
+which is MA(1) with coefficient $-1$.
+
+This explains a common phenomenon: differencing a deterministic trend often creates moving-average behavior.
+
+For a quadratic trend,
+
+$$
+X_t=\beta_0+\beta_1t+\beta_2t^2+Y_t,
+$$
+
+the first difference still has a linear trend:
+
+$$
+\nabla X_t=\beta_1+\beta_2(2t-1)+Y_t-Y_{t-1}.
+$$
+
+The second difference removes the quadratic trend:
+
+$$
+\nabla^2 X_t=2\beta_2+Y_t-2Y_{t-1}+Y_{t-2}.
+$$
+
+::: {.callout-warning}
+## Detrending versus differencing
+Regression detrending estimates and subtracts $\widehat\mu_t$. Differencing removes polynomial trend without estimating all trend coefficients, but it changes the stationary component. Both tools are useful, and neither should be applied blindly.
+:::
+
+## 8.8 How to choose the differencing order $d$
+
+The differencing order $d$ should be chosen before identifying $p$ and $q$. The usual workflow is:
+
+1. Plot $X_t$.
+2. Check whether the level and variance appear stable.
+3. Inspect the ACF of $X_t$.
+4. Difference once and inspect $\nabla X_t$.
+5. Difference twice only if necessary.
+6. Once the differenced series appears stationary, inspect ACF/PACF to choose $p$ and $q$.
+
+A slowly decaying ACF is a common sign of nonstationarity. For a random walk or a strongly trended series, the sample ACF often remains large for many lags.
+
+Typical clues:
+
+| Observation | Possible decision |
+|---|---|
+| time plot has stable level and variance | try $d=0$ |
+| time plot has persistent trend | try $d=1$ |
+| first difference still has trend | consider $d=2$ |
+| ACF decays very slowly | increase $d$ or remove trend |
+| lag-1 ACF of differenced series is strongly negative | possible over-differencing |
+
+Formal tests can help, but they do not replace plots and subject-matter reasoning. Two common tests are:
+
+- the augmented Dickey--Fuller test, where the null hypothesis is often a unit root;
+- the KPSS test, where the null hypothesis is often stationarity around a level or trend.
+
+These tests can disagree in finite samples. For this course, the key principle is to combine mathematical structure, plots, ACF/PACF, residual diagnostics, and forecasting performance.
+
+## 8.9 Under-differencing and over-differencing
+
+### Under-differencing
+
+A series is under-differenced if nonstationarity remains after transformation. Symptoms include:
+
+- a visible trend in the transformed series;
+- slowly decaying ACF;
+- residual autocorrelation after fitting;
+- forecasts that lag behind changes in level.
+
+### Over-differencing
+
+A series is over-differenced if too many differences are applied. Symptoms include:
+
+- unnecessary roughness;
+- strong negative autocorrelation at lag 1;
+- inflated forecast variance;
+- fitted MA coefficients near noninvertibility;
+- worse out-of-sample forecasts despite apparently stationary transformed data.
+
+A simple example shows why. If $X_t$ is already white noise, then
+
+$$
+Y_t=\nabla X_t=X_t-X_{t-1}=W_t-W_{t-1}.
+$$
+
+This is MA(1) with coefficient $-1$. Its lag-1 autocorrelation is
+
+$$
+\rho_Y(1)=\frac{-\sigma^2}{2\sigma^2}=-\frac12.
+$$
+
+Thus differencing white noise creates artificial negative dependence.
+
+::: {.callout-tip}
+## Diagnostic rule of thumb
+If the differenced series has a very negative lag-1 autocorrelation, ask whether the original series may have been differenced too much.
+:::
+
+## 8.10 Identifying $p$ and $q$ after differencing
+
+Once $Y_t=\nabla^dX_t$ looks stationary, identify the ARMA model for $Y_t$.
+
+For $Y_t$:
+
+| Candidate for $Y_t$ | ACF | PACF |
+|---|---|---|
+| AR($p$) | decays gradually | cuts off after lag $p$ |
+| MA($q$) | cuts off after lag $q$ | decays gradually |
+| ARMA($p,q$) | decays gradually | decays gradually |
+| white noise | insignificant after lag 0 | insignificant after lag 0 |
+
+Then $X_t$ is ARIMA($p,d,q$).
+
+Example: If $\nabla X_t$ has an ACF that cuts off after lag 1 and a PACF that decays gradually, then $\nabla X_t$ may be MA(1), so $X_t$ may be ARIMA($0,1,1$).
+
+Example: If $\nabla X_t$ has a PACF that cuts off after lag 2 and an ACF that decays gradually, then $\nabla X_t$ may be AR(2), so $X_t$ may be ARIMA($2,1,0$).
+
+## 8.11 Forecasting ARIMA models
+
+Forecasting an ARIMA model happens in two stages:
+
+1. Forecast the stationary differenced series.
+2. Convert the forecast back to the original scale.
+
+For ARIMA($p,1,q$), define
+
+$$
+Y_t=\nabla X_t=X_t-X_{t-1}.
+$$
+
+Suppose we forecast future differences:
+
+$$
+\widehat Y_{n+1|n},\widehat Y_{n+2|n},\ldots,\widehat Y_{n+h|n}.
+$$
+
+Then forecasts of the original series satisfy
+
+$$
+\widehat X_{n+1|n}=X_n+\widehat Y_{n+1|n},
+$$
+
+$$
+\widehat X_{n+2|n}=\widehat X_{n+1|n}+\widehat Y_{n+2|n},
+$$
+
+and in general
+
+$$
+\widehat X_{n+h|n}=X_n+\sum_{j=1}^{h}\widehat Y_{n+j|n}.
+$$
+
+For $d=2$, the reconstruction accumulates second-difference forecasts twice. Software handles this automatically, but students should understand that ARIMA forecasts are produced by modeling changes and then integrating the forecasted changes.
+
+::: {.callout-note}
+## Forecast intervals widen
+Integrated models often produce forecast intervals that widen with horizon because future shocks accumulate on the original scale.
+:::
+
+## 8.12 Constants, drift, and trend in ARIMA
+
+Constants in ARIMA models require care. Consider
+
+$$
+\phi(B)(1-B)^dX_t=\alpha+\theta(B)W_t.
+$$
+
+When $d=0$, a constant usually corresponds to a nonzero mean of the stationary ARMA process.
+
+When $d=1$, a constant in the differenced equation corresponds to drift in the original series. For example,
+
+$$
+\nabla X_t=\delta+W_t
+$$
+
+implies
+
+$$
+X_t=X_0+\delta t+\sum_{j=1}^{t}W_j.
+$$
+
+Thus $\delta$ creates a linear mean path on the original scale.
+
+When $d=2$, a constant in the second-differenced equation can induce a quadratic mean path on the original scale. This is one reason to avoid high differencing orders unless there is a clear reason.
+
+## 8.13 Model estimation and diagnostics
+
+An ARIMA workflow usually follows these steps:
+
+1. Transform the data if needed, such as log transform for increasing variance.
+2. Choose $d$ using plots, ACF, and domain knowledge.
+3. Inspect ACF/PACF of $\nabla^dX_t$ to propose $p$ and $q$.
+4. Fit several candidate ARIMA models.
+5. Compare using AIC, AICc, BIC, and forecast validation.
+6. Check residuals.
+7. Revise if residuals show autocorrelation, changing variance, outliers, or nonnormal heavy tails.
+8. Forecast and communicate uncertainty.
+
+Residuals should behave like white noise:
+
+$$
+\widehat e_t \approx WN(0,\sigma^2).
+$$
+
+Useful residual diagnostics include:
+
+- residual time plot;
+- residual ACF;
+- Ljung--Box test;
+- histogram and Q--Q plot;
+- rolling variance check;
+- forecast backtesting.
+
+::: {.callout-warning}
+## Do not choose by AIC alone
+AIC can help compare fitted candidate models, but a model with the lowest AIC may still have bad residual diagnostics or poor forecasting performance on future data.
+:::
+
+## 8.14 Interactive HTML: Differencing explorer
+
+Use this module to see how trend, a unit-root component, and stationary AR noise affect the original and differenced series. The ACF plot updates after applying $d=0$, $d=1$, or $d=2$ differences.
+
+```{=html}
+<div class="interactive-card">
+  <h3>Differencing explorer</h3>
+  <p>
+    Generate a synthetic series with deterministic trend, a stochastic unit-root component, and stationary AR(1) noise.
+    Then apply differencing and inspect whether the transformed series looks closer to stationary.
+  </p>
+
+  <div class="control-grid">
+    <label>Trend slope $\beta_1$:
+      <input id="ch8-slope" type="range" min="-0.08" max="0.08" step="0.01" value="0.03">
+      <span id="ch8-slope-value">0.03</span>
+    </label>
+    <label>Unit-root shock scale:
+      <input id="ch8-rw" type="range" min="0" max="1.2" step="0.1" value="0.5">
+      <span id="ch8-rw-value">0.5</span>
+    </label>
+    <label>Stationary AR coefficient $\phi$:
+      <input id="ch8-phi" type="range" min="-0.8" max="0.8" step="0.05" value="0.5">
+      <span id="ch8-phi-value">0.50</span>
+    </label>
+    <label>Differencing order $d$:
+      <input id="ch8-d" type="range" min="0" max="2" step="1" value="1">
+      <span id="ch8-d-value">1</span>
+    </label>
+    <label>Sample size $n$:
+      <input id="ch8-n" type="range" min="80" max="400" step="20" value="220">
+      <span id="ch8-n-value">220</span>
+    </label>
+    <button id="ch8-resimulate" type="button">Resimulate</button>
+  </div>
+
+  <div id="ch8-original" style="width:100%;height:340px;"></div>
+  <div id="ch8-differenced" style="width:100%;height:340px;"></div>
+  <div id="ch8-acf" style="width:100%;height:340px;"></div>
+  <p id="ch8-comment" class="ai-note"></p>
+</div>
+
+<script>
+(function() {
+  let seed = 733908;
+
+  function rand() {
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+
+  function randn() {
+    const u1 = Math.max(rand(), 1e-12);
+    const u2 = Math.max(rand(), 1e-12);
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function mean(x) {
+    return x.reduce((a, b) => a + b, 0) / x.length;
+  }
+
+  function difference(x, d) {
+    let y = x.slice();
+    for (let k = 0; k < d; k++) {
+      const z = [];
+      for (let i = 1; i < y.length; i++) z.push(y[i] - y[i - 1]);
+      y = z;
+    }
+    return y;
+  }
+
+  function acf(x, maxLag) {
+    const m = mean(x);
+    const n = x.length;
+    let gamma0 = 0;
+    for (let t = 0; t < n; t++) gamma0 += (x[t] - m) * (x[t] - m);
+    gamma0 /= n;
+    const out = [];
+    for (let h = 0; h <= maxLag; h++) {
+      let g = 0;
+      for (let t = 0; t < n - h; t++) g += (x[t + h] - m) * (x[t] - m);
+      g /= n;
+      out.push(gamma0 > 1e-12 ? g / gamma0 : 0);
+    }
+    return out;
+  }
+
+  function simulate(n, slope, rwScale, phi) {
+    let rw = 0;
+    let ar = 0;
+    const x = [];
+    const trend = [];
+    const stochasticTrend = [];
+    const stationary = [];
+    for (let t = 0; t < n; t++) {
+      rw += rwScale * randn();
+      ar = phi * ar + randn();
+      const tr = slope * t;
+      const value = tr + rw + ar;
+      x.push(value);
+      trend.push(tr);
+      stochasticTrend.push(rw);
+      stationary.push(ar);
+    }
+    return {x, trend, stochasticTrend, stationary};
+  }
+
+  function stemPlot(div, values, n) {
+    const lags = values.map((_, i) => i);
+    const shapes = [];
+    for (let i = 0; i < values.length; i++) {
+      shapes.push({type:'line', x0:i, x1:i, y0:0, y1:values[i], line:{width:1}});
+    }
+    const band = 1.96 / Math.sqrt(n);
+    shapes.push({type:'line', x0:0, x1:values.length - 1, y0:band, y1:band, line:{dash:'dash', width:1}});
+    shapes.push({type:'line', x0:0, x1:values.length - 1, y0:-band, y1:-band, line:{dash:'dash', width:1}});
+    Plotly.newPlot(div, [{x:lags, y:values, mode:'markers', name:'ACF'}], {
+      title:'ACF of transformed series',
+      xaxis:{title:'Lag'},
+      yaxis:{title:'Autocorrelation', range:[-1, 1]},
+      shapes:shapes,
+      margin:{t:45, r:20, b:45, l:55}
+    }, {responsive:true, displayModeBar:false});
+  }
+
+  function update() {
+    const slope = parseFloat(document.getElementById('ch8-slope').value);
+    const rwScale = parseFloat(document.getElementById('ch8-rw').value);
+    const phi = parseFloat(document.getElementById('ch8-phi').value);
+    const d = parseInt(document.getElementById('ch8-d').value);
+    const n = parseInt(document.getElementById('ch8-n').value);
+
+    document.getElementById('ch8-slope-value').innerText = slope.toFixed(2);
+    document.getElementById('ch8-rw-value').innerText = rwScale.toFixed(1);
+    document.getElementById('ch8-phi-value').innerText = phi.toFixed(2);
+    document.getElementById('ch8-d-value').innerText = d;
+    document.getElementById('ch8-n-value').innerText = n;
+
+    const sim = simulate(n, slope, rwScale, phi);
+    const t = Array.from({length:n}, (_, i) => i + 1);
+    const y = difference(sim.x, d);
+    const ty = Array.from({length:y.length}, (_, i) => i + 1 + d);
+    const r = acf(y, Math.min(36, Math.floor(y.length / 4)));
+
+    Plotly.newPlot('ch8-original', [
+      {x:t, y:sim.x, mode:'lines', name:'Observed series'},
+      {x:t, y:sim.trend, mode:'lines', name:'Deterministic trend', line:{dash:'dot'}}
+    ], {
+      title:'Original synthetic series',
+      xaxis:{title:'Time'},
+      yaxis:{title:'Value'},
+      margin:{t:45, r:20, b:45, l:55}
+    }, {responsive:true, displayModeBar:false});
+
+    Plotly.newPlot('ch8-differenced', [
+      {x:ty, y:y, mode:'lines', name:'Transformed series'}
+    ], {
+      title:'After applying d = ' + d + ' differences',
+      xaxis:{title:'Time'},
+      yaxis:{title:'Value'},
+      margin:{t:45, r:20, b:45, l:55}
+    }, {responsive:true, displayModeBar:false});
+
+    stemPlot('ch8-acf', r, y.length);
+
+    let msg = '';
+    if (d === 0 && (Math.abs(slope) > 0.02 || rwScale > 0.2)) {
+      msg = 'Diagnostic hint: the original series likely remains nonstationary. Try d = 1 and inspect whether the transformed series has a stable level and faster ACF decay.';
+    } else if (d === 1 && rwScale > 0.2) {
+      msg = 'Diagnostic hint: first differencing is designed for stochastic trend. Now identify ARMA structure in the differenced series using ACF/PACF.';
+    } else if (d === 2) {
+      msg = 'Diagnostic hint: second differencing is strong. If the lag-1 ACF is highly negative, consider whether d = 1 is enough.';
+    } else if (d === 1 && Math.abs(slope) > 0.02 && rwScale < 0.2) {
+      msg = 'Diagnostic hint: first differencing removed a deterministic linear trend, but it may have introduced MA-type dependence.';
+    } else {
+      msg = 'Diagnostic hint: compare the transformed time plot and ACF before deciding whether the differencing order is appropriate.';
+    }
+    document.getElementById('ch8-comment').innerText = msg;
+  }
+
+  ['ch8-slope','ch8-rw','ch8-phi','ch8-d','ch8-n'].forEach(id => {
+    document.getElementById(id).addEventListener('input', update);
+  });
+  document.getElementById('ch8-resimulate').addEventListener('click', function() {
+    seed = (seed + 987654321) >>> 0;
+    update();
+  });
+  update();
+})();
+</script>
+```
+
+## 8.15 Python example: deterministic trend, random walk, and differencing
+
+The following example compares deterministic and stochastic trend. Both can look nonstationary, but their meanings are different.
+
+```{python}
+#| label: py-ch08-deterministic-vs-stochastic-trend
+#| fig-cap: "Deterministic trend and stochastic trend before and after differencing."
+#| warning: false
+#| message: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(7339)
+
+n = 250
+t = np.arange(n)
+
+# Deterministic trend plus stationary noise
+phi = 0.6
+noise = np.random.normal(size=n)
+y = np.zeros(n)
+for i in range(1, n):
+    y[i] = phi * y[i-1] + noise[i]
+
+x_det = 10 + 0.05 * t + y
+
+# Stochastic trend: random walk with drift
+w = np.random.normal(scale=1.0, size=n)
+x_rw = np.cumsum(0.05 + w)
+
+fig, ax = plt.subplots(figsize=(9, 3.5))
+ax.plot(t, x_det, label="deterministic trend + AR(1)")
+ax.plot(t, x_rw, label="random walk with drift")
+ax.set_title("Two nonstationary-looking series")
+ax.set_xlabel("time")
+ax.legend()
+plt.show()
+
+fig, ax = plt.subplots(figsize=(9, 3.5))
+ax.plot(t[1:], np.diff(x_det), label="difference of deterministic trend model")
+ax.plot(t[1:], np.diff(x_rw), label="difference of random walk")
+ax.axhline(0, linewidth=1)
+ax.set_title("First differences")
+ax.set_xlabel("time")
+ax.legend()
+plt.show()
+```
+
+The first difference of the random walk is close to white noise with drift. The first difference of the deterministic trend model is stationary, but it has a different dependence structure from the original stationary component.
+
+## 8.16 Python example: ACF before and after differencing
+
+```{python}
+#| label: py-ch08-acf-before-after-differencing
+#| fig-cap: "ACF before and after differencing a nonstationary series."
+#| warning: false
+#| message: false
+
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+series = x_rw
+first_difference = np.diff(series)
+
+plot_acf(series, lags=40)
+plt.title("ACF of original random walk with drift")
+plt.show()
+
+plot_acf(first_difference, lags=40)
+plt.title("ACF after first differencing")
+plt.show()
+
+plot_pacf(first_difference, lags=40, method="ywm")
+plt.title("PACF after first differencing")
+plt.show()
+```
+
+The original random walk usually shows slow ACF decay. After differencing, the ACF should be much closer to what we expect for a stationary process.
+
+## 8.17 Python example: fitting ARIMA models
+
+Here we simulate an ARIMA($1,1,1$) series and fit several candidate models.
+
+```{python}
+#| label: py-ch08-fit-arima-grid
+#| warning: false
+#| message: false
+
+import warnings
+import pandas as pd
+from statsmodels.tsa.arima.model import ARIMA
+
+warnings.filterwarnings("ignore")
+
+np.random.seed(2026)
+
+n = 350
+burn = 100
+phi = 0.65
+theta = -0.45
+w = np.random.normal(size=n + burn + 1)
+y = np.zeros(n + burn + 1)
+
+# y_t = phi y_{t-1} + w_t + theta w_{t-1}
+for i in range(1, n + burn + 1):
+    y[i] = phi * y[i-1] + w[i] + theta * w[i-1]
+
+# x_t is integrated: difference x_t is y_t
+x = np.cumsum(y)[burn:]
+
+candidates = []
+for p in range(3):
+    for d in [0, 1, 2]:
+        for q in range(3):
+            if p == 0 and d == 0 and q == 0:
+                continue
+            try:
+                fit = ARIMA(x, order=(p, d, q), trend="n").fit()
+                candidates.append({
+                    "p": p,
+                    "d": d,
+                    "q": q,
+                    "AIC": fit.aic,
+                    "BIC": fit.bic
+                })
+            except Exception:
+                pass
+
+arima_table = pd.DataFrame(candidates).sort_values("AIC")
+arima_table.head(10)
+```
+
+Fit the best candidate and inspect residuals.
+
+```{python}
+#| label: py-ch08-arima-residuals
+#| fig-cap: "Residual diagnostics for an ARIMA model."
+#| warning: false
+#| message: false
+
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from scipy import stats
+
+best = arima_table.iloc[0]
+best_order = (int(best.p), int(best.d), int(best.q))
+best_fit = ARIMA(x, order=best_order, trend="n").fit()
+resid = np.asarray(best_fit.resid)
+
+print("Selected order:", best_order)
+print(acorr_ljungbox(resid, lags=[10, 20], return_df=True))
+
+fig, ax = plt.subplots(figsize=(9, 3))
+ax.plot(resid)
+ax.axhline(0, linewidth=1)
+ax.set_title("ARIMA residuals")
+ax.set_xlabel("time")
+plt.show()
+
+plot_acf(resid, lags=30)
+plt.title("Residual ACF")
+plt.show()
+
+fig, ax = plt.subplots(figsize=(5, 5))
+stats.probplot(resid, dist="norm", plot=ax)
+ax.set_title("Residual Q-Q plot")
+plt.show()
+```
+
+## 8.18 Python example: forecasting on the original scale
+
+The next example fits an ARIMA model and produces forecasts. Notice that `statsmodels` automatically returns forecasts on the original scale of $X_t$, not on the differenced scale.
+
+```{python}
+#| label: py-ch08-arima-forecast
+#| fig-cap: "ARIMA forecasts and forecast intervals on the original scale."
+#| warning: false
+#| message: false
+
+h = 40
+fit = ARIMA(x, order=best_order, trend="n").fit()
+forecast_result = fit.get_forecast(steps=h)
+forecast_mean = forecast_result.predicted_mean
+forecast_ci = forecast_result.conf_int()
+
+future_index = np.arange(len(x), len(x) + h)
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(np.arange(len(x)), x, label="observed")
+ax.plot(future_index, forecast_mean, label="forecast")
+ax.fill_between(
+    future_index,
+    forecast_ci[:, 0],
+    forecast_ci[:, 1],
+    alpha=0.25,
+    label="95% interval"
+)
+ax.set_title(f"Forecast from ARIMA{best_order}")
+ax.set_xlabel("time")
+ax.legend()
+plt.show()
+```
+
+Forecast intervals typically widen as the horizon increases because future innovations accumulate through the integrated structure.
+
+## 8.19 AI-assisted study: asking useful questions
+
+AI tools can be helpful for explaining diagnostics, debugging code, and generating model alternatives. They are not a replacement for checking stationarity, residuals, and validation.
+
+Good prompts:
+
+> I have a time series whose ACF decays slowly. Explain why this may indicate a unit root or trend. Give me a checklist for deciding whether to difference, detrend, or transform the data.
+
+> Here is my ARIMA modeling workflow: [paste workflow]. Identify possible data leakage, over-differencing, and missing residual diagnostics. Do not choose a model only by AIC.
+
+> I fit ARIMA($0,1,1$). Explain how the model is written with the backshift operator, and explain how forecasts on the differenced scale are converted back to the original scale.
+
+> My first-differenced series has a large negative lag-1 ACF. Give possible mathematical explanations and how I should test whether I over-differenced.
+
+Poor prompts:
+
+> What is the best ARIMA model for this data?
+
+> Make the data stationary and forecast it.
+
+> The AIC is smallest for ARIMA($2,2,2$). Is this definitely the best model?
+
+::: {.callout-warning}
+## AI verification rule
+When using AI for ARIMA modeling, always verify three things yourself: the differencing order, residual whiteness, and out-of-sample forecast performance.
+:::
+
+## 8.20 Common mistakes
+
+1. **Fitting ARMA directly to a nonstationary series.**  
+   This often leads to spurious dependence and unreliable forecasts.
+
+2. **Differencing before looking at the data.**  
+   The time plot, variance behavior, and domain meaning should be considered first.
+
+3. **Using $d=2$ too quickly.**  
+   Second differencing can create unnecessary complexity and unstable forecasts.
+
+4. **Ignoring transformations.**  
+   If variability increases with the level, a log or Box--Cox transformation may be needed before differencing.
+
+5. **Choosing $p,d,q$ only by AIC.**  
+   AIC should be combined with diagnostics and forecasting validation.
+
+6. **Interpreting differenced forecasts incorrectly.**  
+   Forecasts of $\nabla X_t$ must be accumulated to recover forecasts of $X_t$.
+
+7. **Forgetting constants and drift.**  
+   A constant in a differenced model has a different meaning from a mean in a stationary model.
+
+8. **Ignoring outliers and structural breaks.**  
+   A single level shift can look like nonstationarity and mislead differencing decisions.
+
+## 8.21 Exercises
+
+### Conceptual exercises
+
+1. Define ARIMA($p,d,q$). Explain why ARMA($p,q$) is a special case.
+
+2. Show that a random walk $X_t=X_{t-1}+W_t$ is ARIMA($0,1,0$).
+
+3. Suppose $X_t=\beta_0+\beta_1t+W_t$, where $W_t$ is white noise. Compute $\nabla X_t$ and describe its autocorrelation structure.
+
+4. Explain why over-differencing can produce negative autocorrelation at lag 1.
+
+5. What is the difference between deterministic trend and stochastic trend? Give one example of each.
+
+6. Explain why $d$ should be chosen before $p$ and $q$.
+
+7. Why do forecast intervals for integrated models usually widen as the forecast horizon grows?
+
+### Mathematical exercises
+
+8. Compute $\nabla^2X_t$ and $\nabla^3X_t$ explicitly in terms of $X_t,X_{t-1},\ldots$.
+
+9. Let $X_t=\delta+X_{t-1}+W_t$. Find $E[X_t]$ and $\operatorname{Var}(X_t)$ assuming $X_0=0$.
+
+10. Suppose $\nabla X_t=\phi\nabla X_{t-1}+W_t$ with $|\phi|<1$. Write the model as an ARIMA equation involving $B$.
+
+11. Suppose $X_t$ is white noise. Let $Y_t=\nabla X_t$. Compute $\gamma_Y(0)$, $\gamma_Y(1)$, and $\rho_Y(1)$.
+
+12. If $Y_t=\nabla X_t$ is ARMA($1,1$), write the full ARIMA model for $X_t$ using $\phi(B)$ and $\theta(B)$.
+
+### Computational exercises
+
+13. Simulate a random walk with drift. Plot the series, its first difference, and their ACFs.
+
+14. Simulate an ARIMA($1,1,0$) model. Fit ARIMA($0,1,0$), ARIMA($1,1,0$), and ARIMA($2,1,0$). Compare AIC and residual diagnostics.
+
+15. Take a real economic or environmental time series. Decide whether to log transform, difference, or detrend it. Justify your decision with plots and ACFs.
+
+16. Use rolling-origin validation to compare ARIMA candidates. Report MAE, RMSE, and residual diagnostics.
+
+## 8.22 Mini project: ARIMA modeling report
+
+Choose a real univariate time series with at least 100 observations. Examples include monthly passengers, daily demand, weekly sales, stock index levels, temperature anomalies, or ridership.
+
+Your report should include:
+
+1. a description of the data and its time scale;
+2. time plot and transformation decision;
+3. differencing decision with explanation;
+4. ACF/PACF of the stationary transformed series;
+5. at least three fitted ARIMA candidates;
+6. AIC/BIC comparison;
+7. residual diagnostics;
+8. forecast plot with intervals;
+9. a paragraph explaining what AI assistance was used and how you verified it.
+
+## 8.23 Chapter checklist
+
+By the end of this chapter, you should be able to say:
+
+- I can write $\nabla X_t$ and $\nabla^2X_t$ using the backshift operator.
+- I can explain why a random walk is nonstationary but its first difference is stationary.
+- I can define ARIMA($p,d,q$) mathematically.
+- I can distinguish deterministic trend from stochastic trend.
+- I can use plots and ACF behavior to choose a preliminary $d$.
+- I can recognize signs of over-differencing.
+- I can use ACF/PACF of $\nabla^dX_t$ to propose $p$ and $q$.
+- I can fit ARIMA models in Python and check residuals.
+- I can explain how differenced forecasts are converted back to the original scale.
+- I can use AI tools for critique and explanation while verifying all modeling decisions.

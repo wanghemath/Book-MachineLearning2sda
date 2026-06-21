@@ -1,0 +1,1084 @@
+# Estimation, Model Identification, and Diagnostics
+
+::: {.hero}
+**Part II. Stationarity and Linear Time-Domain Models**  
+**Chapter goal:** learn how to move from time-series plots and dependence summaries to fitted models, diagnostic checks, and defensible model choices. We develop model identification with ACF/PACF, parameter estimation by moment methods, least squares, and likelihood, residual diagnostics, information criteria, and AI-assisted model criticism.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. describe the iterative Box--Jenkins modeling workflow: identify, estimate, diagnose, revise, forecast;
+2. use sample ACF and PACF to propose preliminary AR, MA, and ARMA orders;
+3. derive and implement Yule--Walker estimation for AR($p$) models;
+4. explain conditional least squares and Gaussian maximum likelihood for time-series models;
+5. compare competing models using AIC, AICc, and BIC;
+6. perform residual diagnostics using time plots, residual ACF, Ljung--Box tests, and Q--Q plots;
+7. recognize underfitting, overfitting, nonstationarity, outliers, and changing variance;
+8. avoid time-series data leakage in estimation, validation, and reporting;
+9. use AI tools to critique a modeling workflow without replacing mathematical diagnostics.
+
+## 7.1 The model-building cycle
+
+A fitted time-series model is not finished when software returns parameter estimates. The main workflow is iterative:
+
+$$
+\text{explore} \rightarrow \text{identify} \rightarrow \text{estimate} \rightarrow \text{diagnose} \rightarrow \text{revise} \rightarrow \text{forecast}.
+$$
+
+For stationary linear models, the cycle usually begins with a time plot, ACF, and PACF. These suggest a small collection of candidate models. After fitting the candidates, we check residuals. If residuals still contain autocorrelation, trend, seasonality, changing variance, or outliers, the model has not captured the structure of the data.
+
+::: {.callout-note}
+## Principle
+A good model is not simply a model with low training error. A good time-series model should leave residuals that look approximately like white noise and should forecast well on future data.
+:::
+
+For a parametric model with parameter vector $\theta$, we write
+
+$$
+X_t = m_t(\theta) + e_t(\theta),
+$$
+
+where $m_t(\theta)$ is the model-implied conditional mean and $e_t(\theta)$ is the one-step-ahead innovation or residual. A successful model should make
+
+$$
+e_t(\widehat \theta)
+$$
+
+approximately uncorrelated, centered, and stable in variance.
+
+## 7.2 What is being estimated?
+
+Consider a zero-mean ARMA($p,q$) model
+
+$$
+\phi(B)X_t = \theta(B)W_t,
+$$
+
+where
+
+$$
+\phi(B)=1-\phi_1B-\cdots-\phi_pB^p,
+$$
+
+$$
+\theta(B)=1+\theta_1B+\cdots+\theta_qB^q,
+$$
+
+and
+
+$$
+W_t \sim WN(0,\sigma^2).
+$$
+
+The unknown parameter vector is
+
+$$
+\vartheta=(\phi_1,\ldots,\phi_p,\theta_1,\ldots,\theta_q,\sigma^2).
+$$
+
+If the mean is not zero, we also estimate a mean or intercept term. For stationary models, mean correction is usually handled by centering the data or including an intercept.
+
+In practice, we estimate $\vartheta$ from one realization
+
+$$
+x_1,x_2,\ldots,x_n.
+$$
+
+This is fundamentally different from ordinary independent-data regression because neighboring observations are dependent. The dependence is not a nuisance; it is exactly what we are trying to model.
+
+## 7.3 Model identification with ACF and PACF
+
+The sample ACF and PACF provide first-order clues about the order of a linear time-series model.
+
+For stationary data:
+
+| Candidate model | ACF pattern | PACF pattern | Interpretation |
+|---|---|---|---|
+| AR($p$) | tails off gradually | cuts off after lag $p$ | finite memory in regression on past values |
+| MA($q$) | cuts off after lag $q$ | tails off gradually | finite memory in shocks |
+| ARMA($p,q$) | tails off gradually | tails off gradually | mixed dependence structure |
+| White noise | insignificant after lag 0 | insignificant after lag 0 | no useful linear dependence |
+| Nonstationary trend | slow decay | often slow decay | difference or detrend first |
+
+Here “cuts off” means the theoretical quantity is exactly zero beyond a finite lag. In finite samples, sample estimates rarely equal exactly zero, so we look for values inside approximate confidence bands.
+
+For white noise, the sample autocorrelations are approximately
+
+$$
+\widehat \rho(h) \approx N\left(0,\frac{1}{n}\right),
+$$
+
+so a rough $95\%$ band is
+
+$$
+\pm \frac{1.96}{\sqrt n}.
+$$
+
+::: {.callout-warning}
+## Do not overread the ACF
+The ACF and PACF are screening tools, not final proof. A few significant lags may occur by chance, and nonstationarity can create misleading slow decay. Always check residuals after fitting.
+:::
+
+### ACF and PACF logic
+
+For an AR($p$) model,
+
+$$
+X_t=\phi_1X_{t-1}+\cdots+\phi_pX_{t-p}+W_t,
+$$
+
+the best linear predictor using the infinite past only needs the most recent $p$ values. Therefore, the partial autocorrelation becomes zero beyond lag $p$.
+
+For an MA($q$) model,
+
+$$
+X_t=W_t+\theta_1W_{t-1}+\cdots+\theta_qW_{t-q},
+$$
+
+$X_t$ and $X_{t-h}$ share no common shocks when $h>q$. Therefore,
+
+$$
+\rho(h)=0, \qquad h>q.
+$$
+
+This is why the ACF identifies MA order more directly and the PACF identifies AR order more directly.
+
+## 7.4 Sample autocovariance and sample ACF
+
+Given observations $x_1,\ldots,x_n$, define the sample mean
+
+$$
+\bar x=\frac{1}{n}\sum_{t=1}^n x_t.
+$$
+
+A common estimator of the autocovariance is
+
+$$
+\widehat\gamma(h)
+=\frac{1}{n}\sum_{t=1}^{n-h}(x_{t+h}-\bar x)(x_t-\bar x),
+\qquad h=0,1,\ldots,n-1.
+$$
+
+The sample autocorrelation is
+
+$$
+\widehat\rho(h)=\frac{\widehat\gamma(h)}{\widehat\gamma(0)}.
+$$
+
+The denominator uses $\widehat\gamma(0)$, the sample variance computed with divisor $n$. Some software uses slightly different conventions. These differences matter less than the modeling interpretation.
+
+::: {.callout-tip}
+## Estimator convention
+Using divisor $n$ produces a positive semidefinite sample autocovariance sequence, which is useful when forming Toeplitz covariance matrices.
+:::
+
+## 7.5 Yule--Walker estimation for AR($p$)
+
+For a stationary AR($p$) process,
+
+$$
+X_t=\phi_1X_{t-1}+\cdots+\phi_pX_{t-p}+W_t,
+$$
+
+multiply both sides by $X_{t-h}$ and take expectations. For $h=1,\ldots,p$,
+
+$$
+\gamma(h)=\phi_1\gamma(h-1)+\phi_2\gamma(h-2)+\cdots+\phi_p\gamma(h-p).
+$$
+
+In matrix form,
+
+$$
+\begin{bmatrix}
+\gamma(0) & \gamma(1) & \cdots & \gamma(p-1) \\
+\gamma(1) & \gamma(0) & \cdots & \gamma(p-2) \\
+\vdots & \vdots & \ddots & \vdots \\
+\gamma(p-1) & \gamma(p-2) & \cdots & \gamma(0)
+\end{bmatrix}
+\begin{bmatrix}
+\phi_1 \\
+\phi_2 \\
+\vdots \\
+\phi_p
+\end{bmatrix}
+=
+\begin{bmatrix}
+\gamma(1) \\
+\gamma(2) \\
+\vdots \\
+\gamma(p)
+\end{bmatrix}.
+$$
+
+Replacing $\gamma(h)$ by $\widehat\gamma(h)$ gives the Yule--Walker estimator:
+
+$$
+\widehat{\boldsymbol\phi}_{YW}=\widehat\Gamma_p^{-1}\widehat{\boldsymbol\gamma}_p.
+$$
+
+The innovation variance is estimated by
+
+$$
+\widehat\sigma^2
+=\widehat\gamma(0)-\widehat{\boldsymbol\gamma}_p^T\widehat\Gamma_p^{-1}\widehat{\boldsymbol\gamma}_p.
+$$
+
+### Why Yule--Walker is useful
+
+Yule--Walker estimation is fast, interpretable, and closely connected to best linear prediction. It is especially useful for AR models and for initializing more complicated likelihood-based algorithms.
+
+### Why Yule--Walker is limited
+
+Yule--Walker is designed for AR models. For ARMA models, the moving-average part introduces latent innovations $W_t$ that are not directly observed. In that case, likelihood or nonlinear least squares methods are usually preferred.
+
+## 7.6 Conditional least squares
+
+For an AR($p$) model, conditional least squares is ordinary least squares applied to the regression
+
+$$
+X_t=\phi_1X_{t-1}+\cdots+\phi_pX_{t-p}+W_t,
+\qquad t=p+1,\ldots,n.
+$$
+
+Define
+
+$$
+\mathbf y=
+\begin{bmatrix}
+x_{p+1} \\
+x_{p+2} \\
+\vdots \\
+x_n
+\end{bmatrix},
+\qquad
+Z=
+\begin{bmatrix}
+x_p & x_{p-1} & \cdots & x_1 \\
+x_{p+1} & x_p & \cdots & x_2 \\
+\vdots & \vdots & \ddots & \vdots \\
+x_{n-1} & x_{n-2} & \cdots & x_{n-p}
+\end{bmatrix}.
+$$
+
+Then
+
+$$
+\widehat{\boldsymbol\phi}_{CLS}=(Z^TZ)^{-1}Z^T\mathbf y.
+$$
+
+This is simple because AR residuals can be computed directly:
+
+$$
+e_t(\phi)=x_t-\phi_1x_{t-1}-\cdots-\phi_px_{t-p}.
+$$
+
+For ARMA models, residuals depend recursively on previous residuals:
+
+$$
+e_t(\vartheta)=x_t-\phi_1x_{t-1}-\cdots-\phi_px_{t-p}
+-\theta_1e_{t-1}(\vartheta)-\cdots-\theta_qe_{t-q}(\vartheta).
+$$
+
+The conditional sum of squares is
+
+$$
+S(\vartheta)=\sum_{t=m+1}^n e_t(\vartheta)^2,
+$$
+
+where $m=\max(p,q)$ and initial residuals are handled by convention. The estimator minimizes $S(\vartheta)$ subject to stationarity and invertibility restrictions.
+
+::: {.callout-note}
+## Computational point
+For AR models, conditional least squares is linear least squares. For ARMA models, conditional least squares is nonlinear because residuals depend recursively on the MA parameters.
+:::
+
+## 7.7 Gaussian maximum likelihood
+
+If the innovations are Gaussian,
+
+$$
+W_t \sim N(0,\sigma^2),
+$$
+
+then the vector
+
+$$
+\mathbf X=(X_1,\ldots,X_n)^T
+$$
+
+is multivariate normal for a stationary Gaussian model:
+
+$$
+\mathbf X\sim N(\boldsymbol\mu,\Sigma_\vartheta).
+$$
+
+The log-likelihood is
+
+$$
+\ell(\vartheta)
+=-\frac{n}{2}\log(2\pi)
+-\frac{1}{2}\log |\Sigma_\vartheta|
+-\frac{1}{2}(\mathbf x-\boldsymbol\mu)^T\Sigma_\vartheta^{-1}(\mathbf x-\boldsymbol\mu).
+$$
+
+Maximum likelihood estimation chooses
+
+$$
+\widehat\vartheta_{MLE}=\arg\max_\vartheta \ell(\vartheta).
+$$
+
+Exact likelihood accounts for the full joint distribution of the observed vector. Conditional likelihood approximates the likelihood by conditioning on initial observations or initial residuals.
+
+For many ARMA and ARIMA models, software uses state-space or innovations algorithms to compute the likelihood efficiently without explicitly inverting a large $n\times n$ covariance matrix.
+
+::: {.callout-important}
+## Why likelihood matters
+Maximum likelihood gives a unified framework for estimation, standard errors, model comparison, missing-data handling, and forecast uncertainty. But it still depends on model assumptions.
+:::
+
+## 7.8 Standard errors and coefficient significance
+
+After fitting a parametric model, software often reports standard errors for estimated coefficients. A common approximate statistic is
+
+$$
+z_j=\frac{\widehat\vartheta_j}{\operatorname{se}(\widehat\vartheta_j)}.
+$$
+
+Large values of $|z_j|$ suggest that the parameter is distinguishable from zero under the fitted model.
+
+However, coefficient significance should not be used mechanically. A parameter can be statistically significant but practically irrelevant, and a nonsignificant parameter may appear because the model is overparameterized or the sample is short.
+
+::: {.callout-warning}
+## Parameter significance is not model adequacy
+A model with significant coefficients can still have autocorrelated residuals, wrong variance structure, or poor forecasts. Residual diagnostics are essential.
+:::
+
+## 7.9 Information criteria: AIC, AICc, and BIC
+
+Suppose a fitted model has maximized log-likelihood $\ell(\widehat\vartheta)$ and $k$ estimated parameters. The Akaike information criterion is
+
+$$
+AIC=-2\ell(\widehat\vartheta)+2k.
+$$
+
+A finite-sample corrected version is
+
+$$
+AICc=AIC+\frac{2k(k+1)}{n-k-1}.
+$$
+
+The Bayesian information criterion is
+
+$$
+BIC=-2\ell(\widehat\vartheta)+k\log n.
+$$
+
+Lower values are preferred among models fit to the same data with comparable likelihoods.
+
+### Interpretation
+
+AIC tends to choose models with better predictive flexibility. BIC penalizes complexity more strongly and tends to choose simpler models as $n$ grows.
+
+::: {.callout-tip}
+## Use information criteria as filters
+Information criteria help compare candidate models. They do not replace residual diagnostics, forecast backtesting, or scientific interpretation.
+:::
+
+## 7.10 Residual diagnostics
+
+Let $\widehat e_t$ be the residuals from a fitted model. Diagnostics ask whether $\widehat e_t$ behaves like white noise.
+
+A useful diagnostic set includes:
+
+1. residual time plot;
+2. histogram and Q--Q plot;
+3. residual ACF and PACF;
+4. Ljung--Box test;
+5. residuals versus fitted values;
+6. squared residual ACF for changing variance.
+
+### Residual time plot
+
+The residual time plot should show no obvious trend, seasonal pattern, level shift, or changing variance. Outliers should be investigated.
+
+### Residual ACF
+
+The residual ACF should have most nonzero-lag values inside the approximate band
+
+$$
+\pm \frac{1.96}{\sqrt n}.
+$$
+
+A large residual autocorrelation at lag $h$ suggests that the fitted model did not explain dependence at that lag.
+
+### Q--Q plot
+
+A Q--Q plot compares residual quantiles with normal quantiles. Strong curvature, heavy tails, or extreme points suggest non-Gaussian residuals. For point forecasting, mild nonnormality may be acceptable; for interval forecasting, it matters more.
+
+## 7.11 Ljung--Box test
+
+The Ljung--Box statistic tests whether a collection of residual autocorrelations is jointly small. For maximum lag $H$,
+
+$$
+Q(H)=n(n+2)\sum_{h=1}^H \frac{\widehat\rho_e(h)^2}{n-h},
+$$
+
+where $\widehat\rho_e(h)$ is the residual sample autocorrelation at lag $h$.
+
+Under the null hypothesis that residuals are white noise, approximately
+
+$$
+Q(H)\sim \chi^2_{H-k},
+$$
+
+where $k$ is often taken as the number of fitted ARMA parameters. A small $p$-value suggests remaining autocorrelation.
+
+::: {.callout-warning}
+## Practical caution
+The Ljung--Box test is sensitive to the choice of $H$, sample size, and estimated parameters. Use it together with residual plots, not by itself.
+:::
+
+## 7.12 Interactive HTML: model identification simulator
+
+This interactive module simulates an ARMA(1,1) model
+
+$$
+X_t=\phi X_{t-1}+W_t+\theta W_{t-1}
+$$
+
+and displays the time plot, sample ACF, and sample PACF. The goal is to help you see why AR, MA, and ARMA models produce different empirical signatures.
+
+::: {.callout-note}
+The simulator relies on Plotly being loaded globally through the book header. Do not add a second Plotly script tag inside this chapter.
+:::
+
+```{=html}
+<div class="interactive-card">
+  <h3>ARMA(1,1) Identification Simulator</h3>
+  <p>Change <strong>AR coefficient</strong> \(\phi\), <strong>MA coefficient</strong> \(\theta\), and sample size. Inspect whether the ACF or PACF cuts off or tails off.</p>
+
+  <div class="controls-grid">
+    <label>AR coefficient \(\phi\): <span id="ch7-phi-value">0.60</span>
+      <input id="ch7-phi" type="range" min="-0.95" max="0.95" step="0.05" value="0.60">
+    </label>
+    <label>MA coefficient \(\theta\): <span id="ch7-theta-value">0.00</span>
+      <input id="ch7-theta" type="range" min="-0.95" max="0.95" step="0.05" value="0.00">
+    </label>
+    <label>Sample size \(n\): <span id="ch7-n-value">300</span>
+      <input id="ch7-n" type="range" min="80" max="800" step="20" value="300">
+    </label>
+    <label>Maximum lag: <span id="ch7-lag-value">30</span>
+      <input id="ch7-lag" type="range" min="10" max="60" step="5" value="30">
+    </label>
+  </div>
+
+  <button id="ch7-resimulate">Resimulate with new noise</button>
+  <p id="ch7-suggestion" class="ai-note"></p>
+
+  <div id="ch7-series" style="height:320px;"></div>
+  <div id="ch7-acf" style="height:320px;"></div>
+  <div id="ch7-pacf" style="height:320px;"></div>
+</div>
+
+<script>
+(function() {
+  let seed = 1234567;
+
+  function randn() {
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    let u1 = (seed + 1) / 4294967297;
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    let u2 = (seed + 1) / 4294967297;
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function simulateARMA(phi, theta, n) {
+    const burn = 200;
+    const total = n + burn;
+    const w = new Array(total).fill(0).map(randn);
+    const x = new Array(total).fill(0);
+    for (let t = 1; t < total; t++) {
+      x[t] = phi * x[t - 1] + w[t] + theta * w[t - 1];
+    }
+    return x.slice(burn);
+  }
+
+  function mean(arr) {
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+  }
+
+  function acf(x, maxLag) {
+    const n = x.length;
+    const m = mean(x);
+    let gamma0 = 0;
+    for (let t = 0; t < n; t++) gamma0 += (x[t] - m) * (x[t] - m);
+    gamma0 /= n;
+    const out = [];
+    for (let h = 0; h <= maxLag; h++) {
+      let g = 0;
+      for (let t = 0; t < n - h; t++) g += (x[t + h] - m) * (x[t] - m);
+      g /= n;
+      out.push(g / gamma0);
+    }
+    return out;
+  }
+
+  function solveLinear(A, b) {
+    const n = b.length;
+    const M = A.map((row, i) => row.concat([b[i]]));
+    for (let k = 0; k < n; k++) {
+      let pivot = k;
+      for (let i = k + 1; i < n; i++) {
+        if (Math.abs(M[i][k]) > Math.abs(M[pivot][k])) pivot = i;
+      }
+      const tmp = M[k]; M[k] = M[pivot]; M[pivot] = tmp;
+      const div = M[k][k] || 1e-12;
+      for (let j = k; j <= n; j++) M[k][j] /= div;
+      for (let i = 0; i < n; i++) {
+        if (i === k) continue;
+        const factor = M[i][k];
+        for (let j = k; j <= n; j++) M[i][j] -= factor * M[k][j];
+      }
+    }
+    return M.map(row => row[n]);
+  }
+
+  function pacfFromACF(rho, maxLag) {
+    const p = [1];
+    for (let k = 1; k <= maxLag; k++) {
+      const A = [];
+      const b = [];
+      for (let i = 1; i <= k; i++) {
+        const row = [];
+        for (let j = 1; j <= k; j++) row.push(rho[Math.abs(i - j)]);
+        A.push(row);
+        b.push(rho[i]);
+      }
+      const sol = solveLinear(A, b);
+      p.push(sol[k - 1]);
+    }
+    return p;
+  }
+
+  function stemPlot(div, values, title, n) {
+    const lags = values.map((_, i) => i);
+    const shapes = [];
+    for (let i = 0; i < values.length; i++) {
+      shapes.push({type:'line', x0:i, x1:i, y0:0, y1:values[i], line:{width:1}});
+    }
+    const band = 1.96 / Math.sqrt(n);
+    shapes.push({type:'line', x0:0, x1:values.length - 1, y0:band, y1:band, line:{dash:'dash', width:1}});
+    shapes.push({type:'line', x0:0, x1:values.length - 1, y0:-band, y1:-band, line:{dash:'dash', width:1}});
+    Plotly.newPlot(div, [{x:lags, y:values, mode:'markers', name:title}], {
+      title:title,
+      xaxis:{title:'Lag'},
+      yaxis:{title:'Correlation', range:[-1,1]},
+      shapes:shapes,
+      margin:{t:45, r:20, b:45, l:55}
+    }, {responsive:true, displayModeBar:false});
+  }
+
+  function update() {
+    const phi = parseFloat(document.getElementById('ch7-phi').value);
+    const theta = parseFloat(document.getElementById('ch7-theta').value);
+    const n = parseInt(document.getElementById('ch7-n').value);
+    const maxLag = parseInt(document.getElementById('ch7-lag').value);
+
+    document.getElementById('ch7-phi-value').innerText = phi.toFixed(2);
+    document.getElementById('ch7-theta-value').innerText = theta.toFixed(2);
+    document.getElementById('ch7-n-value').innerText = n;
+    document.getElementById('ch7-lag-value').innerText = maxLag;
+
+    const x = simulateARMA(phi, theta, n);
+    const t = Array.from({length:n}, (_, i) => i + 1);
+    const r = acf(x, maxLag);
+    const pr = pacfFromACF(r, maxLag);
+
+    Plotly.newPlot('ch7-series', [{x:t, y:x, mode:'lines', name:'Simulated series'}], {
+      title:'Simulated ARMA(1,1) series',
+      xaxis:{title:'Time'},
+      yaxis:{title:'Value'},
+      margin:{t:45, r:20, b:45, l:55}
+    }, {responsive:true, displayModeBar:false});
+
+    stemPlot('ch7-acf', r, 'Sample ACF', n);
+    stemPlot('ch7-pacf', pr, 'Sample PACF', n);
+
+    let msg = '';
+    if (Math.abs(theta) < 0.10 && Math.abs(phi) > 0.20) {
+      msg = 'Diagnostic hint: with theta near zero, this behaves mostly like an AR(1): PACF often has a strong first lag while ACF tails off.';
+    } else if (Math.abs(phi) < 0.10 && Math.abs(theta) > 0.20) {
+      msg = 'Diagnostic hint: with phi near zero, this behaves mostly like an MA(1): ACF often has a strong first lag while PACF tails off.';
+    } else if (Math.abs(phi) < 0.10 && Math.abs(theta) < 0.10) {
+      msg = 'Diagnostic hint: both parameters are near zero, so the process is close to white noise.';
+    } else {
+      msg = 'Diagnostic hint: both AR and MA effects are present, so both ACF and PACF usually tail off rather than cleanly cutting off.';
+    }
+    document.getElementById('ch7-suggestion').innerText = msg;
+  }
+
+  ['ch7-phi','ch7-theta','ch7-n','ch7-lag'].forEach(id => {
+    document.getElementById(id).addEventListener('input', update);
+  });
+  document.getElementById('ch7-resimulate').addEventListener('click', function() {
+    seed = (seed + 987654321) >>> 0;
+    update();
+  });
+  update();
+})();
+</script>
+```
+
+## 7.13 Python example: ACF, PACF, and Yule--Walker from scratch
+
+The following example simulates an AR(2) process and estimates its coefficients by Yule--Walker.
+
+```{python}
+#| label: py-ch07-yule-walker
+#| fig-cap: "ACF and PACF of a simulated AR(2) process."
+#| warning: false
+#| message: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(7339)
+
+n = 600
+burn = 200
+phi_true = np.array([0.65, -0.30])
+w = np.random.normal(size=n + burn)
+x = np.zeros(n + burn)
+
+for t in range(2, n + burn):
+    x[t] = phi_true[0] * x[t-1] + phi_true[1] * x[t-2] + w[t]
+
+x = x[burn:]
+
+
+def sample_autocovariance(x, max_lag):
+    x = np.asarray(x)
+    x_centered = x - x.mean()
+    n = len(x)
+    return np.array([
+        np.dot(x_centered[h:], x_centered[:n-h]) / n
+        for h in range(max_lag + 1)
+    ])
+
+
+def yule_walker_estimate(x, p):
+    gamma = sample_autocovariance(x, p)
+    Gamma = np.array([[gamma[abs(i-j)] for j in range(p)] for i in range(p)])
+    rhs = gamma[1:p+1]
+    phi_hat = np.linalg.solve(Gamma, rhs)
+    sigma2_hat = gamma[0] - rhs @ phi_hat
+    return phi_hat, sigma2_hat
+
+phi_hat, sigma2_hat = yule_walker_estimate(x, p=2)
+print("True phi:", phi_true)
+print("Yule-Walker estimate:", np.round(phi_hat, 4))
+print("Estimated innovation variance:", round(sigma2_hat, 4))
+```
+
+The Yule--Walker estimator uses only the empirical second-order dependence structure. It is a moment estimator, not a full likelihood estimator.
+
+## 7.14 Python example: fitting ARMA models with diagnostics
+
+The next example uses `statsmodels` to fit several ARMA models to the same stationary data and compare them by AIC and BIC.
+
+```{python}
+#| label: py-ch07-fit-arma-grid
+#| warning: false
+#| message: false
+
+import warnings
+import pandas as pd
+from statsmodels.tsa.arima.model import ARIMA
+
+warnings.filterwarnings("ignore")
+
+results = []
+for p in range(4):
+    for q in range(4):
+        if p == 0 and q == 0:
+            continue
+        try:
+            fit = ARIMA(x, order=(p, 0, q), trend="n").fit()
+            results.append({
+                "p": p,
+                "q": q,
+                "AIC": fit.aic,
+                "BIC": fit.bic,
+                "loglik": fit.llf
+            })
+        except Exception as err:
+            results.append({"p": p, "q": q, "AIC": np.nan, "BIC": np.nan, "loglik": np.nan})
+
+model_table = pd.DataFrame(results).sort_values("AIC")
+model_table.head(8)
+```
+
+After choosing a candidate model, inspect residuals.
+
+```{python}
+#| label: py-ch07-residual-diagnostics
+#| fig-cap: "Residual diagnostics for a fitted ARMA model."
+#| warning: false
+#| message: false
+
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from scipy import stats
+
+best_p = int(model_table.iloc[0]["p"])
+best_q = int(model_table.iloc[0]["q"])
+best_fit = ARIMA(x, order=(best_p, 0, best_q), trend="n").fit()
+resid = np.asarray(best_fit.resid)
+
+print(f"Selected by AIC: ARMA({best_p},{best_q})")
+print(acorr_ljungbox(resid, lags=[10, 20], return_df=True))
+
+fig, ax = plt.subplots(figsize=(8, 3))
+ax.plot(resid)
+ax.axhline(0, linewidth=1)
+ax.set_title("Residual time plot")
+ax.set_xlabel("Time")
+ax.set_ylabel("Residual")
+plt.show()
+
+plot_acf(resid, lags=30)
+plt.title("Residual ACF")
+plt.show()
+
+fig, ax = plt.subplots(figsize=(5, 5))
+stats.probplot(resid, dist="norm", plot=ax)
+ax.set_title("Normal Q-Q plot of residuals")
+plt.show()
+```
+
+::: {.callout-note}
+## Reading the diagnostics
+A good residual time plot has no visible pattern. A good residual ACF has no systematic significant autocorrelations. A good Q--Q plot is approximately linear, although real data often have heavier tails than the Gaussian model assumes.
+:::
+
+## 7.15 Interactive HTML: residual diagnostics laboratory
+
+This module shows why residual diagnostics matter. White-noise residuals, autocorrelated residuals, and heteroskedastic residuals can look quite different.
+
+```{=html}
+<div class="interactive-card">
+  <h3>Residual Diagnostics Laboratory</h3>
+  <p>Select a residual pattern and compare the time plot with the ACF.</p>
+
+  <div class="controls-grid">
+    <label>Residual type:
+      <select id="ch7-resid-type">
+        <option value="white">White noise</option>
+        <option value="ar">Autocorrelated residuals</option>
+        <option value="arch">Changing variance</option>
+        <option value="outlier">White noise with outliers</option>
+      </select>
+    </label>
+    <label>Sample size: <span id="ch7-resid-n-value">300</span>
+      <input id="ch7-resid-n" type="range" min="100" max="800" step="50" value="300">
+    </label>
+  </div>
+
+  <button id="ch7-resid-resimulate">Resimulate residuals</button>
+  <p id="ch7-resid-message" class="ai-note"></p>
+  <div id="ch7-resid-series" style="height:300px;"></div>
+  <div id="ch7-resid-acf" style="height:300px;"></div>
+</div>
+
+<script>
+(function() {
+  let seed = 24681357;
+
+  function randn() {
+    seed = (1103515245 * seed + 12345) >>> 0;
+    let u1 = (seed + 1) / 4294967297;
+    seed = (1103515245 * seed + 12345) >>> 0;
+    let u2 = (seed + 1) / 4294967297;
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function mean(arr) { return arr.reduce((a,b) => a+b, 0) / arr.length; }
+
+  function acf(x, maxLag) {
+    const n = x.length;
+    const m = mean(x);
+    let gamma0 = 0;
+    for (let t = 0; t < n; t++) gamma0 += (x[t] - m) * (x[t] - m);
+    gamma0 /= n;
+    const out = [];
+    for (let h = 0; h <= maxLag; h++) {
+      let g = 0;
+      for (let t = 0; t < n - h; t++) g += (x[t+h] - m) * (x[t] - m);
+      g /= n;
+      out.push(g / gamma0);
+    }
+    return out;
+  }
+
+  function makeResiduals(type, n) {
+    const e = new Array(n).fill(0);
+    if (type === 'white') {
+      for (let t = 0; t < n; t++) e[t] = randn();
+    } else if (type === 'ar') {
+      for (let t = 1; t < n; t++) e[t] = 0.75 * e[t-1] + randn();
+    } else if (type === 'arch') {
+      for (let t = 1; t < n; t++) {
+        const scale = 0.5 + 0.6 * Math.abs(e[t-1]);
+        e[t] = scale * randn();
+      }
+    } else if (type === 'outlier') {
+      for (let t = 0; t < n; t++) e[t] = randn();
+      for (let j = 0; j < 5; j++) {
+        const idx = Math.floor(Math.random() * n);
+        e[idx] += (randn() > 0 ? 1 : -1) * 6;
+      }
+    }
+    return e;
+  }
+
+  function plotStem(div, values, n) {
+    const lags = values.map((_, i) => i);
+    const shapes = [];
+    for (let i = 0; i < values.length; i++) {
+      shapes.push({type:'line', x0:i, x1:i, y0:0, y1:values[i], line:{width:1}});
+    }
+    const band = 1.96 / Math.sqrt(n);
+    shapes.push({type:'line', x0:0, x1:values.length-1, y0:band, y1:band, line:{dash:'dash', width:1}});
+    shapes.push({type:'line', x0:0, x1:values.length-1, y0:-band, y1:-band, line:{dash:'dash', width:1}});
+    Plotly.newPlot(div, [{x:lags, y:values, mode:'markers', name:'ACF'}], {
+      title:'Residual ACF',
+      xaxis:{title:'Lag'},
+      yaxis:{title:'Correlation', range:[-1, 1]},
+      shapes:shapes,
+      margin:{t:45, r:20, b:45, l:55}
+    }, {responsive:true, displayModeBar:false});
+  }
+
+  function update() {
+    const type = document.getElementById('ch7-resid-type').value;
+    const n = parseInt(document.getElementById('ch7-resid-n').value);
+    document.getElementById('ch7-resid-n-value').innerText = n;
+    const e = makeResiduals(type, n);
+    const t = Array.from({length:n}, (_, i) => i + 1);
+    const r = acf(e, 30);
+
+    Plotly.newPlot('ch7-resid-series', [{x:t, y:e, mode:'lines', name:'Residual'}], {
+      title:'Residual time plot',
+      xaxis:{title:'Time'},
+      yaxis:{title:'Residual'},
+      margin:{t:45, r:20, b:45, l:55}
+    }, {responsive:true, displayModeBar:false});
+
+    plotStem('ch7-resid-acf', r, n);
+
+    const messages = {
+      white: 'White-noise residuals should show no systematic pattern and only occasional ACF spikes.',
+      ar: 'Autocorrelated residuals indicate that the mean model has left dependence unexplained.',
+      arch: 'Changing variance may not always appear in the residual ACF, so inspect squared residuals too.',
+      outlier: 'Outliers can distort estimation, diagnostics, and forecast intervals even when autocorrelation is weak.'
+    };
+    document.getElementById('ch7-resid-message').innerText = messages[type];
+  }
+
+  document.getElementById('ch7-resid-type').addEventListener('change', update);
+  document.getElementById('ch7-resid-n').addEventListener('input', update);
+  document.getElementById('ch7-resid-resimulate').addEventListener('click', function() {
+    seed = (seed + 1357911) >>> 0;
+    update();
+  });
+  update();
+})();
+</script>
+```
+
+## 7.16 Python example: detecting changing variance
+
+A model can remove autocorrelation from the conditional mean but still fail to model conditional variance. This is common in financial returns.
+
+```{python}
+#| label: py-ch07-changing-variance
+#| fig-cap: "Changing variance can be visible in squared residuals even when residual ACF is small."
+#| warning: false
+#| message: false
+
+np.random.seed(2027)
+n = 600
+z = np.random.normal(size=n)
+e = np.zeros(n)
+for t in range(1, n):
+    sigma_t = np.sqrt(0.2 + 0.75 * e[t-1]**2)
+    e[t] = sigma_t * z[t]
+
+fig, ax = plt.subplots(figsize=(8, 3))
+ax.plot(e)
+ax.set_title("Synthetic residuals with changing variance")
+ax.set_xlabel("Time")
+ax.set_ylabel("Residual")
+plt.show()
+
+plot_acf(e, lags=30)
+plt.title("ACF of residuals")
+plt.show()
+
+plot_acf(e**2, lags=30)
+plt.title("ACF of squared residuals")
+plt.show()
+```
+
+If the residual ACF is small but the squared residual ACF is large, the conditional mean model may be adequate, but the variance model is not. This motivates ARCH/GARCH models and modern volatility models.
+
+## 7.17 Forecasting and validation during model selection
+
+Information criteria are computed in-sample. Forecasting performance must be evaluated out-of-sample or by time-aware backtesting.
+
+A simple time-series split is
+
+$$
+\underbrace{x_1,\ldots,x_T}_{\text{training}}
+\quad
+\underbrace{x_{T+1},\ldots,x_n}_{\text{testing}}.
+$$
+
+A rolling-origin evaluation repeatedly refits or updates the model at increasing time origins:
+
+$$
+\{x_1,\ldots,x_T\}\rightarrow \widehat x_{T+h|T},
+$$
+
+$$
+\{x_1,\ldots,x_{T+1}\}\rightarrow \widehat x_{T+1+h|T+1},
+$$
+
+and so on.
+
+::: {.callout-warning}
+## Leakage warning
+Do not randomly shuffle a time series when evaluating a forecasting model. Random splitting allows future information to leak into the training set and gives overly optimistic performance.
+:::
+
+## 7.18 AI-assisted model criticism
+
+AI tools can be helpful in time-series modeling, but the mathematical checks must remain explicit. The most useful role for AI is often **critique**, not final authority.
+
+### Productive AI prompts
+
+Use prompts such as:
+
+> I fitted an ARMA(2,1) model. The residual ACF has significant spikes at lags 7 and 14. Give possible mathematical explanations and suggest diagnostics I should run next.
+
+> Explain why choosing the model with the lowest AIC is not enough for a final forecasting report.
+
+> Here is my rolling-origin validation code. Identify possible time-series leakage.
+
+> My residuals are uncorrelated but have heavy tails. What changes affect point forecasts, forecast intervals, or both?
+
+### Required verification
+
+Whenever an AI assistant suggests a model, verify the following manually:
+
+1. Was stationarity checked before fitting stationary ARMA models?
+2. Were transformations or differencing justified?
+3. Are residuals approximately white noise?
+4. Was model selection performed on comparable likelihoods?
+5. Was forecast performance evaluated using a time-aware split?
+6. Were uncertainty intervals calibrated or at least inspected?
+
+::: {.callout-important}
+## AI principle
+AI can suggest candidate explanations, but residual diagnostics and forecasting validation decide whether the model is acceptable.
+:::
+
+## 7.19 Common mistakes
+
+::: {.callout-caution}
+## Mistake 1: fitting ARMA to nonstationary data
+A slowly decaying ACF often indicates nonstationarity. Fitting a stationary ARMA model without transformation or differencing can produce misleading parameters.
+:::
+
+::: {.callout-caution}
+## Mistake 2: choosing the largest model
+A large ARMA model can reduce training error but produce unstable forecasts and unnecessary parameter uncertainty.
+:::
+
+::: {.callout-caution}
+## Mistake 3: ignoring residual autocorrelation
+If residuals are autocorrelated, the fitted model has not fully captured the dependence structure.
+:::
+
+::: {.callout-caution}
+## Mistake 4: using random train-test splits
+Random splits violate temporal ordering and create data leakage in forecasting tasks.
+:::
+
+::: {.callout-caution}
+## Mistake 5: trusting software defaults without checking conventions
+Different packages use different likelihood approximations, trends, intercepts, initialization methods, and parameter constraints.
+:::
+
+## 7.20 Mini project: model identification report
+
+Choose one real or simulated stationary time series. Prepare a short report with the following sections:
+
+1. time plot, ACF, and PACF;
+2. candidate models and identification reasoning;
+3. parameter estimates from at least two candidate models;
+4. AIC, AICc, and BIC comparison;
+5. residual time plot, residual ACF, Q--Q plot, and Ljung--Box test;
+6. final model choice and explanation;
+7. one-step and multi-step forecasts with uncertainty intervals;
+8. a paragraph explaining what an AI assistant suggested and how you verified or rejected it.
+
+## 7.21 Exercises
+
+### Exercise 1
+
+Let $X_t=\phi X_{t-1}+W_t$ with $|\phi|<1$. Derive the Yule--Walker equation and show that
+
+$$
+\phi=\frac{\gamma(1)}{\gamma(0)}.
+$$
+
+### Exercise 2
+
+For an AR(2) model, write the Yule--Walker system explicitly and solve symbolically for $\phi_1$ and $\phi_2$ in terms of $\gamma(0)$, $\gamma(1)$, and $\gamma(2)$.
+
+### Exercise 3
+
+Suppose a fitted ARMA model has residual ACF spikes at lags 12, 24, and 36. Give at least two possible explanations and propose next modeling steps.
+
+### Exercise 4
+
+Explain why AIC and BIC can select different models. Which criterion penalizes complexity more strongly when $n$ is large?
+
+### Exercise 5
+
+Simulate an MA(1) process with $\theta=0.8$. Plot the ACF and PACF. Does the ACF cut off exactly in the finite sample? Explain the difference between theoretical and sample behavior.
+
+### Exercise 6
+
+Create a time series with changing variance but no autocorrelation in the mean. Fit a mean-only model. Show that residual ACF may look acceptable while squared residual ACF reveals dependence.
+
+### Exercise 7
+
+Write a short AI prompt asking for help diagnosing a poor ARIMA model. Then write a checklist of what you would verify manually before trusting the answer.
+
+## 7.22 Chapter checklist
+
+By the end of this chapter, you should be able to:
+
+- [ ] compute sample autocovariance and sample ACF;
+- [ ] use ACF/PACF patterns to propose candidate ARMA orders;
+- [ ] derive the Yule--Walker equations for AR($p$);
+- [ ] distinguish Yule--Walker, conditional least squares, and maximum likelihood;
+- [ ] use AIC, AICc, and BIC appropriately;
+- [ ] diagnose residual autocorrelation using plots and Ljung--Box tests;
+- [ ] recognize changing variance through squared residuals;
+- [ ] avoid leakage in time-series validation;
+- [ ] use AI as a model critic while verifying all claims mathematically and computationally.

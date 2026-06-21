@@ -1,0 +1,14 @@
+numpy
+pandas
+matplotlib
+scipy
+statsmodels
+scikit-learn
+plotly
+jupyter
+nbformat
+pywavelets
+pmdarima
+prophet
+hmmlearn
+torch

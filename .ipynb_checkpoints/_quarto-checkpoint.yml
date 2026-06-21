@@ -1,0 +1,106 @@
+project:
+  type: book
+  output-dir: docs
+  resources:
+    - assets/**
+    - labs/**
+
+book:
+  title: "Modern Time Series Analysis and Sequence Learning"
+  subtitle: "Classical Theory, Forecasting, Spectral Methods, Deep Learning, and AI-Assisted Modeling"
+  author: "He Wang"
+  date: today
+  site-url: "https://wanghemath.github.io/"
+  repo-url: "https://github.com/wanghemath/modern-time-series-sequence-learning"
+  repo-actions: [edit, issue]
+  downloads: [pdf, epub]
+  search: true
+  page-navigation: true
+  chapters:
+    - index.qmd
+    - introduction.qmd
+    - part: "Part I. Time Series as Dependent Data"
+      chapters:
+        - chapters/chapter-01-why-time-series-and-sequences.qmd
+        - chapters/chapter-02-exploratory-data-analysis.qmd
+    - part: "Part II. Stationarity and Linear Time-Domain Models"
+      chapters:
+        - chapters/chapter-03-stationarity-autocovariance-acf.qmd
+        - chapters/chapter-04-linear-processes-ar-ma-arma.qmd
+        - chapters/chapter-05-difference-equations-dynamic-behavior.qmd
+        - chapters/chapter-06-forecasting-best-linear-prediction.qmd
+        - chapters/chapter-07-estimation-identification-diagnostics.qmd
+    - part: "Part III. Nonstationary and Seasonal Models"
+      chapters:
+        - chapters/chapter-08-arima-differencing.qmd
+        - chapters/chapter-09-sarima-multiple-seasonality.qmd
+        - chapters/chapter-10-state-space-kalman-filtering.qmd
+        - chapters/chapter-11-hidden-markov-regime-switching.qmd
+    - part: "Part IV. Frequency-Domain and Multiresolution Methods"
+      chapters:
+        - chapters/chapter-12-spectral-analysis-frequency-domain.qmd
+        - chapters/chapter-13-dft-fft-periodogram.qmd
+        - chapters/chapter-14-filtering-wavelets.qmd
+    - part: "Part V. Forecasting at Scale and Machine Learning Methods"
+      chapters:
+        - chapters/chapter-15-forecast-evaluation-backtesting.qmd
+        - chapters/chapter-16-automated-forecasting-prophet.qmd
+        - chapters/chapter-17-feature-based-machine-learning.qmd
+        - chapters/chapter-18-probabilistic-forecasting-uncertainty.qmd
+    - part: "Part VI. Deep Learning for Time Series and Sequence Data"
+      chapters:
+        - chapters/chapter-19-neural-networks-for-time-series.qmd
+        - chapters/chapter-20-convolutional-models-sequences.qmd
+        - chapters/chapter-21-rnn-lstm-gru.qmd
+        - chapters/chapter-22-attention-transformers-time-series.qmd
+        - chapters/chapter-23-representation-learning-time-series.qmd
+        - chapters/chapter-24-multivariate-panel-hierarchical.qmd
+    - part: "Part VII. Responsible AI, Projects, and Deployment"
+      chapters:
+        - chapters/chapter-25-ai-assisted-time-series-modeling.qmd
+        - chapters/chapter-26-end-to-end-forecasting-pipeline.qmd
+        - chapters/chapter-27-final-project-studio.qmd
+  appendices:
+    - labs-summary.qmd
+    - interactive-htmls.qmd
+    - final-projects.qmd
+    - python-reference.qmd
+    - references.qmd
+
+bibliography: references.bib
+csl: assets/american-mathematical-society.csl
+
+format:
+  html:
+    theme:
+      - cosmo
+      - assets/custom.scss
+    include-in-header: assets/header.html
+    toc: true
+    grid:
+      sidebar-width: 260px
+      body-width: 1200px
+      margin-width: 260px
+      gutter-width: 0.6rem
+    toc-depth: 3
+    number-sections: true
+    smooth-scroll: true
+    code-fold: true
+    code-tools: true
+    code-copy: true
+    fig-responsive: true
+  pdf:
+    documentclass: scrreprt
+    toc: true
+    number-sections: true
+    colorlinks: true
+  epub:
+    toc: true
+
+execute:
+  freeze: auto
+  warning: false
+  message: false
+  echo: true
+
+jupyter: python3

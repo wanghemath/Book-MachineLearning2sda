@@ -1,0 +1,1019 @@
+# Spectral Analysis and the Frequency Domain
+
+::: {.hero}
+**Part IV. Frequency-Domain and Multiresolution Methods**  
+**Chapter goal:** learn how to describe second-order dependence by frequency rather than by lag. We develop periodic signals, aliasing, random sinusoidal models, spectral distributions, spectral densities, spectra of ARMA models, and AI-assisted interpretation of frequency-domain evidence.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain the difference between time-domain and frequency-domain views of a time series;
+2. interpret frequency, period, amplitude, and phase in a discrete-time sequence;
+3. explain aliasing and the Nyquist frequency;
+4. show that random sinusoidal models can be stationary;
+5. define the spectral distribution and spectral density of a stationary process;
+6. use the identity between autocovariance and spectral density;
+7. interpret $f(\omega)$ as variance per frequency;
+8. derive spectra of white noise, AR(1), MA(1), and causal ARMA models;
+9. connect spectral peaks with oscillatory behavior in the time domain;
+10. use AI tools to formulate hypotheses about periodicity while verifying them with mathematics and code.
+
+## 12.1 Why frequency-domain thinking?
+
+The earlier chapters used the **time domain**. In the time-domain approach, the central question is:
+
+> How does the present depend on the past?
+
+For example, an AR(1) model says
+
+$$
+X_t=\phi X_{t-1}+W_t.
+$$
+
+This is a rule for moving forward in time. The model describes how the current observation is generated from past observations and new noise.
+
+The **frequency-domain** approach asks a different question:
+
+> Which oscillations explain the variation in the series?
+
+Many time series contain repeated patterns: daily electricity demand, annual climate cycles, weekly web traffic, business cycles, speech waveforms, sensor vibrations, and seasonal sales. Instead of regressing $X_t$ on $X_{t-1},X_{t-2},\ldots$, spectral analysis studies how much variance is associated with low, medium, or high frequencies.
+
+A rough translation is:
+
+| Time-domain language | Frequency-domain language |
+|---|---|
+| dependence across lags | variance across frequencies |
+| autocovariance $\gamma(h)$ | spectral density $f(\omega)$ |
+| AR/MA recursions | filters and frequency response |
+| slow ACF decay | strong low-frequency power |
+| alternating signs | strong high-frequency power |
+
+::: {.callout-note}
+## Same information, different coordinates
+For a stationary process, the autocovariance function and the spectral density are Fourier-transform pairs. They are two coordinate systems for the same second-order information.
+:::
+
+## 12.2 Period, frequency, amplitude, and phase
+
+A basic periodic component can be written as
+
+$$
+\mu_t=A\cos(2\pi \omega t+\varphi),
+$$
+
+where:
+
+- $A$ is the amplitude;
+- $\omega$ is the frequency, measured in cycles per time step;
+- $1/\omega$ is the period, measured in time steps per cycle;
+- $\varphi$ is the phase shift.
+
+If $\omega=1/12$, then the period is $12$. For monthly data, this corresponds to one cycle per year. If $\omega=1/7$, then the period is $7$. For daily data, this corresponds to weekly seasonality.
+
+The phase parameter can be removed from the nonlinear expression using a trigonometric identity:
+
+$$
+A\cos(2\pi\omega t+\varphi)
+=A\cos(\varphi)\cos(2\pi\omega t)-A\sin(\varphi)\sin(2\pi\omega t).
+$$
+
+Thus we may write
+
+$$
+A\cos(2\pi\omega t+\varphi)
+=\beta_c\cos(2\pi\omega t)+\beta_s\sin(2\pi\omega t),
+$$
+
+where
+
+$$
+\beta_c=A\cos(\varphi),
+\qquad
+\beta_s=-A\sin(\varphi).
+$$
+
+This is important computationally: once the frequency $\omega$ is fixed, fitting a sinusoidal component becomes an ordinary linear regression problem.
+
+### Example: regression on sinusoids
+
+Suppose
+
+$$
+X_t=\beta_0+\beta_c\cos(2\pi\omega t)+\beta_s\sin(2\pi\omega t)+E_t.
+$$
+
+Let
+
+$$
+\mathbf{z}_t=\begin{bmatrix}1\\ \cos(2\pi\omega t)\\ \sin(2\pi\omega t)\end{bmatrix},
+\qquad
+\boldsymbol{\beta}=\begin{bmatrix}\beta_0\\ \beta_c\\ \beta_s\end{bmatrix}.
+$$
+
+Then
+
+$$
+X_t=\boldsymbol{\beta}^{\top}\mathbf{z}_t+E_t.
+$$
+
+For a fixed $\omega$, ordinary least squares estimates $\boldsymbol{\beta}$. The fitted amplitude and phase can be recovered from
+
+$$
+\widehat{A}=\sqrt{\widehat{\beta}_c^2+\widehat{\beta}_s^2}.
+$$
+
+The phase is recovered up to the sign convention used for the sine term.
+
+```{python}
+#| label: ch12-sinusoid-regression
+#| fig-cap: "Fitting a sinusoidal component by linear regression."
+#| warning: false
+#| message: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+n = 180
+t = np.arange(n)
+omega = 1 / 30
+
+x = 2.0 + 1.5 * np.cos(2 * np.pi * omega * t + 0.8) + 0.5 * rng.normal(size=n)
+
+Z = np.column_stack([
+    np.ones(n),
+    np.cos(2 * np.pi * omega * t),
+    np.sin(2 * np.pi * omega * t),
+])
+beta_hat = np.linalg.lstsq(Z, x, rcond=None)[0]
+x_hat = Z @ beta_hat
+amp_hat = np.sqrt(beta_hat[1]**2 + beta_hat[2]**2)
+
+print("Estimated coefficients:", beta_hat.round(3))
+print("Estimated amplitude:", round(amp_hat, 3))
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, x, label="observed", alpha=0.7)
+plt.plot(t, x_hat, label="fitted sinusoid", linewidth=2)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Sinusoidal regression at a fixed frequency")
+plt.legend()
+plt.show()
+```
+
+## 12.3 Aliasing in discrete time
+
+In continuous time, many different frequencies can be observed. In discrete time, we only observe the signal at integer times. This creates an important phenomenon called **aliasing**.
+
+For integer $t$,
+
+$$
+\cos(2\pi \omega t)=\cos(2\pi (1-\omega)t).
+$$
+
+Therefore frequencies $\omega$ and $1-\omega$ generate the same observed cosine sequence at integer times. For example, $\omega=0.25$ and $\omega=0.75$ are indistinguishable if the data are observed only at $t=0,1,2,\ldots$.
+
+Because of aliasing, we usually restrict attention to the fundamental range
+
+$$
+-\frac{1}{2}<\omega\leq \frac{1}{2},
+$$
+
+or equivalently
+
+$$
+0\leq \omega\leq \frac{1}{2}
+$$
+
+for one-sided plots of real-valued data. The frequency $1/2$ is the **Nyquist frequency**.
+
+::: {.callout-warning}
+## Aliasing warning
+A high-frequency continuous signal can look like a lower-frequency discrete sequence when sampled too slowly. Spectral analysis always depends on the sampling rate.
+:::
+
+```{python}
+#| label: ch12-aliasing-example
+#| fig-cap: "Aliasing: two different continuous frequencies agree at integer time points."
+
+fine = np.linspace(0, 8, 1000)
+obs = np.arange(0, 9)
+
+w1 = 0.25
+w2 = 0.75
+
+plt.figure(figsize=(10, 4))
+plt.plot(fine, np.cos(2*np.pi*w1*fine), label=r"$\omega=0.25$")
+plt.plot(fine, np.cos(2*np.pi*w2*fine), "--", label=r"$\omega=0.75$")
+plt.scatter(obs, np.cos(2*np.pi*w1*obs), zorder=3, label="integer samples")
+plt.xlabel("time")
+plt.ylabel("cosine value")
+plt.title("Aliasing in discrete-time observations")
+plt.legend()
+plt.show()
+```
+
+## 12.4 Random sinusoidal processes
+
+A deterministic sinusoid is not a typical stationary stochastic process. However, randomizing the coefficients gives a useful stationary model.
+
+Let
+
+$$
+X_t=A\cos(2\pi\omega t)+B\sin(2\pi\omega t),
+$$
+
+where
+
+$$
+E[A]=E[B]=0,
+\qquad
+\operatorname{Var}(A)=\operatorname{Var}(B)=\sigma^2,
+\qquad
+\operatorname{Cov}(A,B)=0.
+$$
+
+Then
+
+$$
+E[X_t]=0.
+$$
+
+For lag $h$,
+
+$$
+\begin{aligned}
+\gamma(h)
+&=\operatorname{Cov}(X_{t+h},X_t) \\
+&=E[X_{t+h}X_t] \\
+&=\sigma^2\cos(2\pi\omega h).
+\end{aligned}
+$$
+
+Thus $\gamma(h)$ depends only on the lag $h$, not on time $t$. Therefore $\{X_t\}$ is weakly stationary.
+
+::: {.callout-tip}
+## Why random coefficients matter
+A deterministic cosine has a time-varying mean. A random-amplitude cosine with zero-mean coefficients has constant mean and lag-only covariance. This is one reason random sinusoidal representations are natural in stationary time-series theory.
+:::
+
+More generally, let
+
+$$
+X_t=\sum_{j=1}^m \left[A_j\cos(2\pi\omega_j t)+B_j\sin(2\pi\omega_j t)\right],
+$$
+
+where the coefficients are uncorrelated, have mean zero, and satisfy
+
+$$
+\operatorname{Var}(A_j)=\operatorname{Var}(B_j)=\sigma_j^2.
+$$
+
+Then
+
+$$
+\gamma(h)=\sum_{j=1}^m \sigma_j^2\cos(2\pi\omega_j h).
+$$
+
+The autocovariance function is a sum of cosines. Each frequency contributes part of the variance.
+
+## 12.5 Autocovariance and spectral representation
+
+For a stationary process, the autocovariance function is
+
+$$
+\gamma(h)=\operatorname{Cov}(X_{t+h},X_t).
+$$
+
+The spectral representation theorem says that there exists a unique nondecreasing function $F$ on $[-1/2,1/2]$, called the **spectral distribution function**, such that
+
+$$
+\gamma(h)=\int_{-1/2}^{1/2} e^{2\pi i\omega h}\,dF(\omega).
+$$
+
+The total mass of $F$ is
+
+$$
+F(1/2)-F(-1/2)=\gamma(0)=\operatorname{Var}(X_t).
+$$
+
+This result is the frequency-domain analogue of saying that covariance matrices must be positive semidefinite. The function $F$ distributes the variance of the process across frequencies.
+
+### Discrete spectral components
+
+For a random sinusoidal process, the spectral distribution has jumps at the sinusoidal frequencies. A process with a strong deterministic or nearly deterministic periodic component often produces sharp spectral peaks.
+
+### Continuous spectral components
+
+For ARMA-type processes, the spectral distribution is usually continuous. In this case we can write
+
+$$
+dF(\omega)=f(\omega)d\omega,
+$$
+
+where $f$ is the **spectral density**.
+
+## 12.6 Spectral density
+
+If the autocovariance function is absolutely summable,
+
+$$
+\sum_{h=-\infty}^{\infty}|\gamma(h)|<\infty,
+$$
+
+then the spectral density is defined by the Fourier series
+
+$$
+f(\omega)=\sum_{h=-\infty}^{\infty}\gamma(h)e^{-2\pi i\omega h},
+\qquad -\frac{1}{2}<\omega<\frac{1}{2}.
+$$
+
+The inverse relation is
+
+$$
+\gamma(h)=\int_{-1/2}^{1/2}e^{2\pi i\omega h}f(\omega)\,d\omega.
+$$
+
+At $h=0$,
+
+$$
+\gamma(0)=\operatorname{Var}(X_t)=\int_{-1/2}^{1/2}f(\omega)\,d\omega.
+$$
+
+This identity gives the most important interpretation:
+
+::: {.callout-note}
+## Interpretation of the spectral density
+The spectral density $f(\omega)$ describes how the variance of a stationary time series is distributed over frequencies. Large $f(\omega)$ means that oscillations near frequency $\omega$ explain a relatively large amount of variation.
+:::
+
+### Basic properties
+
+For a real-valued stationary process with absolutely summable autocovariance:
+
+1. $f(\omega)\geq 0$;
+2. $f(\omega)=f(-\omega)$;
+3. $f(\omega+1)=f(\omega)$;
+4. $f$ completely determines $\gamma$;
+5. for a Gaussian stationary process, $f$ determines the full finite-dimensional distributions.
+
+The evenness $f(\omega)=f(-\omega)$ means that real-valued processes have symmetric spectra.
+
+## 12.7 Interactive spectral explorer
+
+The following interactive demonstration combines two sinusoidal components with noise. Move the frequency, amplitude, and noise sliders. Notice that the time plot can look complicated, but the spectrum often reveals the hidden frequencies.
+
+<div class="interactive-card">
+<div class="controls">
+<label>Frequency 1 $\omega_1$ <input id="ch12_f1" type="range" min="0.02" max="0.48" step="0.01" value="0.08"></label>
+<label>Amplitude 1 <input id="ch12_a1" type="range" min="0.0" max="4.0" step="0.1" value="2.0"></label>
+<label>Frequency 2 $\omega_2$ <input id="ch12_f2" type="range" min="0.02" max="0.48" step="0.01" value="0.22"></label>
+<label>Amplitude 2 <input id="ch12_a2" type="range" min="0.0" max="4.0" step="0.1" value="1.0"></label>
+<label>Noise level <input id="ch12_noise" type="range" min="0.0" max="2.0" step="0.1" value="0.5"></label>
+</div>
+<div id="ch12_signal_plot" style="height:340px;"></div>
+<div id="ch12_spectrum_plot" style="height:340px;"></div>
+<p class="caption">The spectrum shown here is a simple finite-sample periodogram-style display. Chapter 13 develops the DFT, FFT, and periodogram carefully.</p>
+</div>
+
+<script>
+(function(){
+  function seededNoise(n, scale){
+    // deterministic pseudo-noise so the display changes smoothly when sliders move
+    var out = [];
+    var seed = 7339;
+    for(var i=0; i<n; i++){
+      seed = (1664525 * seed + 1013904223) % 4294967296;
+      var u1 = (seed + 1) / 4294967297;
+      seed = (1664525 * seed + 1013904223) % 4294967296;
+      var u2 = (seed + 1) / 4294967297;
+      var z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      out.push(scale * z);
+    }
+    return out;
+  }
+
+  function computeSpectrum(y){
+    var n = y.length;
+    var freqs = [];
+    var power = [];
+    for(var k=1; k<=Math.floor(n/2); k++){
+      var re = 0;
+      var im = 0;
+      for(var t=0; t<n; t++){
+        var angle = -2 * Math.PI * k * t / n;
+        re += y[t] * Math.cos(angle);
+        im += y[t] * Math.sin(angle);
+      }
+      freqs.push(k/n);
+      power.push((re*re + im*im)/n);
+    }
+    return {freqs: freqs, power: power};
+  }
+
+  function update(){
+    var n = 160;
+    var t = Array.from({length:n}, (_,i)=>i);
+    var f1 = parseFloat(document.getElementById('ch12_f1').value);
+    var f2 = parseFloat(document.getElementById('ch12_f2').value);
+    var a1 = parseFloat(document.getElementById('ch12_a1').value);
+    var a2 = parseFloat(document.getElementById('ch12_a2').value);
+    var noise = parseFloat(document.getElementById('ch12_noise').value);
+    var eps = seededNoise(n, noise);
+    var y = t.map(function(i){
+      return a1*Math.cos(2*Math.PI*f1*i) + a2*Math.sin(2*Math.PI*f2*i + 0.7) + eps[i];
+    });
+    var spec = computeSpectrum(y);
+
+    Plotly.newPlot('ch12_signal_plot', [{
+      x: t,
+      y: y,
+      mode: 'lines',
+      name: 'time series'
+    }], {
+      title: 'Time-domain view',
+      margin: {t: 45, r: 20, b: 45, l: 55},
+      xaxis: {title: 'time'},
+      yaxis: {title: 'value'}
+    }, {displayModeBar: false, responsive: true});
+
+    Plotly.newPlot('ch12_spectrum_plot', [{
+      x: spec.freqs,
+      y: spec.power,
+      type: 'bar',
+      name: 'power'
+    }], {
+      title: 'Frequency-domain view',
+      margin: {t: 45, r: 20, b: 45, l: 55},
+      xaxis: {title: 'frequency', range: [0, 0.5]},
+      yaxis: {title: 'relative power'}
+    }, {displayModeBar: false, responsive: true});
+  }
+
+  ['ch12_f1','ch12_a1','ch12_f2','ch12_a2','ch12_noise'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', update);
+  });
+  update();
+})();
+</script>
+
+## 12.8 White noise spectrum
+
+Let $W_t\sim WN(0,\sigma^2)$. Then
+
+$$
+\gamma(h)=\begin{cases}
+\sigma^2, & h=0,\\
+0, & h\neq 0.
+\end{cases}
+$$
+
+Therefore
+
+$$
+f(\omega)=\sum_{h=-\infty}^{\infty}\gamma(h)e^{-2\pi i\omega h}=\sigma^2.
+$$
+
+White noise has a flat spectrum. Every frequency contributes equally. This explains the term **white** noise: it is analogous to white light, which contains all visible frequencies.
+
+```{python}
+#| label: ch12-white-noise-spectrum
+#| fig-cap: "White noise has approximately flat spectral power, up to sampling variability."
+
+from scipy.signal import periodogram
+
+rng = np.random.default_rng(2026)
+n = 512
+w = rng.normal(0, 1, size=n)
+freqs, power = periodogram(w, scaling="density")
+
+plt.figure(figsize=(10, 4))
+plt.plot(freqs, power)
+plt.xlabel("frequency")
+plt.ylabel("periodogram")
+plt.title("A finite-sample spectrum of white noise")
+plt.show()
+```
+
+The periodogram fluctuates substantially even for white noise. This is not a contradiction. The flat spectrum is a population statement. Chapter 13 explains why raw periodograms are noisy and why smoothing is often needed.
+
+## 12.9 AR(1) spectrum
+
+Consider the causal AR(1) model
+
+$$
+X_t=\phi X_{t-1}+W_t,
+\qquad |\phi|<1,
+\qquad W_t\sim WN(0,\sigma^2).
+$$
+
+The autocovariance is
+
+$$
+\gamma(h)=\frac{\sigma^2\phi^{|h|}}{1-\phi^2}.
+$$
+
+Its spectral density is
+
+$$
+f(\omega)=\frac{\sigma^2}{1-2\phi\cos(2\pi\omega)+\phi^2}.
+$$
+
+This formula has a useful interpretation:
+
+- If $\phi>0$, nearby observations tend to have the same sign. The process is smooth. The spectrum is largest near $\omega=0$, a low frequency.
+- If $\phi<0$, nearby observations tend to alternate signs. The process is rough. The spectrum is largest near $\omega=1/2$, a high frequency.
+
+<div class="interactive-card">
+<div class="controls">
+<label>AR(1) coefficient $\phi$ <input id="ch12_phi" type="range" min="-0.95" max="0.95" step="0.01" value="0.70"></label>
+<span id="ch12_phi_label"></span>
+</div>
+<div id="ch12_ar1_time" style="height:320px;"></div>
+<div id="ch12_ar1_spec" style="height:320px;"></div>
+</div>
+
+<script>
+(function(){
+  function noise(n){
+    var out = [];
+    var seed = 12012;
+    for(var i=0; i<n; i++){
+      seed = (1103515245 * seed + 12345) % 2147483648;
+      var u1 = (seed + 1) / 2147483649;
+      seed = (1103515245 * seed + 12345) % 2147483648;
+      var u2 = (seed + 1) / 2147483649;
+      out.push(Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2));
+    }
+    return out;
+  }
+  var eps = noise(240);
+  function update(){
+    var phi = parseFloat(document.getElementById('ch12_phi').value);
+    document.getElementById('ch12_phi_label').innerHTML = ' value: ' + phi.toFixed(2);
+    var n = 220;
+    var x = Array(n).fill(0);
+    for(var t=1; t<n; t++){
+      x[t] = phi*x[t-1] + eps[t];
+    }
+    var time = Array.from({length:n}, (_,i)=>i);
+    var m = 300;
+    var freq = [];
+    var spec = [];
+    for(var k=0; k<=m; k++){
+      var w = 0.5*k/m;
+      freq.push(w);
+      spec.push(1 / (1 - 2*phi*Math.cos(2*Math.PI*w) + phi*phi));
+    }
+    Plotly.newPlot('ch12_ar1_time', [{x:time, y:x, mode:'lines', name:'AR(1)'}], {
+      title:'Simulated AR(1) path',
+      margin:{t:45, r:20, b:45, l:55},
+      xaxis:{title:'time'},
+      yaxis:{title:'value'}
+    }, {displayModeBar:false, responsive:true});
+    Plotly.newPlot('ch12_ar1_spec', [{x:freq, y:spec, mode:'lines', name:'spectrum'}], {
+      title:'Theoretical AR(1) spectral density, up to scale',
+      margin:{t:45, r:20, b:45, l:55},
+      xaxis:{title:'frequency', range:[0,0.5]},
+      yaxis:{title:'spectral density'}
+    }, {displayModeBar:false, responsive:true});
+  }
+  document.getElementById('ch12_phi').addEventListener('input', update);
+  update();
+})();
+</script>
+
+```{python}
+#| label: ch12-ar1-spectra
+#| fig-cap: "Theoretical spectral densities for positive and negative AR(1) coefficients."
+
+omega_grid = np.linspace(0, 0.5, 400)
+
+def ar1_spectrum(phi, sigma2=1.0):
+    return sigma2 / (1 - 2*phi*np.cos(2*np.pi*omega_grid) + phi**2)
+
+plt.figure(figsize=(10, 4))
+plt.plot(omega_grid, ar1_spectrum(0.9), label=r"$\phi=0.9$")
+plt.plot(omega_grid, ar1_spectrum(-0.9), label=r"$\phi=-0.9$")
+plt.xlabel("frequency")
+plt.ylabel("spectral density")
+plt.title("AR(1) spectra")
+plt.legend()
+plt.show()
+```
+
+## 12.10 MA(1) spectrum
+
+Consider the MA(1) model
+
+$$
+X_t=W_t+\theta W_{t-1},
+\qquad W_t\sim WN(0,\sigma^2).
+$$
+
+The autocovariance is
+
+$$
+\gamma(h)=\begin{cases}
+\sigma^2(1+\theta^2), & h=0,\\
+\sigma^2\theta, & |h|=1,\\
+0, & |h|>1.
+\end{cases}
+$$
+
+Therefore
+
+$$
+\begin{aligned}
+f(\omega)
+&=\gamma(0)+\gamma(1)e^{-2\pi i\omega}+\gamma(-1)e^{2\pi i\omega}\\
+&=\sigma^2(1+\theta^2)+2\sigma^2\theta\cos(2\pi\omega)\\
+&=\sigma^2\left|1+\theta e^{-2\pi i\omega}\right|^2.
+\end{aligned}
+$$
+
+If $\theta>0$, the spectrum is larger at low frequencies. If $\theta<0$, it is larger near the Nyquist frequency.
+
+```{python}
+#| label: ch12-ma1-spectra
+#| fig-cap: "Theoretical spectral densities for positive and negative MA(1) coefficients."
+
+def ma1_spectrum(theta, sigma2=1.0):
+    return sigma2 * (1 + theta**2 + 2*theta*np.cos(2*np.pi*omega_grid))
+
+plt.figure(figsize=(10, 4))
+plt.plot(omega_grid, ma1_spectrum(0.9), label=r"$\theta=0.9$")
+plt.plot(omega_grid, ma1_spectrum(-0.9), label=r"$\theta=-0.9$")
+plt.xlabel("frequency")
+plt.ylabel("spectral density")
+plt.title("MA(1) spectra")
+plt.legend()
+plt.show()
+```
+
+## 12.11 Spectral density of a causal ARMA process
+
+Let $X_t$ be a causal ARMA($p,q$) process:
+
+$$
+\phi(B)X_t=\theta(B)W_t,
+\qquad W_t\sim WN(0,\sigma^2),
+$$
+
+where
+
+$$
+\phi(B)=1-\phi_1B-\cdots-\phi_pB^p,
+$$
+
+and
+
+$$
+\theta(B)=1+\theta_1B+\cdots+\theta_qB^q.
+$$
+
+Causality gives the linear-process representation
+
+$$
+X_t=\psi(B)W_t,
+\qquad
+\psi(B)=\frac{\theta(B)}{\phi(B)}.
+$$
+
+The spectral density is
+
+$$
+f(\omega)
+=\sigma^2\left|\psi(e^{-2\pi i\omega})\right|^2
+=\sigma^2\frac{\left|\theta(e^{-2\pi i\omega})\right|^2}
+{\left|\phi(e^{-2\pi i\omega})\right|^2}.
+$$
+
+This formula is one of the main reasons spectral analysis is useful. ARMA models become simple frequency filters applied to white noise.
+
+::: {.callout-note}
+## ARMA as filtered white noise
+White noise has a flat spectrum. A causal ARMA model reshapes this flat spectrum by multiplying it by
+
+$$
+\left|\frac{\theta(e^{-2\pi i\omega})}{\phi(e^{-2\pi i\omega})}\right|^2.
+$$
+
+The AR polynomial can amplify frequencies near its roots, while the MA polynomial can suppress or amplify frequencies depending on its zeros.
+:::
+
+```{python}
+#| label: ch12-arma-spectrum-function
+#| fig-cap: "ARMA spectral density computed from the AR and MA polynomials."
+
+import numpy.polynomial.polynomial as poly
+
+def arma_spectrum(ar_coefs, ma_coefs, sigma2=1.0, grid=None):
+    """
+    ar_coefs: [phi_1, ..., phi_p] for phi(B)=1 - phi_1 B - ... - phi_p B^p
+    ma_coefs: [theta_1, ..., theta_q] for theta(B)=1 + theta_1 B + ... + theta_q B^q
+    """
+    if grid is None:
+        grid = np.linspace(0, 0.5, 400)
+    z = np.exp(-2j * np.pi * grid)
+    theta = np.ones_like(z, dtype=complex)
+    for j, coef in enumerate(ma_coefs, start=1):
+        theta += coef * z**j
+    phi = np.ones_like(z, dtype=complex)
+    for j, coef in enumerate(ar_coefs, start=1):
+        phi -= coef * z**j
+    return grid, sigma2 * np.abs(theta)**2 / np.abs(phi)**2
+
+freq, spec_a = arma_spectrum(ar_coefs=[1.2, -0.7], ma_coefs=[0.4])
+freq, spec_b = arma_spectrum(ar_coefs=[0.8], ma_coefs=[-0.8])
+
+plt.figure(figsize=(10, 4))
+plt.plot(freq, spec_a, label="ARMA(2,1)")
+plt.plot(freq, spec_b, label="ARMA(1,1)")
+plt.xlabel("frequency")
+plt.ylabel("spectral density")
+plt.title("ARMA spectra from polynomial ratios")
+plt.legend()
+plt.show()
+```
+
+## 12.12 Low frequency, high frequency, and time-domain appearance
+
+The shape of a spectrum has direct time-domain meaning.
+
+### Low-frequency dominance
+
+A series dominated by low frequencies changes slowly. It may look smooth, persistent, or trend-like over short windows. Positive AR coefficients often create strong low-frequency power.
+
+### High-frequency dominance
+
+A series dominated by high frequencies changes direction quickly. It may look jagged or alternating. Negative AR coefficients and negative MA coefficients can create high-frequency power.
+
+### Narrow spectral peaks
+
+A narrow peak indicates a strong oscillation near a particular period. For example, a peak near $\omega=1/12$ suggests a period of $12$ time steps.
+
+### Broad spectral regions
+
+A broad region of elevated spectral density suggests variability spread over a range of frequencies rather than one clean periodic component.
+
+```{python}
+#| label: ch12-low-high-frequency-simulation
+#| fig-cap: "Low-frequency and high-frequency dominated sequences."
+
+rng = np.random.default_rng(104)
+n = 240
+eps = rng.normal(size=n)
+
+x_low = np.zeros(n)
+x_high = np.zeros(n)
+for i in range(1, n):
+    x_low[i] = 0.9 * x_low[i-1] + eps[i]
+    x_high[i] = -0.9 * x_high[i-1] + eps[i]
+
+plt.figure(figsize=(10, 4))
+plt.plot(x_low, label=r"low-frequency dominated, $\phi=0.9$")
+plt.plot(x_high, label=r"high-frequency dominated, $\phi=-0.9$", alpha=0.8)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Time-domain appearance of different spectra")
+plt.legend()
+plt.show()
+```
+
+## 12.13 Spectral analysis and stationarity
+
+Classical spectral density is a property of a stationary process. This matters.
+
+If a series has a deterministic trend, the low-frequency region can be dominated by the trend. If a series has changing variance, a single spectrum may average together different regimes. If a series has changing frequencies over time, a global spectrum may hide the time-local structure.
+
+A practical workflow is:
+
+1. plot the time series;
+2. check for trend, seasonality, variance changes, and outliers;
+3. transform or difference if needed;
+4. examine the ACF and PACF;
+5. examine frequency-domain evidence;
+6. connect spectral features to time-domain models or scientific explanations.
+
+::: {.callout-warning}
+## Do not skip EDA
+A spectral peak is not automatically a meaningful cycle. It may be caused by trend, sampling artifacts, missing data patterns, calendar effects, or preprocessing choices.
+:::
+
+## 12.14 From spectra to filters
+
+A linear filter transforms a time series into another time series:
+
+$$
+Y_t=\sum_{j=-\infty}^{\infty}a_jX_{t-j}.
+$$
+
+If $X_t$ has spectral density $f_X(\omega)$, then under suitable summability conditions, $Y_t$ has spectral density
+
+$$
+f_Y(\omega)=|A(\omega)|^2 f_X(\omega),
+$$
+
+where
+
+$$
+A(\omega)=\sum_{j=-\infty}^{\infty}a_j e^{-2\pi i\omega j}
+$$
+
+is the frequency response of the filter.
+
+This explains why moving averages smooth a series: they reduce high-frequency power. We will return to filters, FFT computation, and wavelets in Chapters 13 and 14.
+
+```{python}
+#| label: ch12-moving-average-filter-spectrum
+#| fig-cap: "A moving-average filter suppresses high frequencies."
+
+omega = np.linspace(1e-4, 0.5, 500)
+
+def ma_filter_gain(m):
+    numerator = np.sin(np.pi * m * omega)
+    denominator = m * np.sin(np.pi * omega)
+    return (numerator / denominator)**2
+
+plt.figure(figsize=(10, 4))
+for m in [3, 7, 15]:
+    plt.plot(omega, ma_filter_gain(m), label=f"window m={m}")
+plt.xlabel("frequency")
+plt.ylabel(r"$|A(\omega)|^2$")
+plt.title("Frequency response of simple moving-average filters")
+plt.legend()
+plt.show()
+```
+
+## 12.15 AI-assisted spectral modeling
+
+AI tools can be useful for brainstorming explanations of spectral features, generating code, and checking interpretations. But frequency-domain analysis is easy to overinterpret. Students should use AI as a critic, not as an oracle.
+
+::: {.callout-ai}
+## AI-assisted study box: spectral interpretation prompt
+Use the following prompt after producing a time plot, ACF, and spectrum.
+
+> I have a stationary time series with the following evidence: [describe time plot], [describe ACF], [describe spectral peaks]. Propose three possible data-generating explanations. For each explanation, state one mathematical model, one diagnostic that could refute it, and one possible artifact caused by sampling or preprocessing. Do not choose a final model until the diagnostics are checked.
+:::
+
+### Verification checklist for AI output
+
+When an AI assistant proposes a spectral explanation, verify:
+
+1. **Frequency-to-period conversion:** if the peak is at $\omega$, the period is $1/\omega$.
+2. **Sampling rate:** the interpretation uses the correct time unit.
+3. **Aliasing:** no conclusion relies on a frequency beyond the Nyquist limit.
+4. **Stationarity:** trend and changing variance were considered.
+5. **Model link:** the proposed time-domain model has a spectrum consistent with the observed one.
+6. **Validation:** forecasting or classification performance is checked out of sample.
+
+## 12.16 Python workflow: from time plot to spectrum
+
+The following workflow is a template. It simulates a stationary series with two periodic components and AR noise, then compares the time-domain and frequency-domain views.
+
+```{python}
+#| label: ch12-full-workflow
+#| fig-cap: "A complete first spectral workflow for simulated data."
+#| warning: false
+#| message: false
+
+from scipy.signal import periodogram, welch
+from statsmodels.tsa.stattools import acf
+
+rng = np.random.default_rng(8)
+n = 512
+t = np.arange(n)
+
+# AR(1) noise
+eta = rng.normal(scale=0.7, size=n)
+u = np.zeros(n)
+for i in range(1, n):
+    u[i] = 0.6 * u[i-1] + eta[i]
+
+x = 1.8*np.cos(2*np.pi*(1/32)*t + 0.5) + 0.9*np.sin(2*np.pi*(1/8)*t) + u
+
+freq_p, power_p = periodogram(x - x.mean(), scaling="density")
+freq_w, power_w = welch(x - x.mean(), nperseg=128, scaling="density")
+acf_vals = acf(x, nlags=40, fft=True)
+
+plt.figure(figsize=(10, 4))
+plt.plot(t, x)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Time plot")
+plt.show()
+
+plt.figure(figsize=(10, 4))
+plt.stem(np.arange(len(acf_vals)), acf_vals)
+plt.xlabel("lag")
+plt.ylabel("sample ACF")
+plt.title("Sample ACF")
+plt.show()
+
+plt.figure(figsize=(10, 4))
+plt.plot(freq_p, power_p, alpha=0.45, label="raw periodogram")
+plt.plot(freq_w, power_w, linewidth=2, label="Welch smoothed estimate")
+plt.xlim(0, 0.5)
+plt.xlabel("frequency")
+plt.ylabel("spectral power")
+plt.title("Frequency-domain diagnostics")
+plt.legend()
+plt.show()
+```
+
+In this example, the true periods are $32$ and $8$. The corresponding frequencies are $1/32$ and $1/8$. The spectral plot should show elevated power near those frequencies, while the AR noise adds low-frequency structure.
+
+## 12.17 Common mistakes
+
+1. **Confusing period and frequency.** A frequency of $0.05$ means a period of $20$, not $0.05$ time units.
+2. **Ignoring the sampling rate.** A weekly cycle means different things for hourly, daily, and monthly data.
+3. **Reading too much from a raw periodogram.** Raw periodograms are noisy. Use smoothing or repeated evidence.
+4. **Applying spectral density theory to nonstationary data without caution.** Trend and changing variance can dominate the spectrum.
+5. **Forgetting aliasing.** Frequencies outside the fundamental range are not separately identifiable from discrete observations.
+6. **Treating a spectral peak as causal evidence.** A peak suggests periodic structure, not necessarily a scientific cause.
+7. **Using random train-test splits after spectral feature extraction.** Frequency-domain features must be evaluated with time-aware validation.
+
+## 12.18 Mini project: detect hidden cycles
+
+Choose or simulate a time series with at least one hidden periodic component. Your report should include:
+
+1. a time plot;
+2. an ACF plot;
+3. a raw periodogram or smoothed spectral estimate;
+4. a table translating the top spectral peaks into periods;
+5. a proposed time-domain explanation;
+6. one diagnostic that could refute your explanation;
+7. a short AI-assisted critique paragraph, including what you accepted and what you rejected.
+
+A good project does not merely say “there is a peak.” It explains what the peak means, why it may be real, and why it may be an artifact.
+
+## 12.19 Exercises
+
+1. **Frequency and period.** For each frequency $\omega=1/4,1/7,1/12,1/24$, compute the period. Give one real-world example for each.
+
+2. **Aliasing.** Show that for integer $t$,
+
+   $$
+   \cos(2\pi\omega t)=\cos(2\pi(1-\omega)t).
+   $$
+
+   Explain why this matters for sampled data.
+
+3. **Random sinusoid stationarity.** Let
+
+   $$
+   X_t=A\cos(2\pi\omega t)+B\sin(2\pi\omega t),
+   $$
+
+   where $A$ and $B$ are uncorrelated, mean zero, and have variance $\sigma^2$. Prove that $\{X_t\}$ is weakly stationary and compute $\gamma(h)$.
+
+4. **White noise spectrum.** Starting from the autocovariance of white noise, derive $f(\omega)=\sigma^2$.
+
+5. **AR(1) interpretation.** For $\phi=0.8$ and $\phi=-0.8$, determine whether the spectrum is larger near $\omega=0$ or near $\omega=1/2$. Explain the time-domain behavior.
+
+6. **MA(1) derivation.** Derive the MA(1) spectral density
+
+   $$
+   f(\omega)=\sigma^2(1+\theta^2+2\theta\cos(2\pi\omega)).
+   $$
+
+7. **ARMA formula.** For an ARMA(1,1) model
+
+   $$
+   (1-\phi B)X_t=(1+\theta B)W_t,
+   $$
+
+   write its spectral density.
+
+8. **Simulation.** Simulate an AR(1) process with $\phi=0.9$ and another with $\phi=-0.9$. Plot the time series and periodograms. Explain how the plots match the theory.
+
+9. **Spectral peak.** A daily time series has a spectral peak at $\omega=1/7$. What period does this correspond to? What diagnostic would help determine whether this is a genuine weekly cycle?
+
+10. **AI critique.** Ask an AI assistant to interpret a periodogram from a simulated series with known frequencies. Identify one correct statement, one incomplete statement, and one statement that required mathematical verification.
+
+## 12.20 Chapter checklist
+
+By the end of this chapter, you should be able to:
+
+- [ ] explain frequency-domain analysis in your own words;
+- [ ] convert between frequency and period;
+- [ ] explain aliasing and the Nyquist frequency;
+- [ ] derive the autocovariance of a random sinusoid;
+- [ ] define spectral distribution and spectral density;
+- [ ] state the Fourier-pair relationship between $\gamma(h)$ and $f(\omega)$;
+- [ ] interpret the integral of $f(\omega)$ as variance;
+- [ ] derive spectra for white noise, AR(1), and MA(1);
+- [ ] write the spectral density of a causal ARMA model;
+- [ ] use Python to compute and interpret spectral diagnostics;
+- [ ] use AI assistance while checking stationarity, aliasing, and model assumptions.
+
+## 12.21 Further reading
+
+- Shumway and Stoffer, *Time Series Analysis and Its Applications*, chapters on spectral analysis.
+- Brockwell and Davis, *Introduction to Time Series and Forecasting*, sections on spectral representation.
+- Percival and Walden, *Spectral Analysis for Physical Applications*, for a deeper treatment of spectra and estimation.
+- Oppenheim and Schafer, *Discrete-Time Signal Processing*, for the signal-processing viewpoint.

@@ -1,0 +1,154 @@
+# Modern Time Series Analysis and Sequence Learning
+
+::: {.hero}
+**MATH 7339: Machine Learning and Statistical Learning Theory 2**
+
+This interactive e-book is the time-series analysis and sequence-data part of an advanced machine learning theory sequence for students in the MS Applied Mathematics program. It combines rigorous mathematical modeling with computational labs, interactive HTML demonstrations, and responsible AI-assisted workflows.
+:::
+
+**Author:** He Wang  
+**GitHub repository:** [https://github.com/wanghemath/Book-MachineLearning2sda](https://github.com/wanghemath/Book-MachineLearning2sda)  
+**Book website:** [https://wanghemath.github.io/Book-MachineLearning2sda/](https://wanghemath.github.io/Book-MachineLearning2sda/)
+
+## What this book covers
+
+Time series and sequence data are not ordinary tabular data. The order of the observations matters, dependence across time matters, and the information available at the forecast origin must be respected. This book develops both the classical theory and modern machine learning tools needed for forecasting, filtering, representation learning, and sequence modeling.
+
+The book begins with stochastic-process notation, exploratory analysis, stationarity, autocovariance, ARMA/ARIMA/SARIMA models, forecasting theory, and diagnostics. It then moves to state-space models, hidden Markov models, spectral analysis, FFT, filtering, wavelets, automated forecasting, feature-based machine learning, probabilistic forecasting, neural networks, convolutional sequence models, RNN/LSTM/GRU models, attention, transformers, representation learning, multivariate forecasting, AI-assisted modeling, and final projects.
+
+## How to use this book
+
+Each chapter follows a consistent structure:
+
+1. A motivating example.
+2. Mathematical model and core theory.
+3. Interactive HTML demonstration.
+4. Python examples.
+5. Python lab opened directly in Google Colab.
+6. AI-assisted modeling or study activity.
+7. Common mistakes, exercises, mini project, and checklist.
+
+::: {.callout-note}
+## Interactive modules
+
+The interactive demonstrations are designed for the HTML version of the book. Plotly.js is loaded once globally through `assets/header.html`; do not add additional Plotly script tags inside individual chapter files.
+:::
+
+::: {.callout-tip}
+## Python labs in Google Colab
+
+Each lab notebook can be opened from GitHub directly in Google Colab using the links below. After the book is pushed to the repository, the Colab links will point to the notebooks in `labs/` on the `main` branch.
+:::
+
+## Chapter map and Colab labs
+
+### Part I. Time Series as Dependent Data
+
+| Ch. | Topic | Chapter | Python lab |
+|---:|---|---|---|
+| 1 | Why Time Series and Sequence Data Are Different | [Read](chapters/chapter-01-why-time-series-and-sequences.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-01-why-time-series-and-sequences-lab.ipynb) |
+| 2 | Exploratory Data Analysis for Time Series | [Read](chapters/chapter-02-exploratory-data-analysis.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-02-exploratory-data-analysis-lab.ipynb) |
+
+### Part II. Stationarity and Linear Time-Domain Models
+
+| Ch. | Topic | Chapter | Python lab |
+|---:|---|---|---|
+| 3 | Stationarity, Autocovariance, and Autocorrelation | [Read](chapters/chapter-03-stationarity-autocovariance-acf.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-03-stationarity-autocovariance-acf-lab.ipynb) |
+| 4 | Linear Processes, AR, MA, and ARMA Models | [Read](chapters/chapter-04-linear-processes-ar-ma-arma.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-04-linear-processes-ar-ma-arma-lab.ipynb) |
+| 5 | Difference Equations and Dynamic Behavior | [Read](chapters/chapter-05-difference-equations-dynamic-behavior.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-05-difference-equations-dynamic-behavior-lab.ipynb) |
+| 6 | Forecasting Theory and Best Linear Prediction | [Read](chapters/chapter-06-forecasting-best-linear-prediction.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-06-forecasting-best-linear-prediction-lab.ipynb) |
+| 7 | Estimation, Model Identification, and Diagnostics | [Read](chapters/chapter-07-estimation-identification-diagnostics.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-07-estimation-identification-diagnostics-lab.ipynb) |
+
+### Part III. Nonstationary and Seasonal Models
+
+| Ch. | Topic | Chapter | Python lab |
+|---:|---|---|---|
+| 8 | ARIMA Models and Differencing | [Read](chapters/chapter-08-arima-differencing.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-08-arima-differencing-lab.ipynb) |
+| 9 | Seasonal ARIMA and Multiple Seasonality | [Read](chapters/chapter-09-sarima-multiple-seasonality.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-09-sarima-multiple-seasonality-lab.ipynb) |
+| 10 | State-Space Models and Kalman Filtering | [Read](chapters/chapter-10-state-space-kalman-filtering.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-10-state-space-kalman-filtering-lab.ipynb) |
+| 11 | Hidden Markov Models and Regime Switching | [Read](chapters/chapter-11-hidden-markov-regime-switching.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-11-hidden-markov-regime-switching-lab.ipynb) |
+
+### Part IV. Frequency-Domain and Multiresolution Methods
+
+| Ch. | Topic | Chapter | Python lab |
+|---:|---|---|---|
+| 12 | Spectral Analysis and the Frequency Domain | [Read](chapters/chapter-12-spectral-analysis-frequency-domain.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-12-spectral-analysis-frequency-domain-lab.ipynb) |
+| 13 | Discrete Fourier Transform, FFT, and the Periodogram | [Read](chapters/chapter-13-dft-fft-periodogram.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-13-dft-fft-periodogram-lab.ipynb) |
+| 14 | Filtering and Wavelet Transform | [Read](chapters/chapter-14-filtering-wavelets.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-14-filtering-wavelets-lab.ipynb) |
+
+### Part V. Forecasting at Scale and Machine Learning Methods
+
+| Ch. | Topic | Chapter | Python lab |
+|---:|---|---|---|
+| 15 | Forecast Evaluation and Backtesting | [Read](chapters/chapter-15-forecast-evaluation-backtesting.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-15-forecast-evaluation-backtesting-lab.ipynb) |
+| 16 | Automated Forecasting and Prophet-Type Additive Models | [Read](chapters/chapter-16-automated-forecasting-prophet.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-16-automated-forecasting-prophet-lab.ipynb) |
+| 17 | Feature-Based Machine Learning for Time Series | [Read](chapters/chapter-17-feature-based-machine-learning.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-17-feature-based-machine-learning-lab.ipynb) |
+| 18 | Probabilistic Forecasting and Uncertainty Quantification | [Read](chapters/chapter-18-probabilistic-forecasting-uncertainty.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-18-probabilistic-forecasting-uncertainty-lab.ipynb) |
+
+### Part VI. Deep Learning for Time Series and Sequence Data
+
+| Ch. | Topic | Chapter | Python lab |
+|---:|---|---|---|
+| 19 | Neural Networks for Time Series | [Read](chapters/chapter-19-neural-networks-for-time-series.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-19-neural-networks-for-time-series-lab.ipynb) |
+| 20 | Convolutional Models for Sequences | [Read](chapters/chapter-20-convolutional-models-sequences.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-20-convolutional-models-sequences-lab.ipynb) |
+| 21 | Recurrent Neural Networks, LSTM, and GRU | [Read](chapters/chapter-21-rnn-lstm-gru.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-21-rnn-lstm-gru-lab.ipynb) |
+| 22 | Attention and Transformer Models for Time Series and Sequence Data | [Read](chapters/chapter-22-attention-transformers-time-series.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-22-attention-transformers-time-series-lab.ipynb) |
+| 23 | Representation Learning for Time Series | [Read](chapters/chapter-23-representation-learning-time-series.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-23-representation-learning-time-series-lab.ipynb) |
+| 24 | Multivariate, Panel, and Hierarchical Time Series | [Read](chapters/chapter-24-multivariate-panel-hierarchical.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-24-multivariate-panel-hierarchical-lab.ipynb) |
+
+### Part VII. Responsible AI, Projects, and Deployment
+
+| Ch. | Topic | Chapter | Python lab |
+|---:|---|---|---|
+| 25 | AI-Assisted Time-Series Modeling | [Read](chapters/chapter-25-ai-assisted-time-series-modeling.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-25-ai-assisted-time-series-modeling-lab.ipynb) |
+| 26 | End-to-End Forecasting Pipeline | [Read](chapters/chapter-26-end-to-end-forecasting-pipeline.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-26-end-to-end-forecasting-pipeline-lab.ipynb) |
+| 27 | Final Project Studio | [Read](chapters/chapter-27-final-project-studio.qmd) | [Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-27-final-project-studio-lab.ipynb) |
+
+## Recommended student workflow
+
+For each chapter, first read the mathematical development, then run the interactive module in the HTML book, then open the notebook in Colab and reproduce the Python computations. After completing the lab, use the AI-assisted box as a model critic: ask for explanations, possible mistakes, and alternative modeling choices, but verify every claim mathematically and computationally.
+
+## Computing environment
+
+The notebooks are intended to run in Google Colab with standard scientific Python packages. Some later chapters use `statsmodels`, `scikit-learn`, and `torch`. When a package is missing in Colab, install it in the first notebook cell, for example:
+
+```{python}
+#| eval: false
+# Example only: run inside Colab when needed
+# !pip install statsmodels scikit-learn torch
+```
+
+## Responsible AI policy for the course
+
+AI tools may be used for brainstorming, code review, debugging, and explanation. They should not replace mathematical reasoning, residual diagnostics, validation design, or interpretation of results. A correct forecasting workflow must clearly state the information set, prevent look-ahead leakage, compare against baselines, evaluate using chronological validation, and report uncertainty when decisions depend on risk.
+
+## Repository structure
+
+```text
+Book-MachineLearning2sda/
+├── _quarto.yml
+├── index.qmd
+├── introduction.qmd
+├── chapters/
+│   ├── chapter-01-why-time-series-and-sequences.qmd
+│   └── ...
+├── labs/
+│   ├── chapter-01-why-time-series-and-sequences-lab.ipynb
+│   └── ...
+├── assets/
+│   ├── header.html
+│   ├── ts-interactives.js
+│   └── custom.scss
+└── references.bib
+```
+
+## Build locally
+
+After cloning the repository, render the book with:
+
+```bash
+quarto render
+quarto preview
+```
+
+The HTML output is written to `docs/`, which is suitable for GitHub Pages when the repository is configured to publish from the `docs/` folder.

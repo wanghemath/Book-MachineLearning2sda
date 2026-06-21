@@ -1,0 +1,104 @@
+{
+  "index.qmd": {
+    "index.html": "e6665e2d"
+  },
+  "introduction.qmd": {
+    "introduction.html": "8cf97fe1"
+  },
+  "chapters/chapter-01-why-time-series-and-sequences.qmd": {
+    "chapter-01-why-time-series-and-sequences.html": "90d01b0b"
+  },
+  "chapters/chapter-02-exploratory-data-analysis.qmd": {
+    "chapter-02-exploratory-data-analysis.html": "0b7f234e"
+  },
+  "chapters/chapter-03-stationarity-autocovariance-acf.qmd": {
+    "chapter-03-stationarity-autocovariance-acf.html": "566e5760"
+  },
+  "chapters/chapter-04-linear-processes-ar-ma-arma.qmd": {
+    "chapter-04-linear-processes-ar-ma-arma.html": "76a2af81"
+  },
+  "chapters/chapter-05-difference-equations-dynamic-behavior.qmd": {
+    "chapter-05-difference-equations-dynamic-behavior.html": "89a23d2b"
+  },
+  "chapters/chapter-06-forecasting-best-linear-prediction.qmd": {
+    "chapter-06-forecasting-best-linear-prediction.html": "594e4864"
+  },
+  "chapters/chapter-07-estimation-identification-diagnostics.qmd": {
+    "chapter-07-estimation-identification-diagnostics.html": "47dd4d89"
+  },
+  "chapters/chapter-08-arima-differencing.qmd": {
+    "chapter-08-arima-differencing.html": "a427f5ef"
+  },
+  "chapters/chapter-09-sarima-multiple-seasonality.qmd": {
+    "chapter-09-sarima-multiple-seasonality.html": "8af21f0f"
+  },
+  "chapters/chapter-10-state-space-kalman-filtering.qmd": {
+    "chapter-10-state-space-kalman-filtering.html": "59b2decc"
+  },
+  "chapters/chapter-11-hidden-markov-regime-switching.qmd": {
+    "chapter-11-hidden-markov-regime-switching.html": "ea2f6c5b"
+  },
+  "chapters/chapter-12-spectral-analysis-frequency-domain.qmd": {
+    "chapter-12-spectral-analysis-frequency-domain.html": "f89988c8"
+  },
+  "chapters/chapter-13-dft-fft-periodogram.qmd": {
+    "chapter-13-dft-fft-periodogram.html": "cb14061e"
+  },
+  "chapters/chapter-14-filtering-wavelets.qmd": {
+    "chapter-14-filtering-wavelets.html": "d38bf2f1"
+  },
+  "chapters/chapter-15-forecast-evaluation-backtesting.qmd": {
+    "chapter-15-forecast-evaluation-backtesting.html": "7c759e9b"
+  },
+  "chapters/chapter-16-automated-forecasting-prophet.qmd": {
+    "chapter-16-automated-forecasting-prophet.html": "ca852428"
+  },
+  "chapters/chapter-17-feature-based-machine-learning.qmd": {
+    "chapter-17-feature-based-machine-learning.html": "08fc67c7"
+  },
+  "chapters/chapter-18-probabilistic-forecasting-uncertainty.qmd": {
+    "chapter-18-probabilistic-forecasting-uncertainty.html": "24d91d66"
+  },
+  "chapters/chapter-19-neural-networks-for-time-series.qmd": {
+    "chapter-19-neural-networks-for-time-series.html": "d8b35023"
+  },
+  "chapters/chapter-20-convolutional-models-sequences.qmd": {
+    "chapter-20-convolutional-models-sequences.html": "3f47f7b2"
+  },
+  "chapters/chapter-21-rnn-lstm-gru.qmd": {
+    "chapter-21-rnn-lstm-gru.html": "256a37d1"
+  },
+  "chapters/chapter-22-attention-transformers-time-series.qmd": {
+    "chapter-22-attention-transformers-time-series.html": "73516b85"
+  },
+  "chapters/chapter-23-representation-learning-time-series.qmd": {
+    "chapter-23-representation-learning-time-series.html": "c84e4a17"
+  },
+  "chapters/chapter-24-multivariate-panel-hierarchical.qmd": {
+    "chapter-24-multivariate-panel-hierarchical.html": "89527619"
+  },
+  "chapters/chapter-25-ai-assisted-time-series-modeling.qmd": {
+    "chapter-25-ai-assisted-time-series-modeling.html": "f8a1b263"
+  },
+  "chapters/chapter-26-end-to-end-forecasting-pipeline.qmd": {
+    "chapter-26-end-to-end-forecasting-pipeline.html": "b7a8c3f6"
+  },
+  "chapters/chapter-27-final-project-studio.qmd": {
+    "chapter-27-final-project-studio.html": "2259a261"
+  },
+  "labs-summary.qmd": {
+    "labs-summary.html": "31a89c26"
+  },
+  "interactive-htmls.qmd": {
+    "interactive-htmls.html": "8cccda35"
+  },
+  "final-projects.qmd": {
+    "final-projects.html": "dc33b13f"
+  },
+  "python-reference.qmd": {
+    "python-reference.html": "cab7affb"
+  },
+  "references.qmd": {
+    "references.html": "0da4b36b"
+  }
+}

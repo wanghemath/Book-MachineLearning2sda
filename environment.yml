@@ -1,0 +1,22 @@
+name: modern-ts-sequence
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - matplotlib
+  - scipy
+  - statsmodels
+  - scikit-learn
+  - plotly
+  - jupyter
+  - nbformat
+  - pywavelets
+  - pip
+  - pip:
+      - pmdarima
+      - prophet
+      - hmmlearn
+      - torch

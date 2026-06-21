@@ -1,0 +1,725 @@
+# Python Reference for Time Series and Sequence Learning
+
+This appendix collects the Python patterns used throughout the book.  It is designed as a practical companion for the labs.  The goal is not to replace documentation for `numpy`, `pandas`, `statsmodels`, `scikit-learn`, `torch`, or `plotly`, but to give students a consistent workflow for simulation, visualization, modeling, validation, and debugging.
+
+The guiding principle is simple: in time series, code must respect time order.  Random shuffling, scaling with future data, or using future observations as features can make a model look much better than it really is.
+
+## A.1 Recommended Python environment
+
+The labs are written for Python 3.10 or later.  A standard environment should include the following packages.
+
+```{python}
+#| eval: false
+# Core scientific stack
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Time series tools
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.stattools import acf, pacf, adfuller
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.stats.diagnostic import acorr_ljungbox
+
+# Machine learning tools
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.preprocessing import StandardScaler
+
+# Optional deep learning tools
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+```
+
+For Google Colab, a minimal setup cell is:
+
+```{python}
+#| eval: false
+!pip install numpy pandas matplotlib statsmodels scikit-learn plotly torch --quiet
+```
+
+Some optional packages used in advanced labs may require installation only when needed:
+
+```{python}
+#| eval: false
+!pip install prophet pmdarima PyWavelets hmmlearn --quiet
+```
+
+## A.2 Reproducibility
+
+Use a fixed seed whenever simulation or randomized training is involved.
+
+```{python}
+#| eval: false
+import numpy as np
+import torch
+
+SEED = 7339
+rng = np.random.default_rng(SEED)
+
+torch.manual_seed(SEED)
+torch.set_num_threads(1)
+```
+
+In time series experiments, reproducibility means more than a seed.  It also means recording the forecasting horizon, train/test split date, scaling procedure, feature construction rule, and validation design.
+
+## A.3 Basic time-series objects
+
+A univariate time series can be stored as a `pandas.Series` with an integer index or a datetime index.
+
+```{python}
+#| eval: false
+n = 120
+dates = pd.date_range("2026-01-01", periods=n, freq="D")
+y = pd.Series(rng.normal(size=n).cumsum(), index=dates, name="y")
+
+y.head()
+```
+
+A multivariate time series is usually stored as a `pandas.DataFrame`.
+
+```{python}
+#| eval: false
+X = pd.DataFrame({
+    "series_a": rng.normal(size=n).cumsum(),
+    "series_b": rng.normal(size=n).cumsum(),
+    "series_c": rng.normal(size=n).cumsum()
+}, index=dates)
+
+X.head()
+```
+
+When working with dates, always check the frequency.
+
+```{python}
+#| eval: false
+print(y.index.freq)
+print(pd.infer_freq(y.index))
+```
+
+## A.4 Plotting conventions
+
+For static plots in Python chunks, use `matplotlib`.  For book interactives, Plotly is loaded globally through `assets/header.html`; do not add another Plotly script tag inside a chapter.
+
+```{python}
+#| eval: false
+fig, ax = plt.subplots(figsize=(8, 3))
+y.plot(ax=ax)
+ax.set_title("Time Series Plot")
+ax.set_xlabel("time")
+ax.set_ylabel("value")
+plt.show()
+```
+
+ACF and PACF plots are frequently used for model identification.
+
+```{python}
+#| eval: false
+fig, ax = plt.subplots(figsize=(7, 3))
+plot_acf(y.dropna(), lags=30, ax=ax)
+ax.set_title("Sample ACF")
+plt.show()
+
+fig, ax = plt.subplots(figsize=(7, 3))
+plot_pacf(y.dropna(), lags=30, ax=ax, method="ywm")
+ax.set_title("Sample PACF")
+plt.show()
+```
+
+## A.5 Common simulation patterns
+
+### White noise
+
+White noise has mean zero, constant variance, and zero autocovariance at nonzero lags.
+
+```{python}
+#| eval: false
+n = 400
+sigma = 1.0
+w = rng.normal(0, sigma, size=n)
+```
+
+### Random walk
+
+The random walk satisfies $X_t = X_{t-1} + W_t$.
+
+```{python}
+#| eval: false
+x_rw = np.cumsum(w)
+```
+
+### AR(1)
+
+The AR(1) model is
+
+$$
+X_t = \phi X_{t-1} + W_t.
+$$
+
+```{python}
+#| eval: false
+n = 400
+burnin = 200
+total = n + burnin
+phi = 0.75
+w = rng.normal(0, 1, size=total)
+x_full = np.zeros(total)
+
+for t in range(1, total):
+    x_full[t] = phi * x_full[t - 1] + w[t]
+
+x_ar1 = x_full[burnin:]
+assert len(x_ar1) == n
+```
+
+### MA(1)
+
+The MA(1) model is
+
+$$
+X_t = W_t + \theta W_{t-1}.
+$$
+
+```{python}
+#| eval: false
+theta = 0.70
+x_full = np.zeros(total)
+
+for t in range(1, total):
+    x_full[t] = w[t] + theta * w[t - 1]
+
+x_ma1 = x_full[burnin:]
+assert len(x_ma1) == n
+```
+
+### ARMA(1,1)
+
+The ARMA(1,1) model is
+
+$$
+X_t = \phi X_{t-1} + W_t + \theta W_{t-1}.
+$$
+
+```{python}
+#| eval: false
+phi = 0.65
+theta = 0.50
+x_full = np.zeros(total)
+
+for t in range(1, total):
+    x_full[t] = phi * x_full[t - 1] + w[t] + theta * w[t - 1]
+
+x_arma11 = x_full[burnin:]
+assert len(x_arma11) == n
+```
+
+## A.6 Sample autocovariance and ACF from scratch
+
+The sample autocovariance at lag $h$ is often estimated by
+
+$$
+\widehat{\gamma}(h)
+= \frac{1}{n}\sum_{t=h+1}^{n} (x_t-\bar{x})(x_{t-h}-\bar{x}).
+$$
+
+```{python}
+#| eval: false
+def sample_autocovariance(x, max_lag):
+    x = np.asarray(x, dtype=float)
+    n = len(x)
+    x_centered = x - x.mean()
+    gamma = []
+    for h in range(max_lag + 1):
+        value = np.sum(x_centered[h:] * x_centered[:n - h]) / n
+        gamma.append(value)
+    return np.array(gamma)
+
+
+def sample_acf(x, max_lag):
+    gamma = sample_autocovariance(x, max_lag)
+    return gamma / gamma[0]
+
+rho_hat = sample_acf(x_ar1, max_lag=20)
+```
+
+## A.7 Train, validation, and test splits
+
+For forecasting, split by time order.
+
+```{python}
+#| eval: false
+def chronological_split(y, train_frac=0.7, val_frac=0.15):
+    n = len(y)
+    n_train = int(train_frac * n)
+    n_val = int(val_frac * n)
+
+    train = y.iloc[:n_train]
+    val = y.iloc[n_train:n_train + n_val]
+    test = y.iloc[n_train + n_val:]
+
+    return train, val, test
+
+train, val, test = chronological_split(y)
+```
+
+Avoid this for forecasting:
+
+```{python}
+#| eval: false
+# Do not use this for time-series forecasting validation.
+# from sklearn.model_selection import train_test_split
+# train, test = train_test_split(y, test_size=0.2, shuffle=True)
+```
+
+## A.8 Forecasting metrics
+
+For observations $y_t$ and forecasts $\widehat{y}_t$, common point-forecast metrics include
+
+$$
+\operatorname{MAE} = \frac{1}{n}\sum_{t=1}^{n}|y_t-\widehat{y}_t|,
+$$
+
+$$
+\operatorname{RMSE} = \sqrt{\frac{1}{n}\sum_{t=1}^{n}(y_t-\widehat{y}_t)^2}.
+$$
+
+```{python}
+#| eval: false
+def rmse(y_true, y_pred):
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    return np.sqrt(np.mean((y_true - y_pred) ** 2))
+
+
+def mae(y_true, y_pred):
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    return np.mean(np.abs(y_true - y_pred))
+```
+
+For seasonal data, a seasonal naive model is an essential baseline.
+
+```{python}
+#| eval: false
+def seasonal_naive_forecast(y_train, horizon, season_length):
+    y_train = np.asarray(y_train)
+    if len(y_train) < season_length:
+        raise ValueError("Training series must be at least one seasonal period long.")
+    repeats = int(np.ceil(horizon / season_length))
+    forecast = np.tile(y_train[-season_length:], repeats)[:horizon]
+    return forecast
+```
+
+## A.9 Rolling-origin backtesting
+
+Rolling-origin evaluation repeatedly refits or updates the model using only past data.
+
+```{python}
+#| eval: false
+def rolling_origin_splits(n, initial_window, horizon, step=1):
+    starts = []
+    train_ends = []
+    test_ranges = []
+
+    train_end = initial_window
+    while train_end + horizon <= n:
+        starts.append(0)
+        train_ends.append(train_end)
+        test_ranges.append((train_end, train_end + horizon))
+        train_end += step
+
+    return list(zip(starts, train_ends, test_ranges))
+
+splits = rolling_origin_splits(n=200, initial_window=100, horizon=12, step=12)
+```
+
+A template for evaluating a simple forecasting function is:
+
+```{python}
+#| eval: false
+def evaluate_rolling_origin(y, forecast_function, initial_window, horizon, step=1):
+    y = pd.Series(y).reset_index(drop=True)
+    records = []
+
+    for start, train_end, (test_start, test_end) in rolling_origin_splits(
+        len(y), initial_window, horizon, step
+    ):
+        y_train = y.iloc[start:train_end]
+        y_test = y.iloc[test_start:test_end]
+        y_pred = forecast_function(y_train, horizon)
+
+        records.append({
+            "train_end": train_end,
+            "horizon": horizon,
+            "mae": mae(y_test, y_pred),
+            "rmse": rmse(y_test, y_pred)
+        })
+
+    return pd.DataFrame(records)
+```
+
+## A.10 Fitting ARIMA and SARIMA models
+
+A basic ARIMA fit uses `statsmodels`.
+
+```{python}
+#| eval: false
+model = ARIMA(train, order=(1, 1, 1))
+result = model.fit()
+print(result.summary())
+
+forecast_result = result.get_forecast(steps=len(test))
+forecast_mean = forecast_result.predicted_mean
+forecast_interval = forecast_result.conf_int()
+```
+
+A SARIMA model can be fitted with `SARIMAX`.
+
+```{python}
+#| eval: false
+model = SARIMAX(
+    train,
+    order=(1, 1, 1),
+    seasonal_order=(1, 1, 1, 12),
+    enforce_stationarity=False,
+    enforce_invertibility=False
+)
+result = model.fit(disp=False)
+forecast = result.get_forecast(steps=len(test))
+```
+
+Residual diagnostics should always be checked.
+
+```{python}
+#| eval: false
+resid = result.resid.dropna()
+
+fig, ax = plt.subplots(figsize=(7, 3))
+plot_acf(resid, lags=30, ax=ax)
+ax.set_title("Residual ACF")
+plt.show()
+
+lb = acorr_ljungbox(resid, lags=[10, 20], return_df=True)
+lb
+```
+
+## A.11 Supervised learning matrix from lags
+
+Many machine learning models require turning a time series into a supervised learning table.
+
+```{python}
+#| eval: false
+def make_lagged_frame(y, lags, horizon=1):
+    y = pd.Series(y).reset_index(drop=True)
+    data = pd.DataFrame({"y": y})
+
+    for lag in lags:
+        data[f"lag_{lag}"] = data["y"].shift(lag)
+
+    data["target"] = data["y"].shift(-horizon)
+    data = data.dropna().reset_index(drop=True)
+
+    X = data[[f"lag_{lag}" for lag in lags]]
+    target = data["target"]
+    return X, target
+
+X_lag, y_target = make_lagged_frame(y, lags=[1, 2, 3, 7], horizon=1)
+```
+
+The scaling rule is important.  Fit scalers only on training data.
+
+```{python}
+#| eval: false
+split = int(0.8 * len(X_lag))
+X_train, X_test = X_lag.iloc[:split], X_lag.iloc[split:]
+y_train, y_test = y_target.iloc[:split], y_target.iloc[split:]
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+model = Ridge(alpha=1.0)
+model.fit(X_train_scaled, y_train)
+y_pred = model.predict(X_test_scaled)
+
+print("MAE:", mae(y_test, y_pred))
+print("RMSE:", rmse(y_test, y_pred))
+```
+
+## A.12 Window datasets for neural networks
+
+For neural networks, a common supervised learning format is
+
+$$
+(x_{t-L+1},\ldots,x_t) \mapsto (x_{t+1},\ldots,x_{t+H}).
+$$
+
+```{python}
+#| eval: false
+def make_windows(y, input_length, horizon):
+    y = np.asarray(y, dtype=np.float32)
+    X = []
+    Y = []
+    for start in range(0, len(y) - input_length - horizon + 1):
+        end = start + input_length
+        X.append(y[start:end])
+        Y.append(y[end:end + horizon])
+    return np.array(X), np.array(Y)
+
+X_win, Y_win = make_windows(y.values, input_length=24, horizon=12)
+print(X_win.shape, Y_win.shape)
+```
+
+A minimal PyTorch dataset is:
+
+```{python}
+#| eval: false
+class WindowDataset(Dataset):
+    def __init__(self, X, Y):
+        self.X = torch.tensor(X, dtype=torch.float32)
+        self.Y = torch.tensor(Y, dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.Y[idx]
+
+train_ds = WindowDataset(X_win, Y_win)
+train_loader = DataLoader(train_ds, batch_size=32, shuffle=False)
+```
+
+For forecasting, avoid shuffling validation and test windows.  Shuffling training windows is sometimes acceptable for neural-network optimization after the windows have been created without leakage, but validation must remain chronological.
+
+## A.13 Minimal neural network forecaster
+
+```{python}
+#| eval: false
+class MLPForecaster(nn.Module):
+    def __init__(self, input_length, horizon, hidden=64):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_length, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, horizon)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+model = MLPForecaster(input_length=24, horizon=12)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+loss_fn = nn.MSELoss()
+```
+
+A small training loop:
+
+```{python}
+#| eval: false
+for epoch in range(20):
+    model.train()
+    total_loss = 0.0
+
+    for xb, yb in train_loader:
+        optimizer.zero_grad()
+        pred = model(xb)
+        loss = loss_fn(pred, yb)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item() * len(xb)
+
+    avg_loss = total_loss / len(train_loader.dataset)
+    print(f"epoch={epoch + 1:02d}, train_mse={avg_loss:.4f}")
+```
+
+## A.14 Causal convolution helper
+
+A 1D causal convolution should not use future values.  The output at time $t$ may depend on $x_t,x_{t-1},x_{t-2},\ldots$, but not on $x_{t+1}$.
+
+```{python}
+#| eval: false
+def causal_convolution_1d(x, kernel, dilation=1):
+    x = np.asarray(x, dtype=float)
+    kernel = np.asarray(kernel, dtype=float)
+    n = len(x)
+    k = len(kernel)
+    y = np.zeros(n)
+
+    for t in range(n):
+        value = 0.0
+        for j in range(k):
+            idx = t - dilation * j
+            if idx >= 0:
+                value += kernel[j] * x[idx]
+        y[t] = value
+
+    return y
+```
+
+The receptive field of a stack of dilated convolutions with kernel size $K$ and dilations $d_1,\ldots,d_L$ is
+
+$$
+R = 1 + (K-1)\sum_{\ell=1}^{L} d_\ell.
+$$
+
+## A.15 Attention helper functions
+
+The scaled dot-product attention formula is
+
+$$
+\operatorname{Attention}(Q,K,V)
+= \operatorname{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V.
+$$
+
+```{python}
+#| eval: false
+def softmax_rows(A):
+    A = A - A.max(axis=1, keepdims=True)
+    E = np.exp(A)
+    return E / E.sum(axis=1, keepdims=True)
+
+
+def scaled_dot_product_attention(Q, K, V, mask=None):
+    d_k = Q.shape[-1]
+    scores = Q @ K.T / np.sqrt(d_k)
+    if mask is not None:
+        scores = scores + mask
+    weights = softmax_rows(scores)
+    output = weights @ V
+    return output, weights
+
+
+def causal_mask(T):
+    M = np.triu(np.ones((T, T)), k=1)
+    return np.where(M == 1, -1e9, 0.0)
+```
+
+## A.16 Plotly interactive pattern for this book
+
+Plotly.js is included once globally in `assets/header.html`.  Interactive modules should use the shared configuration in `assets/ts-interactives.js`.
+
+A standard pattern is:
+
+```{js}
+//| eval: false
+window.TSInteractives = window.TSInteractives || {};
+
+window.TSInteractives.exampleModule = function () {
+  const plotDiv = document.getElementById("example-plot");
+  if (!plotDiv || typeof Plotly === "undefined") return;
+
+  const traces = [
+    { x: [0, 1, 2], y: [0, 1, 0], mode: "lines", name: "example" }
+  ];
+
+  const layout = {
+    title: "Example Interactive",
+    margin: { t: 60, r: 30, b: 50, l: 50 }
+  };
+
+  Plotly.react(
+    plotDiv,
+    traces,
+    layout,
+    window.TSInteractives.plotlyConfig
+  );
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+  window.TSInteractives.exampleModule();
+});
+```
+
+The chapter `.qmd` file should contain only the container, not another Plotly script tag.
+
+```{markdown}
+```html
+<div class="interactive-card">
+  <h3>Interactive Module</h3>
+  <div id="example-plot" style="width:100%; height:480px;"></div>
+</div>
+```
+```
+
+## A.17 Common debugging checklist
+
+When a lab or interactive does not work, check these items first.
+
+- Confirm the notebook runtime is using Python 3.10 or later.
+- Run all cells from the top instead of running isolated cells out of order.
+- Check array lengths after differencing, lagging, and windowing.
+- Use `assert` statements for expected shapes.
+- Make sure scaling is fitted only on the training set.
+- Make sure validation and test sets are later in time than the training set.
+- Check that `assets/header.html` loads Plotly.js once.
+- Check browser developer tools for missing file errors such as `404 Not Found`.
+- Check that each interactive container ID matches the JavaScript code.
+- Avoid raw HTML tables inside Quarto documents when rendering to PDF.
+
+Useful shape checks:
+
+```{python}
+#| eval: false
+assert len(y_train) > 0
+assert len(y_test) > 0
+assert X_train.shape[0] == len(y_train)
+assert X_test.shape[0] == len(y_test)
+assert np.isfinite(X_train).all().all()
+assert np.isfinite(y_train).all()
+```
+
+## A.18 AI-assisted Python workflow
+
+AI tools are helpful for code review, but they must be asked precise, time-series-aware questions.  Good prompts include the data structure, the forecast horizon, the information set, and the validation design.
+
+Example prompt:
+
+> I am forecasting $y_{t+12}$ using only information available up to time $t$.  Here is my feature construction and train/test split.  Check whether any feature leaks future information.  Also check whether my scaling is fitted only on the training set.
+
+Another useful prompt:
+
+> Here is my residual ACF, Ljung-Box result, and rolling-origin error table.  Give three possible reasons the model fails, and propose checks that I can verify with code.
+
+AI-generated code should be treated as a draft.  Before using it in a project, verify the following.
+
+- The model does not use future observations as predictors.
+- Differencing, scaling, and feature engineering are performed in the correct chronological order.
+- The validation method matches the forecasting task.
+- Baselines are included.
+- Residual diagnostics are checked.
+- The code is reproducible from a fresh runtime.
+
+## A.19 Minimal project notebook structure
+
+A strong final-project notebook should follow this structure.
+
+1. Problem statement and forecast contract.
+2. Data loading and cleaning.
+3. Exploratory time-series analysis.
+4. Baseline models.
+5. Main models.
+6. Rolling-origin or chronological validation.
+7. Residual diagnostics and uncertainty.
+8. Interpretation and limitations.
+9. Final conclusion.
+
+A simple project header can be:
+
+```{python}
+#| eval: false
+PROJECT_TITLE = "Short descriptive title"
+FORECAST_TARGET = "variable to forecast"
+FORECAST_HORIZON = 12
+INFORMATION_SET = "all variables observed up to forecast origin t"
+VALIDATION_SCHEME = "rolling-origin evaluation"
+RANDOM_SEED = 7339
+```
+
+## A.20 Key principle
+
+For sequence data, the order is part of the data.  A model that ignores the order may still be useful, but a validation procedure that ignores the order is usually misleading.

@@ -1,0 +1,476 @@
+# Final Projects
+
+The final project is the capstone experience for **Modern Time Series Analysis and Sequence Learning**. It asks you to design, implement, evaluate, and communicate a complete time-series or sequence-data modeling study.
+
+A strong project should combine **mathematical modeling**, **careful validation**, **computational implementation**, and **AI-assisted but human-verified reasoning**. The goal is not only to obtain a good numerical score. The goal is to show that you understand the structure of the data, the assumptions behind your models, the limitations of your conclusions, and the way the model would be used in practice.
+
+## Project goals
+
+By the end of the project, you should be able to:
+
+1. Formulate a real time-series or sequence-data problem precisely.
+2. Identify the forecasting or sequence-learning information set.
+3. Build meaningful baselines before using advanced methods.
+4. Compare classical, machine-learning, and modern sequence models using time-aware validation.
+5. Diagnose residuals, errors, uncertainty, and model failure modes.
+6. Use AI tools responsibly as assistants for coding, checking, explanation, and report revision.
+7. Produce a reproducible notebook, written report, and interactive visualization.
+
+## Project types
+
+Your project may focus on one of the following problem types.
+
+| Type | Main question | Typical output |
+|---|---|---|
+| Point forecasting | What value will occur in the future? | $\widehat{y}_{t+h}$ |
+| Probabilistic forecasting | What is the predictive distribution? | intervals, quantiles, risk probabilities |
+| Anomaly detection | Which observations or windows are unusual? | anomaly scores, alerts |
+| Sequence classification | Which class does a sequence belong to? | class label or probability vector |
+| Regime detection | Which hidden state generated the observation? | state probabilities or decoded states |
+| Representation learning | What low-dimensional features summarize the sequence? | embeddings, clusters, latent features |
+| Multivariate forecasting | How do several related series evolve together? | vector forecast $\widehat{\mathbf y}_{t+h}$ |
+| Hierarchical forecasting | How should forecasts agree across aggregation levels? | reconciled forecasts |
+
+## Required project contract
+
+Each team or student should begin with a short project contract. This contract should be written before model fitting begins.
+
+### Problem statement
+
+State the problem in one paragraph. Be explicit about the target variable, the time index, and the decision context.
+
+Example:
+
+> We forecast daily electricity demand for the next 7 days using historical demand, calendar information, and weather covariates. The forecast will be evaluated with rolling-origin validation and compared against seasonal naive, SARIMA, gradient boosting, and LSTM models.
+
+### Information set
+
+Define the information available at prediction time:
+
+$$
+\mathcal F_t = \sigma\{\text{all variables known at or before time } t\}.
+$$
+
+A valid forecast for horizon $h$ must satisfy
+
+$$
+\widehat y_{t+h|t} = g_h(\mathcal F_t),
+$$
+
+so the model must not use information that would only be available after time $t$.
+
+### Forecast horizon or sequence task
+
+Specify one of the following:
+
+- one-step forecasting: $h=1$;
+- multi-step forecasting: $h=1,\ldots,H$;
+- fixed-horizon forecasting: one chosen value of $h$;
+- sequence-to-one classification;
+- sequence-to-sequence prediction;
+- anomaly detection over rolling windows.
+
+### Data description
+
+Describe:
+
+- data source;
+- observation frequency;
+- number of observations;
+- missing values;
+- outliers;
+- exogenous variables;
+- whether the series is univariate, multivariate, panel, or hierarchical;
+- whether the data are public, synthetic, or restricted.
+
+### Success criterion
+
+Choose primary and secondary evaluation criteria before model fitting.
+
+For point forecasts, common metrics include
+
+$$
+\operatorname{MAE}=\frac{1}{m}\sum_{i=1}^m |y_i-\widehat y_i|,
+$$
+
+$$
+\operatorname{RMSE}=\left(\frac{1}{m}\sum_{i=1}^m (y_i-\widehat y_i)^2\right)^{1/2}.
+$$
+
+For quantile forecasts, use pinball loss:
+
+$$
+L_\tau(y,q)=
+\begin{cases}
+\tau(y-q), & y\ge q,\\
+(1-\tau)(q-y), & y<q.
+\end{cases}
+$$
+
+For prediction intervals, report empirical coverage and average width.
+
+## Required deliverables
+
+Each final project must include the following deliverables.
+
+| Deliverable | Description |
+|---|---|
+| Project proposal | One-page problem formulation and validation plan |
+| Reproducible notebook | Python notebook that runs from raw or prepared data to results |
+| Written report | Clear explanation of data, models, validation, results, diagnostics, and limitations |
+| Interactive visualization | One HTML visualization or dashboard-style figure for the main result |
+| AI-use appendix | Short explanation of how AI tools were used and how outputs were checked |
+| Presentation | Short class presentation or recorded walkthrough |
+
+## Suggested report structure
+
+Use the following structure for the written report.
+
+### 1. Abstract
+
+Summarize the problem, data, main models, main validation design, and final conclusion in 150--250 words.
+
+### 2. Problem and data
+
+Explain what the series represents and why the problem matters. Include plots of the raw data and describe trend, seasonality, volatility, missingness, outliers, and possible regime changes.
+
+### 3. Mathematical formulation
+
+State the target and information set. For forecasting, write the task as
+
+$$
+\widehat y_{t+h|t}=g_h(y_t,y_{t-1},\ldots,\mathbf x_t,\mathbf x_{t-1},\ldots).
+$$
+
+For sequence classification, write the task as
+
+$$
+\widehat c = g(x_1,x_2,\ldots,x_T).
+$$
+
+For anomaly detection, define an anomaly score such as
+
+$$
+A_t = \frac{|y_t-\widehat y_{t|t-1}|}{\widehat \sigma_t}.
+$$
+
+### 4. Exploratory analysis
+
+Include at least three of the following:
+
+- time plot;
+- rolling mean and rolling standard deviation;
+- seasonal plot;
+- lag plot;
+- ACF/PACF;
+- periodogram or spectral plot;
+- missing-value visualization;
+- train/test split diagram.
+
+### 5. Baselines
+
+Every project must include at least two appropriate baselines. Possible baselines include:
+
+- mean forecast;
+- last-value naive forecast;
+- seasonal naive forecast;
+- moving average;
+- linear regression on time and seasonal features;
+- simple ARIMA or SARIMA;
+- simple logistic regression or random forest for sequence classification.
+
+The advanced model is only meaningful if it beats a reasonable baseline under a fair validation design.
+
+### 6. Models
+
+Choose a small number of models and explain why they are appropriate. A good project usually compares one model from at least two of the following families.
+
+| Family | Examples |
+|---|---|
+| Classical time-domain | AR, MA, ARMA, ARIMA, SARIMA |
+| State-space or hidden-state | Kalman filter, local trend model, HMM, regime-switching model |
+| Frequency-domain | Fourier features, spectral filtering, wavelets |
+| Feature-based ML | ridge regression, random forest, gradient boosting |
+| Probabilistic forecasting | quantile regression, conformal intervals, bootstrap intervals |
+| Deep learning | MLP, 1D CNN, TCN, RNN, LSTM, GRU, transformer |
+| Multivariate/panel | VAR, dynamic regression, global forecasting model |
+
+### 7. Validation design
+
+Use time-aware validation. Random train/test splitting is usually not acceptable for forecasting.
+
+A standard rolling-origin design is
+
+$$
+\{1,\ldots,t_j\}\rightarrow \{t_j+1,\ldots,t_j+H\},
+\qquad j=1,\ldots,J.
+$$
+
+Report the split dates and the forecast horizons. For sequence classification, avoid putting highly overlapping windows from the same original sequence into both train and test sets.
+
+### 8. Results
+
+Report model performance clearly. Include horizon-wise results when appropriate.
+
+For multi-step forecasting, report
+
+$$
+\operatorname{MAE}(h)=\frac{1}{J}\sum_{j=1}^J |y_{t_j+h}-\widehat y_{t_j+h|t_j}|,
+\qquad h=1,\ldots,H.
+$$
+
+Do not report only a single average if the error increases substantially with horizon.
+
+### 9. Diagnostics and interpretation
+
+Include at least three of the following:
+
+- residual time plot;
+- residual ACF;
+- Ljung--Box test or equivalent residual-dependence check;
+- error by horizon;
+- error by season or regime;
+- prediction interval coverage;
+- feature importance or permutation importance;
+- attention map or saliency plot;
+- anomaly examples;
+- failure-case analysis.
+
+### 10. AI-assisted modeling appendix
+
+Describe how AI tools were used. Possible uses include:
+
+- brainstorming model families;
+- generating starter code;
+- checking for data leakage;
+- debugging Python errors;
+- explaining residual plots;
+- improving report clarity.
+
+Also describe how each AI-generated output was checked. AI assistance does not replace mathematical reasoning, code review, or validation.
+
+## Suggested topics
+
+### Forecasting projects
+
+| Topic | Possible data | Suggested models |
+|---|---|---|
+| Electricity demand forecasting | hourly/daily load | SARIMA, Prophet, gradient boosting, LSTM |
+| Public transit ridership | daily or monthly ridership | seasonal naive, ARIMA, Prophet, feature-based ML |
+| Retail demand | product-store sales | global ML model, hierarchical reconciliation |
+| Web traffic | page views or visits | Fourier features, Prophet, TCN |
+| Weather variables | temperature, precipitation | SARIMA, dynamic regression, probabilistic intervals |
+| Financial volatility | returns, realized volatility | GARCH-style baseline, HMM, LSTM |
+| Housing or rent trends | monthly indices | trend/seasonal regression, ARIMA, uncertainty intervals |
+
+### Sequence classification projects
+
+| Topic | Possible data | Suggested models |
+|---|---|---|
+| Human activity recognition | sensor windows | 1D CNN, LSTM, transformer |
+| ECG or biomedical signals | waveform segments | filtering, wavelets, CNN |
+| Machine vibration monitoring | sensor readings | anomaly detection, autoencoder, TCN |
+| Text or token sequence classification | tokenized sequences | RNN, attention, transformer |
+| Audio event classification | spectrogram or waveform | FFT features, CNN |
+
+### Representation-learning projects
+
+| Topic | Possible data | Suggested models |
+|---|---|---|
+| Time-series clustering | many related series | feature extraction, PCA, autoencoder |
+| Anomaly detection | industrial or sensor data | reconstruction error, conformal thresholding |
+| Regime discovery | financial or climate series | HMM, embeddings, clustering |
+| Self-supervised sequence learning | unlabeled windows | masked reconstruction, contrastive learning |
+
+## Project proposal template
+
+Use this template for the one-page proposal.
+
+```markdown
+# Project Proposal
+
+## Title
+
+## Team members
+
+## Problem statement
+
+## Data source and description
+
+## Target variable or sequence label
+
+## Forecast horizon or sequence task
+
+## Information set
+
+What is known at prediction time?
+
+## Initial exploratory observations
+
+Trend, seasonality, missing values, outliers, changing variance, or regimes.
+
+## Baseline models
+
+At least two baselines.
+
+## Main models to compare
+
+At least two serious candidate models.
+
+## Validation plan
+
+Train/validation/test dates or rolling-origin design.
+
+## Primary metric
+
+## Secondary diagnostics
+
+## AI-assistance plan
+
+How AI will be used and how its outputs will be verified.
+```
+
+## Reproducible notebook requirements
+
+The notebook should run from top to bottom. It should contain:
+
+1. package imports;
+2. data loading;
+3. data cleaning;
+4. train/validation/test split;
+5. exploratory plots;
+6. baseline models;
+7. main models;
+8. evaluation;
+9. diagnostics;
+10. final summary.
+
+The notebook should avoid hidden manual steps. Any randomness should use a fixed seed, for example:
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(7339)
+```
+
+For deep learning projects, also set framework-specific seeds when possible.
+
+## Interactive visualization requirement
+
+Each project should include at least one interactive visualization. It may be simple but should help the reader understand the result.
+
+Good choices include:
+
+- forecast plot with observed values, forecast mean, and prediction interval;
+- rolling-origin validation plot;
+- residual diagnostic dashboard;
+- horizon-wise error plot;
+- anomaly-score plot with flagged windows;
+- embedding scatterplot;
+- attention heatmap;
+- hierarchical forecast reconciliation diagram.
+
+For this book, Plotly.js is loaded globally through `assets/header.html`. Do not add another Plotly script tag inside project pages.
+
+A minimal Quarto HTML block can use the global Plotly object:
+
+```html
+<div id="project-forecast-plot" style="width:100%; height:420px;"></div>
+<script>
+(function () {
+  if (typeof Plotly === "undefined") return;
+
+  const trace = {
+    x: [1, 2, 3, 4],
+    y: [10, 12, 11, 15],
+    mode: "lines+markers",
+    name: "observed"
+  };
+
+  const layout = {
+    title: "Example Project Visualization",
+    xaxis: {title: "time"},
+    yaxis: {title: "value"},
+    margin: {t: 60, r: 20, b: 50, l: 60}
+  };
+
+  const config = window.TSInteractives?.plotlyConfig || {
+    responsive: true,
+    displayModeBar: true,
+    displaylogo: false
+  };
+
+  Plotly.newPlot("project-forecast-plot", [trace], layout, config);
+})();
+</script>
+```
+
+For PDF output, use a static figure or code-generated plot rather than relying only on the interactive HTML block.
+
+## Rubric
+
+| Category | Points | Description |
+|---|---:|---|
+| Problem formulation and information set | 15 | Clear task, target, horizon, and prediction-time information |
+| Data understanding and EDA | 15 | Strong visual and statistical exploration of dependence, seasonality, outliers, and missingness |
+| Baselines and model choice | 15 | Appropriate baselines and justified advanced models |
+| Validation and leakage control | 15 | Time-aware validation and explicit leakage checks |
+| Results and diagnostics | 15 | Clear metrics, residual analysis, uncertainty, and failure-case analysis |
+| Mathematical explanation | 10 | Correct explanation of assumptions, model equations, and evaluation criteria |
+| Reproducibility and code quality | 10 | Notebook runs cleanly and is organized |
+| Communication and AI reflection | 5 | Clear report, honest limitations, and responsible AI-use statement |
+
+Total: 100 points.
+
+## Common mistakes
+
+1. **Randomly splitting time-series data.** This often leaks future information into training.
+2. **Skipping baselines.** A complex model is not impressive if it cannot beat a seasonal naive forecast.
+3. **Using future covariates.** Only include covariates that are known at prediction time.
+4. **Evaluating only one horizon.** Multi-step forecasts should be evaluated by horizon.
+5. **Reporting only point accuracy.** Many applications require uncertainty or risk estimates.
+6. **Ignoring residual dependence.** A good forecast should leave little predictable structure in residuals.
+7. **Overusing AI-generated code without verification.** Every AI-generated claim, formula, and code block must be checked.
+8. **Overfitting the test set.** Use a validation set for model selection and reserve the test set for final evaluation.
+
+## Final presentation format
+
+A good presentation is 8--10 minutes and contains:
+
+1. problem and data;
+2. target and horizon;
+3. validation design;
+4. baseline results;
+5. main model results;
+6. diagnostics and uncertainty;
+7. one failure case;
+8. conclusion and next steps.
+
+Use visual evidence. Avoid showing too much code on slides.
+
+## Final project checklist
+
+Before submission, check the following.
+
+- [ ] The problem is clearly stated.
+- [ ] The target variable or sequence label is defined.
+- [ ] The forecast horizon or sequence task is defined.
+- [ ] The information set is stated.
+- [ ] The data source and frequency are described.
+- [ ] Missing values and outliers are discussed.
+- [ ] At least two baselines are included.
+- [ ] At least one classical or statistical model is considered when appropriate.
+- [ ] At least one machine-learning or sequence-learning model is considered when appropriate.
+- [ ] Validation is chronological or rolling-origin.
+- [ ] Leakage checks are included.
+- [ ] Results are reported using suitable metrics.
+- [ ] Residuals or errors are diagnosed.
+- [ ] Uncertainty is discussed when relevant.
+- [ ] An interactive visualization is included.
+- [ ] The notebook runs from top to bottom.
+- [ ] AI assistance is documented and verified.
+- [ ] Limitations are stated honestly.
+
+## Connection to Chapter 27
+
+Chapter 27 gives a studio-style guide to designing the final project. This appendix is the practical submission guide: use it as the checklist for proposal, notebook, report, visualization, and presentation.

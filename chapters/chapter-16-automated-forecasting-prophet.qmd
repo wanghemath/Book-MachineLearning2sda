@@ -1,0 +1,1149 @@
+# Automated Forecasting and Prophet-Type Additive Models
+
+::: {.hero}
+**Part V. Forecasting at Scale and Machine Learning Methods**  
+**Chapter goal:** understand automated forecasting as a modeling pipeline, not as a black box. We study Prophet-type additive models, changepoints, Fourier seasonality, holiday effects, cross-validation, hyperparameter tuning, and the analyst-in-the-loop workflow used when many time series must be forecast repeatedly.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain why manual ARIMA/SARIMA modeling becomes difficult at scale;
+2. distinguish time-domain models, frequency-domain methods, additive forecasting models, and deep-learning sequence models;
+3. write the Prophet-style additive model
+   $$
+   y(t)=g(t)+s(t)+h(t)+\varepsilon_t;
+   $$
+4. derive the main ingredients of piecewise linear trend, saturating logistic trend, Fourier seasonality, and holiday indicators;
+5. explain why changepoint priors and seasonality priors act as regularization parameters;
+6. construct a simplified Prophet-like model using linear regression, Fourier features, changepoint basis functions, and holiday indicators;
+7. design rolling-origin cross-validation for automated forecasting;
+8. tune changepoint, seasonality, holiday, and seasonality-mode parameters without leaking future information;
+9. compare Prophet-type models with SARIMA and machine-learning feature models;
+10. use AI assistants to generate candidate forecasting pipelines while independently checking assumptions, leakage, and diagnostics.
+
+## 16.1 Why automated forecasting?
+
+Classical chapters built models by hand. For a single important series, hand modeling is valuable: plot the data, transform it, inspect the ACF/PACF, choose ARIMA or SARIMA orders, estimate parameters, diagnose residuals, and backtest forecasts. This workflow gives mathematical control.
+
+At scale, however, an organization may need forecasts for hundreds, thousands, or millions of related time series:
+
+- daily demand for many products;
+- hourly load for many regions;
+- weekly admissions for many programs;
+- traffic, rideshare, health, finance, climate, or website metrics;
+- multiple horizons and repeated updates.
+
+Manual modeling becomes slow and inconsistent. Automated forecasting asks for a procedure that can:
+
+1. fit reasonable models with minimal manual intervention;
+2. incorporate common forecasting structure such as trend, seasonality, holidays, and outliers;
+3. support analyst knowledge through interpretable parameters;
+4. evaluate forecasts with rolling-origin backtests;
+5. scale across many time series.
+
+The lecture notes place Prophet after ARIMA/SARIMA, spectral analysis, and deep-learning approaches. That is the right position pedagogically: Prophet is not a replacement for time-series theory; it is a practical additive modeling strategy that borrows ideas from regression, splines, Fourier analysis, Bayesian regularization, and forecasting evaluation.
+
+::: {.callout-note}
+## Automated does not mean assumption-free
+An automated model still makes assumptions. Prophet-type models assume that trend, seasonality, holiday effects, and noise give a useful decomposition. A good analyst checks whether this decomposition matches the forecasting problem.
+:::
+
+## 16.2 A taxonomy of forecasting models
+
+A useful high-level taxonomy is:
+
+1. **Time-domain statistical models**: AR, MA, ARMA, ARIMA, SARIMA, state-space models. These model dependence through lagged values and lagged shocks.
+2. **Frequency-domain methods**: Fourier analysis, spectral density, periodograms, wavelets, filtering. These model oscillatory structure.
+3. **Additive automated models**: Prophet-type models, generalized additive models, spline trend plus seasonality and holiday effects.
+4. **Machine-learning feature models**: lag features, rolling statistics, calendar features, gradient boosting, random forests.
+5. **Deep sequence models**: RNN, LSTM, GRU, temporal CNN, TCN, attention, and transformers.
+
+The categories overlap. Prophet uses Fourier features for seasonality, regression-like additive components, changepoint regularization, and rolling-origin cross-validation. NeuralProphet and related models add autoregression or neural-network components.
+
+A practical forecaster compares at least:
+
+$$
+\text{naive},\quad
+\text{seasonal naive},\quad
+\text{SARIMA},\quad
+\text{Prophet-type additive model},\quad
+\text{ML feature model}.
+$$
+
+The winning model depends on the data-generating mechanism, forecast horizon, cost function, and operational constraints.
+
+## 16.3 The Prophet-style additive model
+
+A Prophet-type model represents the observed series as
+
+$$
+y(t)=g(t)+s(t)+h(t)+\varepsilon_t.
+$$
+
+The components are:
+
+- $g(t)$: trend, modeling nonperiodic long-term change;
+- $s(t)$: seasonal component, modeling periodic behavior;
+- $h(t)$: holiday or event component, modeling irregular known events;
+- $\varepsilon_t$: residual error.
+
+This is a **generalized additive forecasting model**. The model is interpretable because each term has a separate role.
+
+For a fixed set of basis functions, the additive model can be written as a regression:
+
+$$
+y_t
+=\beta_0
++\sum_{j=1}^{p_g}\beta^{(g)}_j G_j(t)
++\sum_{j=1}^{p_s}\beta^{(s)}_j S_j(t)
++\sum_{j=1}^{p_h}\beta^{(h)}_j H_j(t)
++\varepsilon_t.
+$$
+
+Here:
+
+- $G_j(t)$ are trend/changepoint features;
+- $S_j(t)$ are seasonal Fourier features;
+- $H_j(t)$ are holiday/event indicators.
+
+The model is simple in form, but the feature design and regularization are important.
+
+::: {.theorem-box}
+## Additive model as projection
+If the noise has mean zero and the features are fixed, the least-squares fit is the orthogonal projection of the data vector $y$ onto the span of the trend, seasonal, and holiday feature vectors. Regularization shrinks this projection toward simpler trend and seasonal components.
+:::
+
+## 16.4 Trend component I: piecewise linear trend
+
+A common trend model is piecewise linear. Suppose changepoints occur at
+
+$$
+s_1<s_2<\cdots<s_J.
+$$
+
+Define the hinge basis function
+
+$$
+(t-s_j)_+=\max(t-s_j,0).
+$$
+
+A continuous piecewise linear trend can be written as
+
+$$
+g(t)=m+kt+\sum_{j=1}^J\delta_j(t-s_j)_+.
+$$
+
+Before the first changepoint, the slope is $k$. After changepoint $s_j$, the slope changes by $\delta_j$. Therefore, after all changepoints up to time $t$, the local slope is
+
+$$
+k+\sum_{j:s_j<t}\delta_j.
+$$
+
+This form is closely related to linear splines. It is useful because:
+
+1. the trend remains continuous;
+2. changes in growth rate are explicit;
+3. changepoints can be chosen automatically or specified by the analyst;
+4. regularizing the coefficients $\delta_j$ controls flexibility.
+
+### Changepoint regularization
+
+If too many changepoints are allowed without regularization, the trend can overfit noise. A Laplace prior
+
+$$
+\delta_j\sim \operatorname{Laplace}(0,\tau)
+$$
+
+encourages many $\delta_j$ to be close to zero. In optimization terms, this behaves like an $\ell^1$ penalty:
+
+$$
+\min_\beta
+\sum_{t=1}^T
+\left(y_t-\widehat y_t\right)^2
++\lambda\sum_{j=1}^J|\delta_j|.
+$$
+
+Small $\tau$ or large $\lambda$ gives a smoother trend. Large $\tau$ or small $\lambda$ allows more changepoint flexibility.
+
+::: {.callout-warning}
+## Changepoints are not magic
+A changepoint basis can explain historical bends in the curve, but it does not know whether those bends will continue. Long-horizon forecasts can be very sensitive to trend assumptions.
+:::
+
+## 16.5 Trend component II: saturating logistic growth
+
+For growth that cannot increase forever, Prophet-type models may use a saturating logistic trend. The basic logistic curve is
+
+$$
+g(t)=\frac{C}{1+\exp(-k(t-m))},
+$$
+
+where:
+
+- $C$ is the carrying capacity;
+- $k$ is the growth rate;
+- $m$ is an offset parameter controlling the midpoint.
+
+This model is appropriate when there is a natural ceiling: population growth in an ecosystem, market adoption, number of users in a bounded region, or capacity-limited demand.
+
+A time-varying capacity version replaces $C$ by $C(t)$:
+
+$$
+g(t)=\frac{C(t)}{1+\exp(-k(t-m))}.
+$$
+
+Changepoints can also modify the growth rate. Conceptually,
+
+$$
+k(t)=k+\sum_{j:s_j<t}\delta_j.
+$$
+
+The technical implementation adjusts the offset terms so that the curve remains continuous at changepoints.
+
+::: {.callout-tip}
+## Linear or logistic trend?
+Use a logistic trend only when a meaningful capacity is available. Without a meaningful carrying capacity, a piecewise linear trend is usually easier to explain and diagnose.
+:::
+
+## 16.6 Seasonality through Fourier features
+
+A periodic function with period $P$ satisfies
+
+$$
+s(t+P)=s(t).
+$$
+
+Prophet models seasonality using a truncated Fourier series:
+
+$$
+s(t)=
+\sum_{n=1}^N
+\left[
+ a_n\cos\left(\frac{2\pi nt}{P}\right)
++b_n\sin\left(\frac{2\pi nt}{P}\right)
+\right].
+$$
+
+For weekly seasonality in daily data, $P=7$. For yearly seasonality in daily data, $P\approx365.25$. For hourly data with daily seasonality, $P=24$ if time is measured in hours.
+
+The Fourier order $N$ controls flexibility:
+
+- small $N$: smooth seasonal curve;
+- large $N$: more wiggly seasonal curve;
+- too large $N$: overfitting.
+
+The number of seasonal coefficients for one seasonal period is $2N$.
+
+Fourier seasonality connects this chapter directly to spectral analysis. The difference is that here the Fourier basis is used as a deterministic regression basis, not as a full stochastic spectral model.
+
+## 16.7 Holiday and event effects
+
+Some effects are neither smooth trends nor regular seasonality. Examples include:
+
+- Thanksgiving, Black Friday, Christmas, Lunar New Year;
+- semester start, graduation, application deadlines;
+- product launches;
+- policy changes;
+- weather events;
+- one-time disruptions.
+
+For holiday $i$, let $D_i$ be the set of dates associated with that holiday. Define
+
+$$
+H_i(t)=\mathbf 1_{\{t\in D_i\}}.
+$$
+
+A holiday component is
+
+$$
+h(t)=\sum_{i=1}^K\kappa_i H_i(t).
+$$
+
+In matrix form,
+
+$$
+h(t)=Z(t)^T\kappa.
+$$
+
+A Gaussian prior
+
+$$
+\kappa_i\sim N(0,\nu^2)
+$$
+
+shrinks holiday effects toward zero unless the data support them. This is important when many holidays or event windows are included.
+
+Holiday effects can also include windows. For example, a Black Friday effect may include Thanksgiving Day, Black Friday, and Cyber Monday:
+
+$$
+H_{\text{BlackFriday}}(t)=1
+\quad\text{if }t\in\{\text{Thu},\text{Fri},\text{Mon}\}
+$$
+
+for the relevant calendar year.
+
+## 16.8 Additive versus multiplicative seasonality
+
+The default additive model is
+
+$$
+y(t)=g(t)+s(t)+h(t)+\varepsilon_t.
+$$
+
+This assumes that seasonal fluctuations have roughly constant absolute size. For example, the seasonal amplitude is about $10$ units whether the trend is $100$ or $1000$.
+
+A multiplicative seasonal model has the form
+
+$$
+y(t)=g(t)\{1+s(t)+h(t)\}+\varepsilon_t.
+$$
+
+This assumes that seasonal fluctuations scale with the level. For example, the seasonal effect might be about $10\%$ of the trend.
+
+A common alternative is to log-transform the response:
+
+$$
+z(t)=\log y(t),
+$$
+
+then fit an additive model to $z(t)$. On the original scale, additive structure in logs becomes multiplicative structure.
+
+::: {.callout-note}
+## Rule of thumb
+If seasonal swings get larger as the series level increases, consider multiplicative seasonality or a log transformation.
+:::
+
+## 16.9 Interactive module: build a Prophet-type additive model
+
+The interactive below simulates a Prophet-type model. The graph uses the global Plotly toolbar from `assets/header.html`, so students can zoom, pan, reset axes, and download the plot.
+
+<div class="interactive-card">
+  <h3>Interactive Module: Additive Forecasting Components</h3>
+  <p class="small-note">Adjust trend, changepoint flexibility, seasonality, holiday pulse, and noise. The plot shows the observed series and its underlying additive components.</p>
+
+  <div class="controls">
+    <label>Base slope
+      <input id="ch16-slope" type="range" min="-0.05" max="0.10" step="0.005" value="0.035">
+    </label>
+    <label>Changepoint effect
+      <input id="ch16-change" type="range" min="-0.12" max="0.12" step="0.01" value="-0.04">
+    </label>
+    <label>Seasonal amplitude
+      <input id="ch16-season" type="range" min="0" max="8" step="0.5" value="4">
+    </label>
+    <label>Fourier order
+      <input id="ch16-fourier" type="range" min="1" max="5" step="1" value="2">
+    </label>
+    <label>Holiday effect
+      <input id="ch16-holiday" type="range" min="-15" max="20" step="1" value="10">
+    </label>
+    <label>Noise scale
+      <input id="ch16-noise" type="range" min="0" max="6" step="0.5" value="2">
+    </label>
+  </div>
+
+  <p id="ch16-additive-summary" class="small-note"></p>
+  <div id="ch16-prophet-additive-plot" style="width:100%; height:560px;"></div>
+</div>
+
+<script>
+(function () {
+  function seededNoise(i) {
+    // deterministic pseudo-random noise for reproducible interaction
+    const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    return x - Math.floor(x) - 0.5;
+  }
+
+  function fourierSeason(t, period, order, amplitude) {
+    let value = 0;
+    for (let n = 1; n <= order; n++) {
+      value += (amplitude / n) * Math.sin(2 * Math.PI * n * t / period);
+      value += (0.45 * amplitude / n) * Math.cos(2 * Math.PI * n * t / period);
+    }
+    return value;
+  }
+
+  function updateCh16Additive() {
+    const plotDiv = document.getElementById("ch16-prophet-additive-plot");
+    const summary = document.getElementById("ch16-additive-summary");
+    if (!plotDiv) return;
+
+    const slope = parseFloat(document.getElementById("ch16-slope").value);
+    const change = parseFloat(document.getElementById("ch16-change").value);
+    const seasonAmp = parseFloat(document.getElementById("ch16-season").value);
+    const order = parseInt(document.getElementById("ch16-fourier").value);
+    const holidayAmp = parseFloat(document.getElementById("ch16-holiday").value);
+    const noiseScale = parseFloat(document.getElementById("ch16-noise").value);
+
+    const T = 240;
+    const cp = 130;
+    const period = 30;
+    const x = [];
+    const observed = [];
+    const trend = [];
+    const seasonal = [];
+    const holiday = [];
+    const fitted = [];
+
+    for (let t = 0; t < T; t++) {
+      const hinge = Math.max(0, t - cp);
+      const g = 30 + slope * t * 10 + change * hinge * 10;
+      const s = fourierSeason(t, period, order, seasonAmp);
+      const h = (Math.abs(t - 80) <= 2 || Math.abs(t - 180) <= 2) ? holidayAmp : 0;
+      const yhat = g + s + h;
+      const y = yhat + noiseScale * seededNoise(t);
+      x.push(t);
+      trend.push(g);
+      seasonal.push(s);
+      holiday.push(h);
+      fitted.push(yhat);
+      observed.push(y);
+    }
+
+    const data = [
+      {x: x, y: observed, mode: "markers", name: "observed y(t)", marker: {size: 5}},
+      {x: x, y: fitted, mode: "lines", name: "g(t)+s(t)+h(t)", line: {width: 3}},
+      {x: x, y: trend, mode: "lines", name: "trend g(t)", line: {dash: "dash"}},
+      {x: x, y: seasonal.map((v, i) => trend[i] + v), mode: "lines", name: "trend + seasonality", line: {dash: "dot"}},
+      {x: x, y: holiday, mode: "lines", name: "holiday h(t)", yaxis: "y2"}
+    ];
+
+    const layout = {
+      title: "Prophet-Type Additive Decomposition",
+      xaxis: {title: "time index"},
+      yaxis: {title: "series value"},
+      yaxis2: {title: "holiday effect", overlaying: "y", side: "right", showgrid: false},
+      legend: {orientation: "h", y: -0.25},
+      margin: {t: 70, r: 60, b: 95, l: 60}
+    };
+
+    summary.innerHTML =
+      "Model: y(t)=g(t)+s(t)+h(t)+ε(t). " +
+      "Fourier order N=" + order +
+      ", period P=" + period +
+      ", changepoint at t=" + cp + ".";
+
+    Plotly.react(plotDiv, data, layout, window.TSInteractives ? window.TSInteractives.plotlyConfig : {responsive: true});
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    ["ch16-slope", "ch16-change", "ch16-season", "ch16-fourier", "ch16-holiday", "ch16-noise"].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", updateCh16Additive);
+    });
+    updateCh16Additive();
+  });
+})();
+</script>
+
+## 16.10 Python example: simulate additive forecasting data
+
+We now build a synthetic data set with trend, changepoints, weekly seasonality, yearly seasonality, holiday effects, and noise.
+
+```{python}
+#| label: ch16-simulate-additive-data
+#| fig-cap: "Synthetic data generated from trend, seasonality, holidays, and noise."
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+
+n = 3 * 365
+dates = pd.date_range("2020-01-01", periods=n, freq="D")
+t = np.arange(n)
+
+# Piecewise linear trend with two changepoints
+cp1, cp2 = 320, 760
+trend = 40 + 0.025 * t + 0.060 * np.maximum(t - cp1, 0) - 0.080 * np.maximum(t - cp2, 0)
+
+# Weekly and yearly seasonal components
+weekly = 3.0 * np.sin(2 * np.pi * t / 7) + 1.2 * np.cos(2 * np.pi * t / 7)
+yearly = 6.0 * np.sin(2 * np.pi * t / 365.25) + 2.5 * np.cos(4 * np.pi * t / 365.25)
+
+# Holiday pulses: one event per year
+holiday = np.zeros(n)
+for day in [80, 445, 810]:
+    holiday[np.abs(t - day) <= 2] = 12
+
+noise = rng.normal(0, 2.0, size=n)
+y = trend + weekly + yearly + holiday + noise
+
+df = pd.DataFrame({
+    "ds": dates,
+    "t": t,
+    "y": y,
+    "trend": trend,
+    "weekly": weekly,
+    "yearly": yearly,
+    "holiday": holiday
+})
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(df["ds"], df["y"], linewidth=1, label="observed")
+ax.plot(df["ds"], df["trend"], linewidth=2, label="true trend")
+ax.set_title("Synthetic additive forecasting data")
+ax.set_xlabel("date")
+ax.set_ylabel("value")
+ax.legend()
+plt.show()
+```
+
+The data frame uses Prophet-style column names:
+
+- `ds`: date stamp;
+- `y`: target value.
+
+Even if we do not use the Prophet package, this naming convention is useful because it reminds students that automated forecasting starts with clean time stamps and a well-defined target.
+
+## 16.11 Python example: Fourier features
+
+A Fourier seasonal design matrix for period $P$ and order $N$ is
+
+$$
+X_{\text{season}}(t)=
+\left(
+\cos\frac{2\pi t}{P},
+\sin\frac{2\pi t}{P},
+\ldots,
+\cos\frac{2\pi Nt}{P},
+\sin\frac{2\pi Nt}{P}
+\right).
+$$
+
+```{python}
+#| label: ch16-fourier-features
+#| fig-cap: "Fourier basis functions for weekly seasonality."
+def fourier_features(t, period, order, prefix):
+    t = np.asarray(t)
+    data = {}
+    for k in range(1, order + 1):
+        data[f"{prefix}_cos_{k}"] = np.cos(2 * np.pi * k * t / period)
+        data[f"{prefix}_sin_{k}"] = np.sin(2 * np.pi * k * t / period)
+    return pd.DataFrame(data)
+
+weekly_X = fourier_features(df["t"], period=7, order=3, prefix="weekly")
+weekly_X.head()
+```
+
+```{python}
+#| label: ch16-plot-fourier-basis
+fig, ax = plt.subplots(figsize=(9, 3.5))
+for col in weekly_X.columns[:4]:
+    ax.plot(df["t"].iloc[:28], weekly_X[col].iloc[:28], label=col)
+ax.set_title("First weekly Fourier basis functions")
+ax.set_xlabel("time index")
+ax.legend(ncol=2)
+plt.show()
+```
+
+Increasing the Fourier order increases flexibility. This is helpful when the seasonal shape is complex, but too many terms can fit noise.
+
+## 16.12 Python example: a simplified Prophet-like regression
+
+We can build a Prophet-like model from scratch using:
+
+1. intercept and linear trend;
+2. hinge functions for changepoints;
+3. Fourier features for weekly and yearly seasonality;
+4. holiday indicators;
+5. ridge regularization.
+
+For clarity, we use a closed-form ridge estimator:
+
+$$
+\widehat\beta_{\lambda}
+=(X^TX+\lambda I)^{-1}X^Ty.
+$$
+
+We usually do not penalize the intercept; below we set the intercept penalty to zero.
+
+```{python}
+#| label: ch16-build-design-matrix
+from numpy.linalg import solve
+
+def make_design_matrix(dates, t, changepoints, weekly_order=3, yearly_order=5, holiday_days=None):
+    t = np.asarray(t)
+    parts = []
+
+    # Intercept and linear trend
+    base = pd.DataFrame({
+        "intercept": np.ones_like(t, dtype=float),
+        "linear_t": t.astype(float)
+    })
+    parts.append(base)
+
+    # Hinge functions for changepoints
+    cp_data = {}
+    for cp in changepoints:
+        cp_data[f"hinge_{cp}"] = np.maximum(t - cp, 0)
+    parts.append(pd.DataFrame(cp_data))
+
+    # Seasonal Fourier features
+    parts.append(fourier_features(t, period=7, order=weekly_order, prefix="weekly"))
+    parts.append(fourier_features(t, period=365.25, order=yearly_order, prefix="yearly"))
+
+    # Holiday indicators, with a small window around each event
+    if holiday_days is not None:
+        h = np.zeros_like(t, dtype=float)
+        for day in holiday_days:
+            h[np.abs(t - day) <= 2] = 1.0
+        parts.append(pd.DataFrame({"holiday_window": h}))
+
+    X = pd.concat(parts, axis=1)
+    return X
+
+changepoints = [180, 320, 500, 760, 900]
+holiday_days = [80, 445, 810]
+X = make_design_matrix(df["ds"], df["t"], changepoints, weekly_order=3, yearly_order=6, holiday_days=holiday_days)
+X.head()
+```
+
+```{python}
+#| label: ch16-fit-ridge-prophet-like
+# Standardize non-intercept columns for numerical stability.
+X_mat = X.to_numpy(dtype=float)
+y_vec = df["y"].to_numpy()
+
+means = X_mat.mean(axis=0)
+stds = X_mat.std(axis=0)
+means[0] = 0.0
+stds[0] = 1.0
+stds[stds == 0] = 1.0
+X_scaled = (X_mat - means) / stds
+
+lam = 25.0
+penalty = np.eye(X_scaled.shape[1])
+penalty[0, 0] = 0.0
+
+beta = solve(X_scaled.T @ X_scaled + lam * penalty, X_scaled.T @ y_vec)
+yhat = X_scaled @ beta
+
+rmse = np.sqrt(np.mean((y_vec - yhat) ** 2))
+mae = np.mean(np.abs(y_vec - yhat))
+print(f"In-sample RMSE: {rmse:.3f}")
+print(f"In-sample MAE:  {mae:.3f}")
+```
+
+```{python}
+#| label: ch16-plot-fit
+#| fig-cap: "Simplified Prophet-like regression fit."
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(df["ds"], df["y"], linewidth=1, label="observed")
+ax.plot(df["ds"], yhat, linewidth=2, label="fitted additive model")
+ax.set_title("Prophet-like additive regression fit")
+ax.set_xlabel("date")
+ax.set_ylabel("value")
+ax.legend()
+plt.show()
+```
+
+This is not the full Prophet algorithm, but it captures the mathematical structure students should understand: basis expansion plus regularized estimation.
+
+## 16.13 Forecasting future dates
+
+To forecast future dates, we create the same features for future time indices and multiply by the fitted coefficient vector.
+
+```{python}
+#| label: ch16-future-forecast
+#| fig-cap: "Future forecast from the simplified additive model."
+h = 120
+future_dates = pd.date_range(df["ds"].iloc[-1] + pd.Timedelta(days=1), periods=h, freq="D")
+future_t = np.arange(n, n + h)
+
+future_X = make_design_matrix(
+    future_dates,
+    future_t,
+    changepoints=changepoints,
+    weekly_order=3,
+    yearly_order=6,
+    holiday_days=holiday_days + [1175]  # an assumed future holiday/event
+)
+
+future_mat = future_X.to_numpy(dtype=float)
+future_scaled = (future_mat - means) / stds
+future_yhat = future_scaled @ beta
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(df["ds"].iloc[-365:], df["y"].iloc[-365:], linewidth=1, label="history")
+ax.plot(future_dates, future_yhat, linewidth=2, label="forecast")
+ax.axvline(df["ds"].iloc[-1], linestyle="--", linewidth=1)
+ax.set_title("Forecast from simplified Prophet-like model")
+ax.set_xlabel("date")
+ax.set_ylabel("value")
+ax.legend()
+plt.show()
+```
+
+The forecast extrapolates the final trend slope and repeats seasonal patterns. This is convenient, but it can be dangerous if the latest trend slope was caused by a temporary event.
+
+## 16.14 Cross-validation for automated forecasting
+
+Prophet popularized an analyst-friendly cross-validation interface with three key quantities:
+
+- **initial**: length of the first training window;
+- **period**: spacing between forecast cutoffs;
+- **horizon**: forecast horizon.
+
+For cutoffs $c_1,c_2,\ldots,c_M$, the model is trained using data up to cutoff $c_m$ and predicts
+
+$$
+y(c_m+1),\ldots,y(c_m+H).
+$$
+
+The evaluation table contains rows of the form
+
+$$
+(c_m,h,y_{c_m+h},\widehat y_{c_m+h\mid c_m}).
+$$
+
+Then scores can be summarized by horizon.
+
+```{python}
+#| label: ch16-rolling-origin-cv
+#| fig-cap: "Rolling-origin cross-validation errors by horizon."
+def fit_ridge_additive(train_df, changepoints, weekly_order, yearly_order, holiday_days, lam=25.0):
+    X_train = make_design_matrix(
+        train_df["ds"], train_df["t"], changepoints,
+        weekly_order=weekly_order,
+        yearly_order=yearly_order,
+        holiday_days=holiday_days
+    )
+    X_mat = X_train.to_numpy(dtype=float)
+    y_train = train_df["y"].to_numpy()
+
+    means = X_mat.mean(axis=0)
+    stds = X_mat.std(axis=0)
+    means[0] = 0.0
+    stds[0] = 1.0
+    stds[stds == 0] = 1.0
+    X_scaled = (X_mat - means) / stds
+
+    penalty = np.eye(X_scaled.shape[1])
+    penalty[0, 0] = 0.0
+    beta = solve(X_scaled.T @ X_scaled + lam * penalty, X_scaled.T @ y_train)
+    return beta, means, stds, X_train.columns
+
+
+def predict_ridge_additive(test_df, beta, means, stds, changepoints, weekly_order, yearly_order, holiday_days):
+    X_test = make_design_matrix(
+        test_df["ds"], test_df["t"], changepoints,
+        weekly_order=weekly_order,
+        yearly_order=yearly_order,
+        holiday_days=holiday_days
+    )
+    X_mat = X_test.to_numpy(dtype=float)
+    X_scaled = (X_mat - means) / stds
+    return X_scaled @ beta
+
+horizon = 60
+initial = 2 * 365
+period = 90
+cutoffs = list(range(initial, n - horizon, period))
+
+records = []
+for cutoff in cutoffs:
+    train_df = df.iloc[:cutoff].copy()
+    test_df = df.iloc[cutoff:cutoff + horizon].copy()
+
+    beta_cv, means_cv, stds_cv, _ = fit_ridge_additive(
+        train_df, changepoints=[180, 320, 500, 760],
+        weekly_order=3, yearly_order=6,
+        holiday_days=holiday_days,
+        lam=25.0
+    )
+    pred = predict_ridge_additive(
+        test_df, beta_cv, means_cv, stds_cv,
+        changepoints=[180, 320, 500, 760],
+        weekly_order=3, yearly_order=6,
+        holiday_days=holiday_days
+    )
+
+    for h_i, (actual, forecast) in enumerate(zip(test_df["y"].to_numpy(), pred), start=1):
+        records.append({
+            "cutoff": cutoff,
+            "horizon": h_i,
+            "y": actual,
+            "yhat": forecast,
+            "error": actual - forecast,
+            "abs_error": abs(actual - forecast)
+        })
+
+cv = pd.DataFrame(records)
+mae_by_h = cv.groupby("horizon")["abs_error"].mean()
+
+fig, ax = plt.subplots(figsize=(8, 3.5))
+ax.plot(mae_by_h.index, mae_by_h.values)
+ax.set_title("Cross-validation MAE by horizon")
+ax.set_xlabel("forecast horizon")
+ax.set_ylabel("MAE")
+plt.show()
+```
+
+Averaging over horizons can hide systematic deterioration. Horizon-wise plots are often more informative than one number.
+
+## 16.15 Forecast metrics in automated workflows
+
+Chapter 15 introduced several metrics. Automated forecasting pipelines often report:
+
+### Absolute and squared error
+
+$$
+\operatorname{MAE}=\frac{1}{n}\sum_{i=1}^n|y_i-\widehat y_i|,
+$$
+
+$$
+\operatorname{RMSE}=\sqrt{\frac{1}{n}\sum_{i=1}^n(y_i-\widehat y_i)^2}.
+$$
+
+MAE is robust and easy to interpret. RMSE penalizes large errors more strongly.
+
+### Percent error
+
+$$
+\operatorname{MAPE}
+=\frac{100}{n}\sum_{i=1}^n
+\left|\frac{y_i-\widehat y_i}{y_i}\right|.
+$$
+
+MAPE is easy to communicate, but it fails when $y_i=0$ and behaves poorly when $y_i$ is near zero.
+
+### Scaled error
+
+A scaled error compares the model to a baseline. For seasonal period $s$, the mean absolute scaled error is
+
+$$
+\operatorname{MASE}
+=\frac{\frac{1}{n}\sum_{i=1}^n|y_i-\widehat y_i|}
+{\frac{1}{T-s}\sum_{t=s+1}^T |y_t-y_{t-s}|}.
+$$
+
+A MASE below $1$ means the model improves over the seasonal naive baseline.
+
+### Relative error
+
+A relative error compares directly to a benchmark forecast:
+
+$$
+\operatorname{RelMAE}
+=\frac{\operatorname{MAE}(\text{model})}
+{\operatorname{MAE}(\text{benchmark})}.
+$$
+
+This is useful at scale because raw MAE values are not comparable across series with different units and scales.
+
+::: {.callout-tip}
+## Use benchmark-relative metrics
+When reporting many automated forecasts, include a baseline-relative metric such as MASE or relative MAE. A raw MAPE of $5\%$ may be excellent for one series and poor for another.
+:::
+
+## 16.16 Hyperparameter tuning
+
+Important Prophet-type tuning parameters include:
+
+1. **changepoint flexibility**: controls how much the trend can bend;
+2. **seasonality flexibility**: controls the size and smoothness of seasonal effects;
+3. **holiday flexibility**: controls how strongly holiday effects are allowed to move the forecast;
+4. **seasonality mode**: additive or multiplicative;
+5. **Fourier order**: number of Fourier terms for each seasonal period;
+6. **changepoint range**: portion of history where changepoints are allowed.
+
+Hyperparameter tuning should be done by time-aware cross-validation. A generic procedure is:
+
+1. choose a grid of candidate parameters;
+2. for each parameter combination, run rolling-origin cross-validation;
+3. compute horizon-wise and aggregate metrics;
+4. choose a parameter set using validation performance and model simplicity;
+5. refit the selected model on all available training data;
+6. evaluate once on a final untouched test set, if available.
+
+```{python}
+#| label: ch16-small-grid-search
+# A small demonstration grid over Fourier order and ridge penalty.
+# For speed, this example uses a short grid.
+grid = []
+for yearly_order in [3, 6, 10]:
+    for lam in [5.0, 25.0, 100.0]:
+        records = []
+        for cutoff in cutoffs:
+            train_df = df.iloc[:cutoff].copy()
+            test_df = df.iloc[cutoff:cutoff + horizon].copy()
+            beta_cv, means_cv, stds_cv, _ = fit_ridge_additive(
+                train_df, changepoints=[180, 320, 500, 760],
+                weekly_order=3, yearly_order=yearly_order,
+                holiday_days=holiday_days,
+                lam=lam
+            )
+            pred = predict_ridge_additive(
+                test_df, beta_cv, means_cv, stds_cv,
+                changepoints=[180, 320, 500, 760],
+                weekly_order=3, yearly_order=yearly_order,
+                holiday_days=holiday_days
+            )
+            records.extend(np.abs(test_df["y"].to_numpy() - pred))
+        grid.append({"yearly_order": yearly_order, "lambda": lam, "cv_mae": float(np.mean(records))})
+
+grid_results = pd.DataFrame(grid).sort_values("cv_mae")
+grid_results
+```
+
+This example tunes a simplified model. The same idea applies to real Prophet parameters such as `changepoint_prior_scale`, `seasonality_prior_scale`, `holidays_prior_scale`, and `seasonality_mode`.
+
+## 16.17 Optional package example: Prophet syntax
+
+The exact package name and installation method may depend on the computing environment. The following code is provided as a template. It is not executed by default in this book.
+
+```python
+# Optional template; run only after installing prophet in your environment.
+from prophet import Prophet
+from prophet.diagnostics import cross_validation, performance_metrics
+from prophet.plot import plot_cross_validation_metric
+
+m = Prophet(
+    yearly_seasonality=True,
+    weekly_seasonality=True,
+    daily_seasonality=False,
+    seasonality_mode="additive",
+    changepoint_prior_scale=0.05,
+    seasonality_prior_scale=10.0,
+)
+
+# df must have columns ds and y.
+m.fit(df[["ds", "y"]])
+
+future = m.make_future_dataframe(periods=120, freq="D")
+forecast = m.predict(future)
+
+fig1 = m.plot(forecast)
+fig2 = m.plot_components(forecast)
+
+# Rolling-origin style cross-validation.
+df_cv = cross_validation(
+    m,
+    initial="730 days",
+    period="180 days",
+    horizon="365 days"
+)
+
+df_perf = performance_metrics(df_cv)
+fig3 = plot_cross_validation_metric(df_cv, metric="mae")
+```
+
+The important conceptual point is not the package call. The important point is the workflow: clean data, specify components, fit, inspect decomposition, cross-validate, tune, and compare with baselines.
+
+## 16.18 Analyst-in-the-loop modeling
+
+Prophet-type models are designed for analyst intervention. The analyst can supply:
+
+- known capacities for logistic growth;
+- manually selected changepoints;
+- country, institutional, or domain-specific holidays;
+- custom seasonalities;
+- prior scales controlling smoothness;
+- outlier handling decisions;
+- external regressors.
+
+This is a strength when domain knowledge is reliable. It is a weakness when analyst choices are not validated.
+
+An analyst-in-the-loop workflow:
+
+1. Fit simple default model.
+2. Inspect trend, seasonality, holiday components.
+3. Compare with naive and seasonal naive baselines.
+4. Check residuals and forecast errors by horizon.
+5. Add known holidays or events.
+6. Tune prior scales using rolling-origin cross-validation.
+7. Refit and communicate the final assumptions.
+
+## 16.19 Diagnostics and failure modes
+
+A Prophet-type model can fail for several reasons.
+
+### Autocorrelated residuals
+
+Because the model is closer to curve fitting than ARIMA, it may leave serial dependence in residuals. If residual ACF shows strong structure, consider:
+
+- adding autoregressive features;
+- using SARIMA/state-space models;
+- using a hybrid model;
+- using ML lag features.
+
+### Extrapolation error
+
+Piecewise linear trend extrapolates the final trend regime. If the last trend segment is temporary, long-range forecasts can be poor.
+
+### Overfitting changepoints
+
+Too much changepoint flexibility can fit noise and create unstable future trends.
+
+### Overfitting seasonalities
+
+Large Fourier order can produce unrealistic seasonal wiggles.
+
+### Bad holiday design
+
+Too many event indicators can fit random spikes. Missing important events can leave systematic errors.
+
+### Multiplicative structure ignored
+
+If variance and seasonal amplitude grow with level, additive errors may be inappropriate.
+
+### Irregular data without context
+
+Prophet can handle missing dates better than many ARIMA implementations, but missingness may still be informative. For example, no sales on a closed day is different from missing data.
+
+## 16.20 Comparing Prophet-type models with SARIMA
+
+SARIMA and Prophet-type models use different modeling philosophies.
+
+| Issue | SARIMA | Prophet-type additive model |
+|---|---|---|
+| Main structure | lag dependence and shocks | trend + seasonality + events |
+| Stationarity | often requires differencing | trend handled directly |
+| Seasonality | seasonal lags and seasonal differencing | Fourier seasonal basis |
+| Holidays | not built in by default | natural event indicators |
+| Missing dates | can be inconvenient | usually easier |
+| Interpretability | AR/MA coefficients and residuals | decomposed components |
+| Residual dependence | modeled directly | may remain unless added |
+| Scaling to many series | possible but tuning can be slow | designed for fast iteration |
+
+A practical approach is not to ask, “Which model is universally better?” Instead ask:
+
+> Which model wins under the actual backtest, forecast horizon, metric, and operational constraints?
+
+## 16.21 AI-assisted automated forecasting
+
+AI tools can help generate code, summarize model components, and suggest diagnostics. They should not replace mathematical and computational verification.
+
+::: {.callout-ai}
+## AI prompt: generate a Prophet-type modeling plan
+I have a daily time series with columns `ds` and `y`. It has weekly seasonality, possible yearly seasonality, several known event dates, and a possible trend change around 2023. Propose a forecasting workflow using baselines, SARIMA, and a Prophet-type additive model. Include rolling-origin cross-validation, horizon-wise metrics, leakage checks, and residual diagnostics. Do not assume random train/test splitting is valid.
+:::
+
+::: {.callout-ai}
+## AI prompt: critique a Prophet forecast
+Here is my model specification: [paste model choices]. Here are my cross-validation results by horizon: [paste table]. Here are residual ACF and forecast plots: [describe or paste]. Identify possible overfitting, missing seasonality, trend extrapolation problems, holiday-design problems, and leakage risks. Separate evidence-based criticisms from speculation.
+:::
+
+::: {.callout-ai}
+## AI prompt: explain components to a nontechnical audience
+Explain the forecast as a sum of trend, seasonality, and holiday effects. Avoid saying the model discovered causal effects. Emphasize that the components are statistical patterns and that future forecasts depend on assumptions about whether these patterns continue.
+:::
+
+### AI verification checklist
+
+When using AI-generated forecasting code, verify:
+
+1. the data are sorted by time;
+2. no future values appear in training features;
+3. train/test splitting respects forecast origin;
+4. transformations are fit only on training data;
+5. holidays/events are known at forecast time;
+6. cross-validation uses the correct horizon;
+7. baselines are included;
+8. metrics match the application;
+9. residuals and forecast errors are checked;
+10. the model assumptions are communicated honestly.
+
+## 16.22 Common mistakes
+
+1. **Treating Prophet as a magic black box.** It is an additive model with assumptions.
+2. **Skipping baselines.** Seasonal naive forecasts are often strong.
+3. **Using random cross-validation.** This leaks future information.
+4. **Over-tuning on the test set.** Use validation backtests for tuning and preserve a final test set when possible.
+5. **Overusing changepoints.** Historical fit improves, future forecasts may worsen.
+6. **Using high Fourier order automatically.** More terms can mean more seasonal overfitting.
+7. **Adding holidays without enough repeated evidence.** One spike does not prove a stable holiday effect.
+8. **Ignoring residual autocorrelation.** Additive components may not capture lag dependence.
+9. **Forgetting uncertainty.** Point forecasts alone are insufficient for planning.
+10. **Interpreting components causally.** A holiday coefficient is an association unless causal design supports it.
+
+## 16.23 Chapter summary
+
+Prophet-type models automate a practical and interpretable decomposition:
+
+$$
+y(t)=g(t)+s(t)+h(t)+\varepsilon_t.
+$$
+
+The trend $g(t)$ may be piecewise linear or saturating logistic. Seasonality $s(t)$ is represented using Fourier features. Holiday effects $h(t)$ are represented using event indicators. Regularization controls flexibility. Forecasting performance must be measured by time-aware cross-validation and benchmark-relative metrics.
+
+The main lesson is that automated forecasting is a pipeline:
+
+$$
+\text{data cleaning}
+\rightarrow
+\text{component specification}
+\rightarrow
+\text{regularized fitting}
+\rightarrow
+\text{cross-validation}
+\rightarrow
+\text{diagnostics}
+\rightarrow
+\text{communication}.
+$$
+
+## Exercises
+
+1. **Additive decomposition.** Suppose
+   $$
+   y(t)=50+0.2t+5\sin(2\pi t/7)+\varepsilon_t.
+   $$
+   Identify $g(t)$, $s(t)$, and $h(t)$.
+
+2. **Fourier features.** For weekly seasonality with $P=7$ and $N=2$, write all four Fourier regressors explicitly.
+
+3. **Changepoint slope.** Let
+   $$
+   g(t)=3+0.5t+2(t-10)_+-1.5(t-20)_+.
+   $$
+   Find the slope for $t<10$, $10<t<20$, and $t>20$.
+
+4. **Regularization.** Explain why a Laplace prior on changepoint effects encourages fewer effective changepoints.
+
+5. **Holiday design.** Design holiday indicators for an academic admissions time series. Which events are known in advance? Which are not?
+
+6. **Additive vs multiplicative.** Give one example where additive seasonality is appropriate and one where multiplicative seasonality is more appropriate.
+
+7. **Backtesting.** Design a rolling-origin backtest with initial window two years, period three months, and horizon six months. What are the forecast cutoffs?
+
+8. **Model comparison.** Explain why Prophet may outperform SARIMA on one series and underperform it on another.
+
+9. **Python extension.** Modify the simplified Prophet-like model in this chapter to include monthly seasonality.
+
+10. **AI critique.** Ask an AI assistant to propose hyperparameters for a Prophet model. Then write a paragraph explaining which suggestions require validation and how you would validate them.
+
+## Mini project
+
+Choose one daily, weekly, or monthly time series. Build an automated forecasting report with the following sections:
+
+1. data description and forecasting goal;
+2. time plot and seasonal plots;
+3. naive and seasonal naive baselines;
+4. Prophet-type additive model or simplified additive regression;
+5. rolling-origin backtest;
+6. metric table by horizon;
+7. component interpretation;
+8. residual and forecast-error diagnostics;
+9. limitations and assumptions;
+10. final recommendation.
+
+Your report should include at least one interactive Plotly visualization and one AI-assisted critique box whose claims you verify manually.
+
+## Checklist
+
+Before moving on, make sure you can:
+
+- [ ] write the Prophet-style additive model;
+- [ ] explain piecewise linear trend and changepoint effects;
+- [ ] derive Fourier seasonal features for a chosen period;
+- [ ] construct holiday indicators;
+- [ ] explain additive versus multiplicative seasonality;
+- [ ] run rolling-origin cross-validation;
+- [ ] tune model flexibility without leaking test information;
+- [ ] compare against naive and seasonal naive baselines;
+- [ ] identify residual autocorrelation and trend extrapolation risks;
+- [ ] use AI tools to assist forecasting while verifying assumptions.

@@ -1,0 +1,1147 @@
+# Stationarity, Autocovariance, and Autocorrelation
+
+::: {.hero}
+**Part II. Stationarity and Linear Time-Domain Models**  
+**Chapter goal:** learn the mathematical language used to describe stable dependence in a time series: stationarity, mean functions, autocovariance, autocorrelation, sample ACF, and the first diagnostic signatures of white noise, random walks, MA(1), and AR(1) processes.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. distinguish strict stationarity from weak stationarity;
+2. define the mean function, autocovariance function, autocorrelation function, and sample ACF;
+3. explain why stationarity makes dependence estimable from one observed path;
+4. prove that white noise and MA(1) processes are weakly stationary;
+5. prove that a random walk is not weakly stationary;
+6. derive the autocovariance and ACF of an AR(1) process;
+7. interpret ACF plots for white noise, random walks, AR(1), MA(1), trends, and changing variance;
+8. use Python to simulate processes, compute sample ACFs, and diagnose stationarity;
+9. use AI tools to critique stationarity assumptions without replacing mathematical checks.
+
+## 3.1 Why stationarity matters
+
+Time-series data are usually observed as one path
+
+$$
+x_1,x_2,\\dots,x_n
+$$
+
+from a stochastic process
+
+$$
+\{X_t:t\in \mathbb Z\}.
+$$
+
+For independent data, we often rely on repeated independent observations. In time series, the observations are dependent, and often we only have one historical path. To learn anything from that path, we need some form of stability. **Stationarity** is the most important stability assumption.
+
+Informally, a stationary process has probabilistic behavior that does not change when the time origin is shifted. A window of length 20 from the beginning of the series should be governed by the same probabilistic rules as a window of length 20 later in the series. The realized values may differ, but the distributional rules are stable.
+
+::: {.callout-note}
+## Why this is not just a technical condition
+If dependence changes over time, then observations from the past may not represent the future. A forecasting model trained on old data may be solving the wrong problem. Stationarity is the assumption that makes the past informative about the future in a controlled way.
+:::
+
+This chapter begins with two levels of stationarity:
+
+- **strict stationarity**, which is a condition on all finite-dimensional distributions;
+- **weak stationarity**, which is a condition only on first and second moments.
+
+Most of classical ARMA theory uses weak stationarity. For Gaussian processes, weak stationarity and strict stationarity are closely connected because means and covariances determine all finite-dimensional Gaussian distributions.
+
+## 3.2 Strict stationarity
+
+Let $\{X_t:t\in\mathbb Z\}$ be a stochastic process. It is **strictly stationary** if, for every integer $k\ge 1$, every set of time points $t_1,\dots,t_k$, every shift $h$, and every vector $(x_1,\dots,x_k)$,
+
+$$
+P(X_{t_1}\le x_1,\dots,X_{t_k}\le x_k)
+=
+P(X_{t_1+h}\le x_1,\dots,X_{t_k+h}\le x_k).
+$$
+
+Equivalently,
+
+$$
+(X_{t_1},\dots,X_{t_k})
+\overset{d}{=}
+(X_{t_1+h},\dots,X_{t_k+h})
+$$
+
+for all choices of $k$, $t_1,\dots,t_k$, and $h$.
+
+The phrase $\overset{d}{=}$ means equality in distribution. Strict stationarity says that the joint distribution of any finite window depends only on the relative arrangement of the time points, not on their absolute position on the calendar.
+
+### Example: iid sequence
+
+If $X_t$ are independent and identically distributed, then the process is strictly stationary. Shifting time changes the labels but not the joint distribution.
+
+### Example: deterministic trend plus noise
+
+Let
+
+$$
+X_t=\beta_0+\beta_1t+W_t,
+$$
+
+where $W_t$ are iid $N(0,\sigma^2)$ and $\beta_1\ne0$. Then $X_t$ is not strictly stationary because
+
+$$
+E[X_t]=\beta_0+\beta_1t
+$$
+
+changes with $t$. A window later in time is centered at a different level.
+
+### Example: changing variance
+
+Let
+
+$$
+X_t=\sigma_t W_t,
+$$
+
+where $W_t$ are iid $N(0,1)$ and $\sigma_t$ changes with $t$. Then
+
+$$
+\operatorname{Var}(X_t)=\sigma_t^2
+$$
+
+changes with $t$, so the process is not stationary.
+
+::: {.callout-tip}
+## Visual clue
+A trend violates stable mean. A changing spread violates stable variance. A changing dependence pattern violates stable covariance. Any one of these is enough to make a process nonstationary.
+:::
+
+## 3.3 Mean function, autocovariance, and autocorrelation
+
+Assume $E[X_t^2]<\infty$ for all $t$. The **mean function** is
+
+$$
+\mu_t=E[X_t].
+$$
+
+The **autocovariance function** is
+
+$$
+\gamma_X(s,t)=\operatorname{Cov}(X_s,X_t)
+=E[(X_s-\mu_s)(X_t-\mu_t)].
+$$
+
+The **autocorrelation function** is
+
+$$
+\rho_X(s,t)=\operatorname{Corr}(X_s,X_t)
+=
+\frac{\gamma_X(s,t)}{\sqrt{\gamma_X(s,s)\gamma_X(t,t)}}
+$$
+
+when the variances are positive.
+
+Autocovariance measures linear dependence between two time-indexed random variables. If $X_t$ and $X_{t+h}$ tend to move together, $\gamma_X(t+h,t)$ is positive. If they tend to move in opposite directions, it is negative. If there is no linear dependence, it is zero.
+
+::: {.callout-important}
+## Covariance is not independence
+Zero covariance does not imply independence in general. It means no linear dependence. If the process is jointly Gaussian, then zero covariance does imply independence. This distinction matters when we move from classical Gaussian models to nonlinear sequence models.
+:::
+
+## 3.4 Weak stationarity
+
+A process $\{X_t\}$ with finite second moments is **weakly stationary**, or **second-order stationary**, if:
+
+1. the mean is constant:
+
+$$
+\mu_t=\mu
+$$
+
+for all $t$;
+
+2. the autocovariance depends only on the lag $h$, not on the absolute time $t$:
+
+$$
+\gamma_X(t+h,t)=\gamma_X(h).
+$$
+
+Thus, under weak stationarity, we write
+
+$$
+\gamma(h)=\operatorname{Cov}(X_{t+h},X_t),
+$$
+
+and
+
+$$
+\rho(h)=\frac{\gamma(h)}{\gamma(0)}.
+$$
+
+Because covariance is symmetric,
+
+$$
+\gamma(-h)=\gamma(h),
+$$
+
+and therefore
+
+$$
+\rho(-h)=\rho(h).
+$$
+
+The number $\gamma(0)$ is the variance:
+
+$$
+\gamma(0)=\operatorname{Var}(X_t).
+$$
+
+The normalized quantity $\rho(h)$ satisfies
+
+$$
+-1\le \rho(h)\le 1,
+$$
+
+and $\rho(0)=1$.
+
+::: {.callout-note}
+## Strict versus weak stationarity
+Strict stationarity is about the full joint distribution. Weak stationarity is only about $E[X_t]$, $\operatorname{Var}(X_t)$, and $\operatorname{Cov}(X_{t+h},X_t)$. Weak stationarity is easier to check and is sufficient for much of ARMA theory.
+:::
+
+## 3.5 Estimating dependence from one path
+
+Why does weak stationarity help? Suppose we want to estimate the lag-$h$ covariance. Without stationarity, the covariance
+
+$$
+\operatorname{Cov}(X_{t+h},X_t)
+$$
+
+could be different for every $t$. We would have only one observation of each pair, which is not enough.
+
+With weak stationarity, all pairs
+
+$$
+(X_{1+h},X_1),(X_{2+h},X_2),\dots,(X_n,X_{n-h})
+$$
+
+share the same lag-$h$ covariance structure. We can average information across time. This is the key reason that stationarity is useful.
+
+For observed data $x_1,\dots,x_n$, define the sample mean
+
+$$
+\bar x=\frac{1}{n}\sum_{t=1}^n x_t.
+$$
+
+A common sample autocovariance estimator is
+
+$$
+\widehat\gamma(h)
+=\frac{1}{n}\sum_{t=1}^{n-h}(x_{t+h}-\bar x)(x_t-\bar x),
+\qquad h=0,1,\dots,n-1.
+$$
+
+Then the sample autocorrelation is
+
+$$
+\widehat\rho(h)=\frac{\widehat\gamma(h)}{\widehat\gamma(0)}.
+$$
+
+Some software uses $1/(n-h)$ instead of $1/n$ in $\widehat\gamma(h)$. Both conventions appear in practice. The ACF plot is usually more important than the small finite-sample difference between these normalizations.
+
+## 3.6 White noise
+
+A process $\{W_t\}$ is **white noise** with mean $0$ and variance $\sigma^2$ if
+
+$$
+E[W_t]=0,
+$$
+
+$$
+\operatorname{Var}(W_t)=\sigma^2,
+$$
+
+and
+
+$$
+\operatorname{Cov}(W_s,W_t)=0
+\quad \text{for } s\ne t.
+$$
+
+We write
+
+$$
+W_t\sim WN(0,\sigma^2).
+$$
+
+White noise is weakly stationary because the mean is constant and the covariance depends only on whether the lag is zero:
+
+$$
+\gamma(h)=
+\begin{cases}
+\sigma^2, & h=0,\\
+0, & h\ne0.
+\end{cases}
+$$
+
+Therefore,
+
+$$
+\rho(h)=
+\begin{cases}
+1, & h=0,\\
+0, & h\ne0.
+\end{cases}
+$$
+
+If the $W_t$ are also independent and identically distributed, then the process is **iid white noise**. If the $W_t$ are iid Gaussian, then it is **Gaussian white noise**.
+
+::: {.callout-warning}
+## White noise is not necessarily independent noise
+The phrase white noise means uncorrelated over time with constant variance. It does not automatically mean independent unless independence is explicitly assumed or follows from a distributional assumption such as joint Gaussianity.
+:::
+
+### Approximate ACF bands for white noise
+
+For a long sample from white noise, the sample autocorrelations satisfy approximately
+
+$$
+\widehat\rho(h)\approx N\left(0,\frac{1}{n}\right)
+$$
+
+for fixed $h\ge1$. Thus, a common visual reference band is
+
+$$
+\pm \frac{1.96}{\sqrt n}.
+$$
+
+If many sample autocorrelations fall outside these bands, the white-noise assumption is questionable. But some spikes may occur by chance, especially when many lags are inspected.
+
+## 3.7 Random walks are not stationary
+
+Let $\{W_t\}$ be iid white noise with mean $0$ and variance $\sigma^2$. Define the random walk
+
+$$
+S_t=\sum_{i=1}^t W_i.
+$$
+
+Equivalently,
+
+$$
+S_t=S_{t-1}+W_t.
+$$
+
+The mean is
+
+$$
+E[S_t]=\sum_{i=1}^t E[W_i]=0.
+$$
+
+But the variance is
+
+$$
+\operatorname{Var}(S_t)
+=\operatorname{Var}\left(\sum_{i=1}^t W_i\right)
+=t\sigma^2.
+$$
+
+The variance depends on $t$, so $\{S_t\}$ is not weakly stationary.
+
+For $h\ge0$,
+
+$$
+S_{t+h}=S_t+W_{t+1}+\cdots+W_{t+h}.
+$$
+
+Therefore,
+
+$$
+\operatorname{Cov}(S_{t+h},S_t)
+=\operatorname{Cov}(S_t,S_t)=t\sigma^2.
+$$
+
+This also depends on $t$. A random walk often looks persistent, but that persistence comes from nonstationary accumulation rather than a stable stationary correlation structure.
+
+### Differencing the random walk
+
+The first difference is
+
+$$
+\nabla S_t=S_t-S_{t-1}=W_t.
+$$
+
+Thus the random walk itself is nonstationary, but its first difference is white noise. This is the simplest example behind ARIMA models.
+
+## 3.8 Moving-average example: MA(1)
+
+Let $\{W_t\}\sim WN(0,\sigma^2)$ and define
+
+$$
+X_t=W_t+\theta W_{t-1}.
+$$
+
+This is an MA(1) process. Its mean is
+
+$$
+E[X_t]=E[W_t]+\theta E[W_{t-1}]=0.
+$$
+
+Its variance is
+
+$$
+\gamma(0)=\operatorname{Var}(X_t)
+=\operatorname{Var}(W_t+\theta W_{t-1})
+=\sigma^2(1+\theta^2).
+$$
+
+For lag $1$,
+
+$$
+\gamma(1)=\operatorname{Cov}(X_t,X_{t-1}).
+$$
+
+Since
+
+$$
+X_t=W_t+\theta W_{t-1},
+$$
+
+and
+
+$$
+X_{t-1}=W_{t-1}+\theta W_{t-2},
+$$
+
+only the shared term $W_{t-1}$ contributes to the covariance. Hence,
+
+$$
+\gamma(1)=\theta\sigma^2.
+$$
+
+For $|h|>1$, there is no overlapping white-noise term, so
+
+$$
+\gamma(h)=0.
+$$
+
+Therefore,
+
+$$
+\rho(h)=
+\begin{cases}
+1, & h=0,\\[4pt]
+\dfrac{\theta}{1+\theta^2}, & |h|=1,\\[8pt]
+0, & |h|>1.
+\end{cases}
+$$
+
+This is the first example of a **cutoff ACF**: an MA(1) process has nonzero autocorrelation only at lag $1$.
+
+::: {.callout-tip}
+## Diagnostic signature of MA(q)
+An MA($q$) process has theoretical ACF equal to zero for lags greater than $q$. In finite samples, the sample ACF will not be exactly zero, but it should become statistically insignificant after lag $q$.
+:::
+
+## 3.9 Autoregressive example: AR(1)
+
+Let
+
+$$
+X_t=\phi X_{t-1}+W_t,
+$$
+
+where $\{W_t\}\sim WN(0,\sigma^2)$. This is an AR(1) process.
+
+If $|\phi|<1$, the process has a causal stationary representation
+
+$$
+X_t=\sum_{j=0}^{\infty}\phi^j W_{t-j}.
+$$
+
+This representation shows that $X_t$ is a weighted sum of current and past shocks. The weights decay geometrically when $|\phi|<1$.
+
+Assuming stationarity and mean zero,
+
+$$
+E[X_t]=\phi E[X_{t-1}]+E[W_t]=\phi E[X_t].
+$$
+
+If $\phi\ne1$, this gives
+
+$$
+E[X_t]=0.
+$$
+
+The variance satisfies
+
+$$
+\operatorname{Var}(X_t)
+=\operatorname{Var}(\phi X_{t-1}+W_t)
+=\phi^2\operatorname{Var}(X_{t-1})+\sigma^2.
+$$
+
+Stationarity gives $\operatorname{Var}(X_t)=\operatorname{Var}(X_{t-1})=\gamma(0)$, so
+
+$$
+\gamma(0)=\phi^2\gamma(0)+\sigma^2.
+$$
+
+Thus,
+
+$$
+\gamma(0)=\frac{\sigma^2}{1-\phi^2},
+\qquad |\phi|<1.
+$$
+
+For $h\ge1$,
+
+$$
+\gamma(h)=\operatorname{Cov}(X_{t+h},X_t).
+$$
+
+Using
+
+$$
+X_{t+h}=\phi X_{t+h-1}+W_{t+h},
+$$
+
+and the fact that $W_{t+h}$ is uncorrelated with $X_t$,
+
+$$
+\gamma(h)=\phi\gamma(h-1).
+$$
+
+By recursion,
+
+$$
+\gamma(h)=\phi^h\gamma(0),
+\qquad h\ge0.
+$$
+
+By symmetry,
+
+$$
+\gamma(h)=\phi^{|h|}\gamma(0)
+$$
+
+when $\phi^{|h|}$ is interpreted with sign according to $\phi$. More explicitly,
+
+$$
+\rho(h)=\phi^{|h|}.
+$$
+
+### Interpretation of $\phi$
+
+If $0<\phi<1$, the ACF decays gradually and stays positive. The series tends to be smooth and persistent.
+
+If $-1<\phi<0$, the ACF alternates signs:
+
+$$
+\rho(1)<0,\quad \rho(2)>0,\quad \rho(3)<0,\dots
+$$
+
+The series tends to zigzag.
+
+If $|\phi|$ is close to $1$, dependence decays slowly. The process may look nearly nonstationary in finite samples.
+
+If $|\phi|>1$, the recursion is explosive and does not have the usual causal stationary solution.
+
+::: {.callout-warning}
+## Slowly decaying ACF can mean different things
+A slowly decaying sample ACF can come from a stationary AR process with $\phi$ close to $1$, but it can also indicate a trend, random walk, seasonal structure, or regime change. Always combine the ACF with the time plot and transformations.
+:::
+
+## 3.10 Linear processes as a unifying language
+
+Many stationary linear time-series models can be written as
+
+$$
+X_t=\sum_{j=0}^{\infty}\psi_j W_{t-j},
+$$
+
+where $\{W_t\}$ is white noise and the weights satisfy a summability condition such as
+
+$$
+\sum_{j=0}^{\infty}|\psi_j|<\infty.
+$$
+
+This is called a **linear process**. The MA(1) model has
+
+$$
+\psi_0=1,\qquad \psi_1=\theta,\qquad \psi_j=0 \text{ for } j\ge2.
+$$
+
+The stationary AR(1) model has
+
+$$
+\psi_j=\phi^j,
+\qquad j=0,1,2,\dots.
+$$
+
+For a linear process with mean zero,
+
+$$
+\gamma(h)=\sigma^2\sum_{j=0}^{\infty}\psi_j\psi_{j+|h|}.
+$$
+
+This formula explains why the ACF of a finite-order moving average cuts off while the ACF of an autoregressive process usually decays gradually.
+
+## 3.11 Sample ACF as a diagnostic, not a proof
+
+The sample ACF is one of the most useful diagnostic plots in time series. But it should be interpreted carefully.
+
+### White noise pattern
+
+For white noise, sample autocorrelations after lag zero should mostly remain within approximate bands
+
+$$
+\pm\frac{1.96}{\sqrt n}.
+$$
+
+A few spikes can happen by chance.
+
+### AR pattern
+
+For an AR(1) process, the ACF tends to decay geometrically. For AR($p$), the ACF usually decays rather than cutting off sharply.
+
+### MA pattern
+
+For an MA($q$) process, the ACF cuts off after lag $q$ in theory.
+
+### Trend or random-walk pattern
+
+For a trending or random-walk-like series, the sample ACF often decays very slowly. This is a warning sign that the series may not be stationary.
+
+### Seasonal pattern
+
+For seasonal data, the ACF may show spikes at seasonal lags such as $7$, $12$, $24$, or $365$, depending on the sampling frequency.
+
+::: {.callout-important}
+## ACF diagnosis is comparative
+Do not ask only: “What model does this ACF prove?” Ask: “Which models are consistent with the time plot, ACF, PACF, residual diagnostics, and validation performance?”
+:::
+
+## 3.12 Interactive demonstration: stationarity and ACF playground
+
+The widget below simulates several processes and shows three views:
+
+1. the time plot;
+2. rolling mean and rolling variance;
+3. sample ACF with approximate white-noise bands.
+
+Use it to compare stationary and nonstationary behavior.
+
+<div class="interactive-card">
+<div class="controls">
+<label>Process
+<select id="ch03_model">
+<option value="wn">White noise</option>
+<option value="ar1">Stationary AR(1)</option>
+<option value="ma1">MA(1)</option>
+<option value="rw">Random walk</option>
+<option value="explosive">Explosive AR(1)</option>
+<option value="trend">Trend + noise</option>
+<option value="variance">Time-varying variance</option>
+</select>
+</label>
+<label>Sample size
+<input id="ch03_n" type="range" min="80" max="600" step="20" value="240">
+<span id="ch03_n_val">240</span>
+</label>
+<label>AR coefficient phi
+<input id="ch03_phi" type="range" min="-0.95" max="0.95" step="0.05" value="0.7">
+<span id="ch03_phi_val">0.70</span>
+</label>
+<label>MA coefficient theta
+<input id="ch03_theta" type="range" min="-0.95" max="0.95" step="0.05" value="0.6">
+<span id="ch03_theta_val">0.60</span>
+</label>
+</div>
+<div id="ch03_ts_plot" style="height:340px;"></div>
+<div id="ch03_rolling_plot" style="height:320px;"></div>
+<div id="ch03_acf_plot" style="height:320px;"></div>
+<p class="caption">Plotly.js is loaded once globally from <code>assets/header.html</code>; this chapter uses the existing global Plotly object and does not load Plotly again.</p>
+</div>
+
+<script>
+(function(){
+  function el(id){ return document.getElementById(id); }
+  function normal(seed){
+    seed.state = (1664525 * seed.state + 1013904223) >>> 0;
+    const u1 = Math.max(seed.state / 4294967296, 1e-12);
+    seed.state = (1664525 * seed.state + 1013904223) >>> 0;
+    const u2 = Math.max(seed.state / 4294967296, 1e-12);
+    return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+  }
+  function simulate(model, n, phi, theta){
+    const seed = {state: 733903};
+    const w = Array.from({length:n}, () => normal(seed));
+    const y = new Array(n).fill(0);
+    if(model === 'wn') return w;
+    if(model === 'ar1'){
+      for(let t=1; t<n; t++) y[t] = phi*y[t-1] + w[t];
+      return y;
+    }
+    if(model === 'ma1'){
+      for(let t=0; t<n; t++) y[t] = w[t] + theta*(t>0 ? w[t-1] : 0);
+      return y;
+    }
+    if(model === 'rw'){
+      let s = 0;
+      for(let t=0; t<n; t++){ s += w[t]; y[t] = s; }
+      return y;
+    }
+    if(model === 'explosive'){
+      const phie = 1.04;
+      for(let t=1; t<n; t++) y[t] = phie*y[t-1] + 0.2*w[t];
+      return y;
+    }
+    if(model === 'trend'){
+      for(let t=0; t<n; t++) y[t] = 0.025*t + w[t];
+      return y;
+    }
+    for(let t=0; t<n; t++){
+      const scale = 0.25 + 1.75*t/Math.max(n-1,1);
+      y[t] = scale*w[t];
+    }
+    return y;
+  }
+  function mean(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
+  function rolling(y, m){
+    const mu=[], vv=[];
+    for(let t=0; t<y.length; t++){
+      const start = Math.max(0, t-m+1);
+      const win = y.slice(start, t+1);
+      const av = mean(win);
+      const va = win.length > 1 ? win.reduce((s,z)=>s+(z-av)*(z-av),0)/(win.length-1) : 0;
+      mu.push(av); vv.push(va);
+    }
+    return {mu:mu, vv:vv};
+  }
+  function acf(y, maxLag){
+    const n = y.length;
+    const av = mean(y);
+    const den = y.reduce((s,z)=>s+(z-av)*(z-av),0);
+    const r=[];
+    for(let h=0; h<=maxLag; h++){
+      let num=0;
+      for(let t=h; t<n; t++) num += (y[t]-av)*(y[t-h]-av);
+      r.push(den === 0 ? 0 : num/den);
+    }
+    return r;
+  }
+  function stem(r){
+    const xs=[], ys=[];
+    for(let h=0; h<r.length; h++){
+      xs.push(h,h,null);
+      ys.push(0,r[h],null);
+    }
+    return {x:xs,y:ys,mode:'lines',name:'ACF stems',hoverinfo:'skip'};
+  }
+  function draw(){
+    if(!window.Plotly || !el('ch03_ts_plot')) return;
+    const model = el('ch03_model').value;
+    const n = Number(el('ch03_n').value);
+    const phi = Number(el('ch03_phi').value);
+    const theta = Number(el('ch03_theta').value);
+    el('ch03_n_val').textContent = String(n);
+    el('ch03_phi_val').textContent = phi.toFixed(2);
+    el('ch03_theta_val').textContent = theta.toFixed(2);
+    const y = simulate(model, n, phi, theta);
+    const x = Array.from({length:n}, (_,i)=>i+1);
+    const m = Math.max(10, Math.floor(n/12));
+    const ro = rolling(y, m);
+    const maxLag = Math.min(50, Math.floor(n/4));
+    const r = acf(y, maxLag);
+    const ci = 1.96/Math.sqrt(n);
+    Plotly.react('ch03_ts_plot', [
+      {x:x, y:y, mode:'lines', name:'series'}
+    ], {
+      title:'Time plot: ' + model,
+      margin:{t:45,r:20,b:45,l:55},
+      xaxis:{title:'time'},
+      yaxis:{title:'value'}
+    }, {responsive:true, displayModeBar:false});
+    Plotly.react('ch03_rolling_plot', [
+      {x:x, y:ro.mu, mode:'lines', name:'rolling mean'},
+      {x:x, y:ro.vv, mode:'lines', name:'rolling variance', yaxis:'y2'}
+    ], {
+      title:'Rolling summaries, window = ' + m,
+      margin:{t:45,r:55,b:45,l:55},
+      xaxis:{title:'time'},
+      yaxis:{title:'rolling mean'},
+      yaxis2:{title:'rolling variance', overlaying:'y', side:'right'},
+      legend:{orientation:'h'}
+    }, {responsive:true, displayModeBar:false});
+    Plotly.react('ch03_acf_plot', [
+      stem(r),
+      {x:Array.from({length:maxLag+1},(_,i)=>i), y:r, mode:'markers', name:'sample ACF'},
+      {x:[0,maxLag], y:[ci,ci], mode:'lines', name:'+1.96/sqrt(n)', line:{dash:'dash'}},
+      {x:[0,maxLag], y:[-ci,-ci], mode:'lines', name:'-1.96/sqrt(n)', line:{dash:'dash'}}
+    ], {
+      title:'Sample autocorrelation',
+      margin:{t:45,r:20,b:45,l:55},
+      xaxis:{title:'lag'},
+      yaxis:{title:'ACF', range:[-1,1]},
+      legend:{orientation:'h'}
+    }, {responsive:true, displayModeBar:false});
+  }
+  ['ch03_model','ch03_n','ch03_phi','ch03_theta'].forEach(function(id){
+    const node = el(id);
+    if(node) node.addEventListener('input', draw);
+  });
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', draw);
+  else draw();
+})();
+</script>
+
+## 3.13 Python example: simulate and compare processes
+
+The following Python code simulates white noise, a random walk, an MA(1), and an AR(1). The important point is not only to plot them, but to compare their dependence structure.
+
+```{python}
+#| label: ch03-python-simulate-processes
+#| warning: false
+#| message: false
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+rng = np.random.default_rng(7339)
+n = 300
+w = rng.normal(size=n)
+
+white_noise = w
+random_walk = np.cumsum(w)
+
+phi = 0.75
+ar1 = np.zeros(n)
+for t in range(1, n):
+    ar1[t] = phi * ar1[t-1] + w[t]
+
+theta = 0.70
+ma1 = np.zeros(n)
+for t in range(n):
+    ma1[t] = w[t] + theta * (w[t-1] if t > 0 else 0.0)
+
+df = pd.DataFrame({
+    "time": np.arange(1, n + 1),
+    "white_noise": white_noise,
+    "random_walk": random_walk,
+    "ar1_phi_075": ar1,
+    "ma1_theta_070": ma1,
+})
+
+fig = make_subplots(rows=4, cols=1, shared_xaxes=True, vertical_spacing=0.04)
+series_names = ["white_noise", "random_walk", "ar1_phi_075", "ma1_theta_070"]
+for i, name in enumerate(series_names, start=1):
+    fig.add_trace(go.Scatter(x=df["time"], y=df[name], mode="lines", name=name), row=i, col=1)
+fig.update_layout(height=800, title="Four simulated processes")
+fig.update_xaxes(title_text="time", row=4, col=1)
+fig.show()
+```
+
+## 3.14 Python example: compute the sample ACF from scratch
+
+It is useful to implement the sample ACF manually before using a package function.
+
+```{python}
+#| label: ch03-python-acf-function
+#| warning: false
+#| message: false
+import numpy as np
+import plotly.graph_objects as go
+
+
+def sample_acf(x, max_lag):
+    """Biased sample ACF using denominator n, matching a common time-series convention."""
+    x = np.asarray(x, dtype=float)
+    n = len(x)
+    x_centered = x - x.mean()
+    gamma0 = np.sum(x_centered * x_centered) / n
+    values = []
+    for h in range(max_lag + 1):
+        gamma_h = np.sum(x_centered[h:] * x_centered[: n - h]) / n
+        values.append(gamma_h / gamma0)
+    return np.array(values)
+
+max_lag = 40
+acf_white = sample_acf(white_noise, max_lag)
+acf_rw = sample_acf(random_walk, max_lag)
+acf_ar1 = sample_acf(ar1, max_lag)
+acf_ma1 = sample_acf(ma1, max_lag)
+
+lags = np.arange(max_lag + 1)
+ci = 1.96 / np.sqrt(n)
+
+fig = go.Figure()
+for acf_values, name in [
+    (acf_white, "white noise"),
+    (acf_rw, "random walk"),
+    (acf_ar1, "AR(1), phi=0.75"),
+    (acf_ma1, "MA(1), theta=0.70"),
+]:
+    fig.add_trace(go.Scatter(x=lags, y=acf_values, mode="lines+markers", name=name))
+fig.add_hline(y=ci, line_dash="dash")
+fig.add_hline(y=-ci, line_dash="dash")
+fig.update_layout(
+    title="Sample ACF comparison",
+    xaxis_title="lag",
+    yaxis_title="sample ACF",
+    yaxis_range=[-1, 1],
+    height=500,
+)
+fig.show()
+```
+
+The random walk usually shows a very slowly decaying sample ACF. That is not evidence for a stationary AR model by itself. It is often evidence that the original series is nonstationary and should be transformed or differenced before fitting a stationary model.
+
+## 3.15 Python example: theoretical ACFs
+
+For white noise, MA(1), and AR(1), the theoretical ACFs are explicit:
+
+$$
+\rho_{WN}(h)=0 \quad h\ge1,
+$$
+
+$$
+\rho_{MA(1)}(1)=\frac{\theta}{1+\theta^2},
+\qquad
+\rho_{MA(1)}(h)=0 \quad h>1,
+$$
+
+and
+
+$$
+\rho_{AR(1)}(h)=\phi^h,\qquad h\ge0.
+$$
+
+```{python}
+#| label: ch03-python-theoretical-acf
+#| warning: false
+#| message: false
+phi = 0.75
+alpha = 0.70
+lags = np.arange(0, 31)
+
+rho_wn = np.where(lags == 0, 1.0, 0.0)
+rho_ar1 = phi ** lags
+rho_ma1 = np.zeros_like(lags, dtype=float)
+rho_ma1[0] = 1.0
+rho_ma1[1] = alpha / (1 + alpha**2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=lags, y=rho_wn, mode="lines+markers", name="white noise"))
+fig.add_trace(go.Scatter(x=lags, y=rho_ar1, mode="lines+markers", name="AR(1)"))
+fig.add_trace(go.Scatter(x=lags, y=rho_ma1, mode="lines+markers", name="MA(1)"))
+fig.update_layout(
+    title="Theoretical ACFs",
+    xaxis_title="lag h",
+    yaxis_title="rho(h)",
+    yaxis_range=[-0.2, 1.05],
+    height=500,
+)
+fig.show()
+```
+
+## 3.16 Python example: stationarity diagnostics in practice
+
+A stationarity diagnosis should combine several pieces of evidence:
+
+1. time plot;
+2. rolling mean and rolling variance;
+3. sample ACF;
+4. transformations and differencing;
+5. model residual diagnostics.
+
+The code below builds a compact diagnostic panel for one series.
+
+```{python}
+#| label: ch03-python-diagnostic-panel
+#| warning: false
+#| message: false
+import pandas as pd
+from plotly.subplots import make_subplots
+
+
+def stationarity_panel(x, title="series", window=30, max_lag=40):
+    x = pd.Series(np.asarray(x, dtype=float))
+    t = np.arange(1, len(x) + 1)
+    rolling_mean = x.rolling(window, min_periods=max(5, window // 4)).mean()
+    rolling_var = x.rolling(window, min_periods=max(5, window // 4)).var()
+    r = sample_acf(x.dropna().to_numpy(), max_lag)
+    lags = np.arange(max_lag + 1)
+    ci = 1.96 / np.sqrt(len(x))
+
+    fig = make_subplots(rows=3, cols=1, vertical_spacing=0.08)
+    fig.add_trace(go.Scatter(x=t, y=x, mode="lines", name="series"), row=1, col=1)
+    fig.add_trace(go.Scatter(x=t, y=rolling_mean, mode="lines", name="rolling mean"), row=2, col=1)
+    fig.add_trace(go.Scatter(x=t, y=rolling_var, mode="lines", name="rolling variance"), row=2, col=1)
+    fig.add_trace(go.Bar(x=lags, y=r, name="sample ACF"), row=3, col=1)
+    fig.add_hline(y=ci, line_dash="dash", row=3, col=1)
+    fig.add_hline(y=-ci, line_dash="dash", row=3, col=1)
+    fig.update_layout(height=850, title=title)
+    fig.update_xaxes(title_text="time", row=1, col=1)
+    fig.update_xaxes(title_text="time", row=2, col=1)
+    fig.update_xaxes(title_text="lag", row=3, col=1)
+    fig.update_yaxes(title_text="value", row=1, col=1)
+    fig.update_yaxes(title_text="rolling summary", row=2, col=1)
+    fig.update_yaxes(title_text="ACF", range=[-1, 1], row=3, col=1)
+    return fig
+
+stationarity_panel(random_walk, title="Diagnostic panel for a random walk", window=40).show()
+```
+
+Now apply the same panel to the differenced random walk.
+
+```{python}
+#| label: ch03-python-differenced-random-walk
+#| warning: false
+#| message: false
+random_walk_diff = np.diff(random_walk)
+stationarity_panel(random_walk_diff, title="Diagnostic panel for the first difference of a random walk", window=40).show()
+```
+
+The original random walk has changing level and slowly decaying ACF. Its first difference is approximately white noise. This is exactly the logic that leads to differencing in ARIMA modeling.
+
+## 3.17 Common mistakes
+
+### Mistake 1: Treating any slowly decaying ACF as AR(1)
+
+A slowly decaying ACF may come from a stationary AR(1) with $\phi$ close to $1$, but it may also come from a trend or random walk. Always inspect the time plot.
+
+### Mistake 2: Confusing white noise with normality
+
+White noise is about mean, variance, and autocorrelation. Gaussianity is a separate distributional assumption.
+
+### Mistake 3: Assuming stationarity because a plot looks noisy
+
+A series can look noisy and still have changing variance or seasonal dependence.
+
+### Mistake 4: Overusing formal tests
+
+Formal stationarity tests are useful, but they do not replace modeling judgment. In large samples, tiny deviations become significant. In small samples, important deviations may be missed.
+
+### Mistake 5: Forgetting that sample ACF is random
+
+A sample ACF is an estimate. It fluctuates from sample to sample. Do not overinterpret one isolated spike.
+
+## 3.18 AI-assisted study and modeling
+
+AI tools can be helpful in this chapter, but only if the prompts force mathematical reasoning and verification.
+
+### Prompt 1: ask for assumptions
+
+> I have a time series with a slowly decaying sample ACF. List at least four possible explanations, including both stationary and nonstationary possibilities. For each explanation, tell me what additional diagnostic plot or transformation I should check.
+
+A good answer should mention near-unit-root AR behavior, random walk, deterministic trend, seasonality, and structural breaks.
+
+### Prompt 2: ask for a derivation
+
+> Derive the autocovariance function of an AR(1) process $X_t=\phi X_{t-1}+W_t$ under $|\phi|<1$. Show where stationarity is used.
+
+A good answer should derive
+
+$$
+\gamma(0)=\frac{\sigma^2}{1-\phi^2}
+$$
+
+and
+
+$$
+\rho(h)=\phi^{|h|}.
+$$
+
+### Prompt 3: ask for code, then verify it
+
+> Write Python code to simulate an MA(1) process and plot the sample ACF. Then separately write code for the theoretical ACF so I can compare them.
+
+Do not stop after receiving code. Check that the theoretical ACF is zero after lag $1$ and that the simulated ACF is only approximately zero because of sampling variation.
+
+### Prompt 4: ask the AI to critique your conclusion
+
+> I concluded that my series is stationary because the sample mean is roughly constant. Critique this conclusion. What else should I check?
+
+A good critique should mention variance, covariance structure, ACF, structural breaks, seasonality, and residual diagnostics after fitting a model.
+
+::: {.callout-warning}
+## AI safety for mathematical modeling
+Do not ask an AI system simply: “Is this series stationary?” Instead, ask it to list evidence for and against stationarity, identify assumptions, propose diagnostics, and show calculations. You remain responsible for the final modeling decision.
+:::
+
+## 3.19 Mini project: stationarity report
+
+Choose one real or simulated time series. Prepare a short stationarity report with the following sections:
+
+1. **Data description.** What is observed? What is the time unit?
+2. **Time plot.** Does the level appear stable?
+3. **Rolling summaries.** Does the mean or variance change?
+4. **Sample ACF.** Does dependence appear short-range, long-range, seasonal, or absent?
+5. **Transformation attempt.** Try log transform, detrending, or differencing if needed.
+6. **Re-diagnosis.** Compare diagnostics before and after transformation.
+7. **Conclusion.** State whether a stationary model is plausible and what model class you would try next.
+8. **AI reflection.** Ask an AI assistant to critique your conclusion and include your response to that critique.
+
+## 3.20 Exercises
+
+### Conceptual exercises
+
+1. Define strict stationarity and weak stationarity. Give an example of a process that is weakly stationary.
+2. Explain why a deterministic linear trend violates weak stationarity.
+3. Explain why a random walk is not weakly stationary even though its increments are stationary.
+4. State the difference between white noise and iid noise.
+5. Explain why the sample ACF of white noise may have a few spikes outside the approximate confidence bands.
+
+### Mathematical exercises
+
+6. Let $X_t=W_t+\theta W_{t-1}$, where $W_t\sim WN(0,\sigma^2)$. Derive $\gamma(0)$, $\gamma(1)$, and $\rho(1)$.
+7. Let $X_t=\phi X_{t-1}+W_t$ with $|\phi|<1$. Starting from stationarity, derive $\gamma(0)$.
+8. For the same AR(1) process, show that $\gamma(h)=\phi\gamma(h-1)$ for $h\ge1$.
+9. Suppose $X_t=\beta_0+\beta_1t+W_t$. Compute $E[X_t]$ and $\operatorname{Cov}(X_{t+h},X_t)$ when $W_t$ is white noise. Is the process weakly stationary?
+10. Let $X_t=\sigma_tW_t$ where $W_t\sim WN(0,1)$ and $\sigma_t=1+t/n$. Is $X_t$ weakly stationary? Explain.
+
+### Python exercises
+
+11. Simulate 500 observations from an AR(1) process with $\phi=0.3$, $0.8$, and $-0.8$. Compare the time plots and ACFs.
+12. Simulate an MA(1) process with $\theta=0.5$ and $\theta=-0.5$. Compare the lag-1 ACF with the theoretical value.
+13. Simulate a random walk and its first difference. Compare their rolling variance and sample ACF.
+14. Write your own function for sample autocovariance and compare it with a package implementation.
+15. Create a nonstationary series with changing variance but constant mean. Explain why a time plot may be misleading if you only inspect the center of the series.
+
+### AI-assisted exercises
+
+16. Ask an AI assistant to explain why a random walk is not stationary. Check whether it discusses both variance and autocovariance.
+17. Ask an AI assistant to derive the ACF of MA(1). Verify the formula manually.
+18. Ask an AI assistant to diagnose a slowly decaying ACF. Evaluate whether the answer overcommits to AR(1) or considers nonstationarity.
+19. Give an AI assistant a simulated AR(1) ACF and a simulated random-walk ACF. Ask it to compare them. Identify any missing caveats.
+20. Ask an AI assistant to write a stationarity checklist for your final project data. Revise the checklist so it matches this chapter.
+
+## 3.21 Chapter summary
+
+Stationarity is the stability assumption that allows us to learn dependence from one observed time series. Strict stationarity concerns all finite-dimensional distributions. Weak stationarity concerns only constant mean, constant variance, and autocovariance depending only on lag.
+
+The autocovariance function
+
+$$
+\gamma(h)=\operatorname{Cov}(X_{t+h},X_t)
+$$
+
+and autocorrelation function
+
+$$
+\rho(h)=\frac{\gamma(h)}{\gamma(0)}
+$$
+
+are the central second-order tools of classical time-series analysis. White noise has zero autocorrelation after lag zero. A random walk is nonstationary because its variance grows with time. MA(1) has ACF cutoff after lag one. Stationary AR(1) has geometrically decaying ACF.
+
+These examples are the diagnostic vocabulary for later chapters. ARMA, ARIMA, SARIMA, spectral analysis, Kalman filtering, and deep sequence models all build on the same question: what structure in the past helps us understand or predict the future?
+
+## 3.22 Checklist
+
+Before moving on, make sure you can:
+
+- state strict and weak stationarity precisely;
+- compute $\mu_t$, $\gamma(s,t)$, $\gamma(h)$, and $\rho(h)$ for simple processes;
+- explain why white noise is stationary;
+- explain why a random walk is not stationary;
+- derive the ACF of MA(1) and AR(1);
+- compute a sample ACF in Python;
+- interpret ACF plots without overclaiming;
+- use AI to generate diagnostic hypotheses and then verify them mathematically.

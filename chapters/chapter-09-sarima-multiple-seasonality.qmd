@@ -1,0 +1,991 @@
+# Seasonal ARIMA and Multiple Seasonality
+
+::: {.hero}
+**Part III. Nonstationary and Seasonal Models**  
+**Chapter goal:** learn how to model time series with repeating seasonal structure. We develop seasonal lag operators, seasonal differencing, pure seasonal ARMA models, multiplicative SARIMA models, model-identification rules, diagnostics, backtesting, multiple-seasonality extensions, and AI-assisted checks for seasonal forecasting workflows.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain why ordinary ARIMA models are often insufficient for monthly, weekly, daily, hourly, or other seasonal data;
+2. use the seasonal backshift operator $B^s$ and the seasonal difference operator $\nabla_s=1-B^s$;
+3. define pure seasonal ARMA$(P,Q)_s$ models and full SARIMA$(p,d,q)(P,D,Q)_s$ models;
+4. distinguish nonseasonal differencing from seasonal differencing;
+5. recognize seasonal ACF and PACF patterns;
+6. write and interpret multiplicative seasonal ARMA/SARIMA equations;
+7. compare SARIMA forecasts with seasonal naive baselines;
+8. diagnose SARIMA residuals using time plots, ACF, Ljung--Box tests, and backtesting;
+9. understand why multiple seasonality often needs Fourier features, dynamic regression, Prophet-type models, or deep sequence models;
+10. use AI tools to critique seasonal model choices while verifying all mathematical and empirical claims.
+
+## 9.1 Why seasonality needs special structure
+
+A nonseasonal ARIMA model explains dependence through recent values such as $X_{t-1}$, $X_{t-2}$, and recent shocks such as $W_{t-1}$, $W_{t-2}$. This is useful when the most relevant past values are nearby in time.
+
+Many real time series also depend strongly on values from the **same season** in previous cycles:
+
+- monthly airline passengers often depend on the same month last year;
+- daily retail demand often depends on the same day of the week;
+- hourly electricity demand often depends on the same hour yesterday and the same hour last week;
+- hospital admissions, web traffic, ride sharing, call centers, and financial volume all have calendar effects.
+
+If the seasonal period is $s$, then the seasonal lag is $s$. For monthly data with yearly seasonality, $s=12$. For quarterly data with yearly seasonality, $s=4$. For daily data with weekly seasonality, $s=7$. For hourly data with daily seasonality, $s=24$.
+
+The simplest seasonal dependence says:
+
+$$
+X_t \text{ is related not only to } X_{t-1}, \text{ but also to } X_{t-s}.
+$$
+
+Ordinary ARIMA can technically include lag $s$ by using a high-order AR or MA model, but doing so directly is inefficient. Seasonal ARIMA builds the lag $s$ structure into the model.
+
+::: {.callout-note}
+## Core idea
+Seasonal models treat $B^s$ as a basic operator, just as nonseasonal ARIMA treats $B$ as a basic operator.
+:::
+
+## 9.2 The seasonal backshift operator
+
+The ordinary backshift operator is
+
+$$
+BX_t=X_{t-1}.
+$$
+
+The seasonal backshift operator is
+
+$$
+B^sX_t=X_{t-s}.
+$$
+
+For example, if $s=12$, then
+
+$$
+B^{12}X_t=X_{t-12},
+$$
+
+which is the observation from the same month one year earlier.
+
+The seasonal first-difference operator is
+
+$$
+\nabla_sX_t=X_t-X_{t-s}=(1-B^s)X_t.
+$$
+
+The $D$-th seasonal difference is
+
+$$
+\nabla_s^D X_t=(1-B^s)^D X_t.
+$$
+
+For $D=2$,
+
+$$
+\nabla_s^2X_t=(1-B^s)^2X_t=X_t-2X_{t-s}+X_{t-2s}.
+$$
+
+In practice, seasonal differencing order $D$ is usually $0$ or $1$. Using $D>1$ is uncommon and should require strong evidence.
+
+::: {.callout-warning}
+## Seasonal differencing is not seasonal adjustment
+Seasonal differencing removes repeated stochastic seasonal level changes, but it also changes the dependence structure. It is not the same as estimating and subtracting deterministic seasonal means or calendar effects.
+:::
+
+## 9.3 Deterministic seasonality versus stochastic seasonality
+
+Seasonality can enter a time series in more than one way.
+
+### Deterministic seasonal mean
+
+A simple deterministic seasonal model is
+
+$$
+X_t=m_{r(t)}+Y_t,
+$$
+
+where $Y_t$ is stationary and $m_{r(t)}$ is a repeating seasonal mean. Here $r(t)$ is the season index. For monthly data, $r(t)$ might be January, February, $\ldots$, December.
+
+If $m_{r(t)}=m_{r(t-s)}$, then
+
+$$
+\nabla_sX_t=X_t-X_{t-s}=Y_t-Y_{t-s}.
+$$
+
+The seasonal mean disappears, but the stationary component has been changed from $Y_t$ to $Y_t-Y_{t-s}$.
+
+Alternatively, we could model the deterministic seasonal mean directly using seasonal dummy variables or Fourier features:
+
+$$
+X_t=\beta_0+\sum_{j=1}^{s-1}\beta_jD_{j,t}+Y_t,
+$$
+
+where $D_{j,t}$ indicates season $j$.
+
+### Stochastic seasonal trend
+
+A stochastic seasonal model is one in which the seasonal level evolves randomly. The simplest example is the **seasonal random walk**:
+
+$$
+X_t=X_{t-s}+W_t.
+$$
+
+Equivalently,
+
+$$
+(1-B^s)X_t=W_t.
+$$
+
+This is SARIMA$(0,0,0)(0,1,0)_s$. Its best one-step forecast is close to the value observed one full season ago.
+
+::: {.callout-tip}
+## Interpretation
+Deterministic seasonality says seasonal patterns repeat in a fixed way. Stochastic seasonality says each season's level can evolve from cycle to cycle.
+:::
+
+## 9.4 Pure seasonal ARMA models
+
+A pure seasonal autoregressive moving-average model uses only seasonal lags.
+
+A pure seasonal ARMA$(P,Q)_s$ model is
+
+$$
+\Phi_P(B^s)X_t=\Theta_Q(B^s)W_t,
+$$
+
+where
+
+$$
+\Phi_P(B^s)=1-\Phi_1B^s-\Phi_2B^{2s}-\cdots-\Phi_PB^{Ps},
+$$
+
+and
+
+$$
+\Theta_Q(B^s)=1+\Theta_1B^s+\Theta_2B^{2s}+\cdots+\Theta_QB^{Qs}.
+$$
+
+For example, a pure seasonal ARMA$(1,1)_{12}$ model is
+
+$$
+(1-\Phi_1B^{12})X_t=(1+\Theta_1B^{12})W_t.
+$$
+
+In ordinary time notation,
+
+$$
+X_t=\Phi_1X_{t-12}+W_t+\Theta_1W_{t-12}.
+$$
+
+This model says that this month's deviation depends on the deviation from the same month last year and on the shock from the same month last year.
+
+## 9.5 Stationarity and invertibility for pure seasonal models
+
+The pure seasonal AR polynomial is
+
+$$
+\Phi_P(z^s)=1-\Phi_1z^s-\cdots-\Phi_Pz^{Ps}.
+$$
+
+The pure seasonal ARMA process is causal if the roots of $\Phi_P(z^s)=0$ lie outside the unit circle. It is invertible if the roots of
+
+$$
+\Theta_Q(z^s)=1+\Theta_1z^s+\cdots+\Theta_Qz^{Qs}
+$$
+
+lie outside the unit circle.
+
+For a pure seasonal AR$(1)_s$ model,
+
+$$
+X_t=\Phi X_{t-s}+W_t,
+$$
+
+causality requires
+
+$$
+|\Phi|<1.
+$$
+
+Then the causal expansion is
+
+$$
+X_t=W_t+\Phi W_{t-s}+\Phi^2W_{t-2s}+\cdots.
+$$
+
+The autocorrelation is nonzero at seasonal lags:
+
+$$
+\rho(ks)=\Phi^{|k|},\qquad k=0,1,2,\ldots,
+$$
+
+and equals zero at many nonseasonal lags when the model is purely seasonal.
+
+## 9.6 Full multiplicative SARIMA models
+
+The most common seasonal ARIMA model combines nonseasonal and seasonal factors multiplicatively.
+
+A SARIMA$(p,d,q)(P,D,Q)_s$ model satisfies
+
+$$
+\phi_p(B)\Phi_P(B^s)(1-B)^d(1-B^s)^DX_t
+=
+\alpha+\theta_q(B)\Theta_Q(B^s)W_t.
+$$
+
+Here
+
+$$
+\phi_p(B)=1-\phi_1B-\cdots-\phi_pB^p,
+$$
+
+$$
+\theta_q(B)=1+\theta_1B+\cdots+\theta_qB^q,
+$$
+
+$$
+\Phi_P(B^s)=1-\Phi_1B^s-\cdots-\Phi_PB^{Ps},
+$$
+
+and
+
+$$
+\Theta_Q(B^s)=1+\Theta_1B^s+\cdots+\Theta_QB^{Qs}.
+$$
+
+The notation means:
+
+| Symbol | Meaning |
+|---|---|
+| $p$ | nonseasonal AR order |
+| $d$ | nonseasonal differencing order |
+| $q$ | nonseasonal MA order |
+| $P$ | seasonal AR order |
+| $D$ | seasonal differencing order |
+| $Q$ | seasonal MA order |
+| $s$ | seasonal period |
+
+::: {.callout-note}
+## Model class
+ARIMA$(p,d,q)$ is the special case SARIMA$(p,d,q)(0,0,0)_s$. Pure seasonal models are the special case SARIMA$(0,0,0)(P,D,Q)_s$.
+:::
+
+## 9.7 What multiplicative means
+
+Consider a simple multiplicative seasonal AR model:
+
+$$
+(1-\phi B)(1-\Phi B^s)X_t=W_t.
+$$
+
+Expanding the left-hand side gives
+
+$$
+(1-\phi B-\Phi B^s+\phi\Phi B^{s+1})X_t=W_t.
+$$
+
+Thus
+
+$$
+X_t=\phi X_{t-1}+\Phi X_{t-s}-\phi\Phi X_{t-s-1}+W_t.
+$$
+
+The multiplicative model is not merely an AR model with lags $1$ and $s$. It also includes the interaction lag $s+1$ with coefficient $-\phi\Phi$.
+
+Similarly, for a multiplicative MA model,
+
+$$
+(1+\theta B)(1+\Theta B^s)W_t
+=
+W_t+\theta W_{t-1}+\Theta W_{t-s}+\theta\Theta W_{t-s-1}.
+$$
+
+The product structure gives a parsimonious model while still allowing interaction between short-range and seasonal dependence.
+
+## 9.8 Seasonal differencing
+
+Seasonal differencing is often used when a series has a seasonal stochastic trend. For example,
+
+$$
+X_t=X_{t-s}+W_t
+$$
+
+is not stationary, but
+
+$$
+\nabla_sX_t=X_t-X_{t-s}=W_t
+$$
+
+is stationary.
+
+A model with both nonseasonal and seasonal differencing is
+
+$$
+Y_t=(1-B)^d(1-B^s)^DX_t.
+$$
+
+For $d=1$ and $D=1$,
+
+$$
+Y_t=(1-B)(1-B^s)X_t.
+$$
+
+Expanding,
+
+$$
+Y_t=X_t-X_{t-1}-X_{t-s}+X_{t-s-1}.
+$$
+
+This transformation removes both local trend and seasonal trend, but it can be aggressive. It should be justified by plots, ACF behavior, diagnostics, and validation.
+
+::: {.callout-warning}
+## Avoid automatic double differencing
+Applying both $d=1$ and $D=1$ can be necessary, but it can also over-difference the series. After differencing, always inspect the transformed series and its ACF.
+:::
+
+## 9.9 Seasonal ACF and PACF patterns
+
+The ACF and PACF for SARIMA models should be read at two scales:
+
+1. **short lags**: $1,2,3,\ldots$;
+2. **seasonal lags**: $s,2s,3s,\ldots$.
+
+For a stationary transformed series $Y_t=(1-B)^d(1-B^s)^DX_t$:
+
+| Candidate seasonal component | ACF at seasonal lags | PACF at seasonal lags |
+|---|---|---|
+| seasonal AR$(P)_s$ | decays at $s,2s,3s,\ldots$ | cuts off after $Ps$ |
+| seasonal MA$(Q)_s$ | cuts off after $Qs$ | decays at $s,2s,3s,\ldots$ |
+| seasonal ARMA$(P,Q)_s$ | decays | decays |
+
+Nonseasonal patterns are interpreted in the ordinary way:
+
+| Candidate nonseasonal component | ACF at short lags | PACF at short lags |
+|---|---|---|
+| AR($p$) | decays | cuts off after $p$ |
+| MA($q$) | cuts off after $q$ | decays |
+| ARMA($p,q$) | decays | decays |
+
+A strong spike at lag $s$ in the ACF often suggests a seasonal MA component or seasonal differencing. A slowly decaying ACF at seasonal lags suggests seasonal nonstationarity or a seasonal AR component.
+
+::: {.callout-tip}
+## Reading seasonal plots
+For monthly data, inspect lags $12,24,36,\ldots$. For quarterly data, inspect lags $4,8,12,\ldots$. For daily weekly data, inspect lags $7,14,21,\ldots$.
+:::
+
+## 9.10 A modeling workflow for SARIMA
+
+A practical SARIMA workflow is:
+
+1. **Plot the series.** Look for trend, seasonality, changing variance, outliers, and structural breaks.
+2. **Identify the seasonal period $s$.** Use domain knowledge first.
+3. **Stabilize variance if needed.** Common choices include log transform or Box--Cox transform.
+4. **Choose seasonal differencing $D$.** If seasonal patterns drift or seasonal ACF decays slowly, try $D=1$.
+5. **Choose nonseasonal differencing $d$.** If trend remains after seasonal differencing, try $d=1$.
+6. **Inspect ACF and PACF of the transformed series.** Propose small values of $p,q,P,Q$.
+7. **Fit several candidate models.** Use maximum likelihood or conditional likelihood.
+8. **Check residuals.** Residuals should look like white noise.
+9. **Compare forecasts by backtesting.** Do not rely only on AIC.
+10. **Report a baseline comparison.** Seasonal naive is often a strong baseline.
+
+A typical starting grid for monthly data might be
+
+$$
+p,q,P,Q\in\{0,1,2\},\qquad d,D\in\{0,1\},\qquad s=12.
+$$
+
+Large grids are possible, but the goal is not to automate blindly. The model should remain interpretable and diagnostically reasonable.
+
+## 9.11 Seasonal naive forecasts
+
+Before fitting SARIMA, always compare with a seasonal naive forecast. For seasonal period $s$, the seasonal naive $h$-step forecast uses the most recent observation from the same season:
+
+$$
+\widehat X_{n+h|n}=X_{n+h-ms},
+$$
+
+where $m$ is the smallest positive integer such that $n+h-ms\le n$.
+
+For monthly data, the forecast for next January is last January, the forecast for next February is last February, and so on.
+
+The seasonal naive method is simple, but for strongly seasonal data it is often difficult to beat. A modern forecasting workflow should treat it as a serious baseline.
+
+## 9.12 Forecasting with SARIMA
+
+A fitted SARIMA model forecasts the transformed stationary process and then reconstructs forecasts on the original scale. If the model uses seasonal differencing,
+
+$$
+Y_t=(1-B^s)X_t=X_t-X_{t-s},
+$$
+
+then
+
+$$
+X_t=Y_t+X_{t-s}.
+$$
+
+Thus future forecasts are recursively reconstructed using previous seasonal values and forecasted seasonal differences.
+
+If the model uses both ordinary and seasonal differencing,
+
+$$
+Y_t=(1-B)(1-B^s)X_t,
+$$
+
+then reconstruction requires reversing both operations. Software performs this recursion automatically, but students should understand that forecast intervals widen because future innovations accumulate through the integration operations.
+
+## 9.13 Residual diagnostics
+
+After fitting a SARIMA model, residuals should behave like white noise. Diagnostics include:
+
+1. **Time plot of residuals.** Look for changing variance, trend, or remaining seasonality.
+2. **Residual ACF.** Seasonal spikes at $s,2s,\ldots$ suggest missing seasonal structure.
+3. **Ljung--Box test.** Test whether a group of autocorrelations is jointly significant.
+4. **Q-Q plot.** Check whether Gaussian forecast intervals are reasonable.
+5. **Backtesting.** Compare out-of-sample forecast errors with baseline models.
+
+If residuals still show seasonal autocorrelation, possible fixes include:
+
+- add a seasonal AR or seasonal MA term;
+- reconsider seasonal differencing $D$;
+- add deterministic seasonal regressors;
+- transform the data;
+- model outliers or interventions;
+- consider multiple-seasonality models.
+
+## 9.14 Multiple seasonality
+
+A single SARIMA model is designed around one seasonal period $s$. Many modern applications have multiple seasonal periods.
+
+Examples:
+
+| Data frequency | Common seasonalities |
+|---|---|
+| hourly electricity demand | daily $s=24$, weekly $s=168$, yearly approximately $8760$ |
+| daily retail sales | weekly $s=7$, yearly approximately $365$ |
+| minute-level web traffic | hourly, daily, weekly |
+| hospital operations | day-of-week, holiday, annual cycles |
+
+A direct SARIMA model with several seasonal periods can become large, unstable, and hard to estimate. In such settings, useful alternatives include:
+
+1. deterministic Fourier features;
+2. dynamic harmonic regression;
+3. Prophet-type additive models;
+4. TBATS-style exponential smoothing models;
+5. machine-learning models with calendar and lag features;
+6. deep sequence models such as TCNs, RNNs, LSTMs, and transformers.
+
+A Fourier seasonal regression with multiple periods has the form
+
+$$
+X_t
+=
+\beta_0
++
+\sum_{m\in\mathcal S}\sum_{k=1}^{K_m}
+\left[
+ a_{k,m}\cos\left(\frac{2\pi kt}{m}\right)
++b_{k,m}\sin\left(\frac{2\pi kt}{m}\right)
+\right]
++Y_t,
+$$
+
+where $\mathcal S$ is the set of seasonal periods and $Y_t$ is a residual time-series process.
+
+::: {.callout-note}
+## Modern connection
+Classical SARIMA handles one dominant seasonal period well. Modern forecasting systems often combine seasonal differencing, Fourier features, calendar features, and flexible ML or deep learning models.
+:::
+
+## 9.15 Calendar effects, holidays, and interventions
+
+Seasonality is regular. Holidays and interventions are often irregular.
+
+A holiday effect may be represented by a regression variable $H_t$:
+
+$$
+X_t=\text{seasonal component}+\beta_HH_t+Y_t.
+$$
+
+Examples include Thanksgiving, Lunar New Year, school breaks, weather emergencies, promotions, policy changes, product launches, and pandemics.
+
+A SARIMA model can be extended to SARIMAX by including exogenous regressors:
+
+$$
+\phi(B)\Phi(B^s)(1-B)^d(1-B^s)^D
+\left(X_t-\beta^\top z_t\right)
+=
+\theta(B)\Theta(B^s)W_t.
+$$
+
+Here $z_t$ may contain calendar effects, weather variables, price variables, holiday indicators, or intervention indicators.
+
+The key modeling principle is that dependence and regression effects should both be checked. If residuals remain autocorrelated after regression, a time-series error model is needed.
+
+## 9.16 Interactive HTML: Seasonal differencing and SAR structure explorer
+
+The interactive below simulates a series with trend, deterministic seasonality, short-memory AR dependence, and seasonal AR dependence. Use the controls to see how ordinary differencing and seasonal differencing change the time plot and ACF.
+
+```{=html}
+<div class="interactive-card">
+  <h3>Seasonal SARIMA Explorer</h3>
+  <p>
+    The simulated residual follows a multiplicative seasonal AR pattern
+    <span class="math inline">$(1-\phi B)(1-\Phi B^s)Y_t=W_t$</span>, then trend and deterministic seasonality are added.
+    The lower plots show the transformed series and its sample ACF after selected differencing.
+  </p>
+
+  <div class="controls-grid">
+    <label>Seasonal period s
+      <select id="sarima_s">
+        <option value="4">4</option>
+        <option value="7">7</option>
+        <option value="12" selected>12</option>
+        <option value="24">24</option>
+      </select>
+    </label>
+    <label>Seasonal amplitude
+      <input id="sarima_amp" type="range" min="0" max="8" step="0.5" value="4">
+      <span id="sarima_amp_val">4</span>
+    </label>
+    <label>Trend slope
+      <input id="sarima_trend" type="range" min="-0.05" max="0.08" step="0.01" value="0.02">
+      <span id="sarima_trend_val">0.02</span>
+    </label>
+    <label>Short AR coefficient φ
+      <input id="sarima_phi" type="range" min="-0.8" max="0.8" step="0.05" value="0.35">
+      <span id="sarima_phi_val">0.35</span>
+    </label>
+    <label>Seasonal AR coefficient Φ
+      <input id="sarima_Phi" type="range" min="-0.8" max="0.8" step="0.05" value="0.55">
+      <span id="sarima_Phi_val">0.55</span>
+    </label>
+    <label>Apply ordinary difference d=1
+      <input id="sarima_d" type="checkbox">
+    </label>
+    <label>Apply seasonal difference D=1
+      <input id="sarima_D" type="checkbox" checked>
+    </label>
+  </div>
+
+  <div id="sarima_raw_plot" style="width:100%;height:360px;"></div>
+  <div id="sarima_transformed_plot" style="width:100%;height:360px;"></div>
+  <div id="sarima_acf_plot" style="width:100%;height:320px;"></div>
+</div>
+
+<script>
+(function(){
+  function lcg(seed){
+    let state = seed >>> 0;
+    return function(){
+      state = (1664525 * state + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  }
+
+  function normalGenerator(seed){
+    const rand = lcg(seed);
+    let spare = null;
+    return function(){
+      if(spare !== null){ const v = spare; spare = null; return v; }
+      let u = 0, v = 0;
+      while(u === 0) u = rand();
+      while(v === 0) v = rand();
+      const mag = Math.sqrt(-2.0 * Math.log(u));
+      const z0 = mag * Math.cos(2.0 * Math.PI * v);
+      const z1 = mag * Math.sin(2.0 * Math.PI * v);
+      spare = z1;
+      return z0;
+    };
+  }
+
+  function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+  function acf(arr, maxLag){
+    const n = arr.length;
+    const m = mean(arr);
+    let denom = 0;
+    for(let i=0;i<n;i++) denom += (arr[i]-m)*(arr[i]-m);
+    const out = [];
+    for(let h=0; h<=maxLag; h++){
+      let num = 0;
+      for(let t=h; t<n; t++) num += (arr[t]-m)*(arr[t-h]-m);
+      out.push(denom > 0 ? num/denom : 0);
+    }
+    return out;
+  }
+
+  function difference(arr){
+    const out = [];
+    for(let i=1;i<arr.length;i++) out.push(arr[i]-arr[i-1]);
+    return out;
+  }
+
+  function seasonalDifference(arr, s){
+    const out = [];
+    for(let i=s;i<arr.length;i++) out.push(arr[i]-arr[i-s]);
+    return out;
+  }
+
+  function simulate(n, s, amp, trend, phi, Phi){
+    const eps = normalGenerator(7339);
+    const y = Array(n).fill(0);
+    const x = Array(n).fill(0);
+    for(let t=0;t<n;t++){
+      const e = eps();
+      const y1 = t-1 >= 0 ? y[t-1] : 0;
+      const ys = t-s >= 0 ? y[t-s] : 0;
+      const ysi = t-s-1 >= 0 ? y[t-s-1] : 0;
+      y[t] = phi*y1 + Phi*ys - phi*Phi*ysi + e;
+      const seasonal = amp * Math.sin(2*Math.PI*t/s) + 0.35*amp*Math.cos(4*Math.PI*t/s);
+      x[t] = 20 + trend*t + seasonal + y[t];
+    }
+    return x;
+  }
+
+  function update(){
+    const s = Number(document.getElementById('sarima_s').value);
+    const amp = Number(document.getElementById('sarima_amp').value);
+    const trend = Number(document.getElementById('sarima_trend').value);
+    const phi = Number(document.getElementById('sarima_phi').value);
+    const Phi = Number(document.getElementById('sarima_Phi').value);
+    const d = document.getElementById('sarima_d').checked;
+    const D = document.getElementById('sarima_D').checked;
+
+    document.getElementById('sarima_amp_val').textContent = amp.toFixed(1);
+    document.getElementById('sarima_trend_val').textContent = trend.toFixed(2);
+    document.getElementById('sarima_phi_val').textContent = phi.toFixed(2);
+    document.getElementById('sarima_Phi_val').textContent = Phi.toFixed(2);
+
+    const n = 240;
+    const x = simulate(n, s, amp, trend, phi, Phi);
+    const time = [...Array(n).keys()];
+
+    let z = x.slice();
+    let label = 'raw series';
+    if(D){ z = seasonalDifference(z, s); label = 'after seasonal differencing'; }
+    if(d){ z = difference(z); label = D ? 'after seasonal and ordinary differencing' : 'after ordinary differencing'; }
+    const ztime = [...Array(z.length).keys()].map(i => n - z.length + i);
+    const maxLag = Math.min(4*s, 60);
+    const r = acf(z, maxLag);
+    const lags = [...Array(maxLag+1).keys()];
+    const ci = 1.96/Math.sqrt(z.length);
+
+    Plotly.newPlot('sarima_raw_plot', [{x:time, y:x, mode:'lines', name:'simulated X_t'}], {
+      title:'Raw seasonal series', margin:{t:45}, xaxis:{title:'time'}, yaxis:{title:'value'}
+    }, {responsive:true});
+
+    Plotly.newPlot('sarima_transformed_plot', [{x:ztime, y:z, mode:'lines', name:label}], {
+      title:'Transformed series: ' + label, margin:{t:45}, xaxis:{title:'time'}, yaxis:{title:'value'}
+    }, {responsive:true});
+
+    const acfTrace = {x:lags, y:r, type:'bar', name:'sample ACF'};
+    const upper = {x:lags, y:lags.map(()=>ci), mode:'lines', name:'±1.96/sqrt(n)', line:{dash:'dot'}};
+    const lower = {x:lags, y:lags.map(()=>-ci), mode:'lines', name:'', showlegend:false, line:{dash:'dot'}};
+    const seasonalMarkers = [];
+    for(let k=s; k<=maxLag; k+=s){ seasonalMarkers.push({type:'line', x0:k, x1:k, y0:-1, y1:1, line:{dash:'dash', width:1}}); }
+    Plotly.newPlot('sarima_acf_plot', [acfTrace, upper, lower], {
+      title:'Sample ACF of transformed series', margin:{t:45}, xaxis:{title:'lag'}, yaxis:{title:'ACF', range:[-1,1]}, shapes:seasonalMarkers
+    }, {responsive:true});
+  }
+
+  ['sarima_s','sarima_amp','sarima_trend','sarima_phi','sarima_Phi','sarima_d','sarima_D'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', update);
+    document.getElementById(id).addEventListener('change', update);
+  });
+  update();
+})();
+</script>
+```
+
+::: {.callout-warning}
+## Plotly loading rule
+This chapter uses `Plotly.newPlot` but does not load Plotly.js. The e-book package loads Plotly.js once globally through the shared header file.
+:::
+
+## 9.17 Python example: simulate seasonal data
+
+The following example simulates a seasonal time series with a trend, deterministic yearly seasonality, and seasonal autoregressive dependence.
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+np.random.seed(7339)
+
+n = 180
+s = 12
+phi = 0.35
+Phi = 0.55
+sigma = 1.0
+
+time = np.arange(n)
+noise = np.random.normal(scale=sigma, size=n)
+y = np.zeros(n)
+
+# Multiplicative seasonal AR: (1 - phi B)(1 - Phi B^s) y_t = w_t
+for t in range(n):
+    y1 = y[t-1] if t-1 >= 0 else 0
+    ys = y[t-s] if t-s >= 0 else 0
+    ysi = y[t-s-1] if t-s-1 >= 0 else 0
+    y[t] = phi*y1 + Phi*ys - phi*Phi*ysi + noise[t]
+
+seasonal_mean = 4*np.sin(2*np.pi*time/s) + 1.5*np.cos(4*np.pi*time/s)
+trend = 0.03*time
+x = 20 + trend + seasonal_mean + y
+
+dates = pd.date_range("2010-01-01", periods=n, freq="MS")
+series = pd.Series(x, index=dates, name="x")
+
+fig, ax = plt.subplots(figsize=(10, 4))
+series.plot(ax=ax)
+ax.set_title("Simulated monthly seasonal time series")
+ax.set_xlabel("date")
+ax.set_ylabel("value")
+plt.show()
+```
+
+## 9.18 Python example: seasonal differencing and ACF/PACF
+
+```{python}
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+seasonally_diff = series.diff(s).dropna()
+both_diff = seasonally_diff.diff().dropna()
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=False)
+series.plot(ax=axes[0])
+axes[0].set_title("Original series")
+seasonally_diff.plot(ax=axes[1])
+axes[1].set_title("Seasonal difference: X_t - X_{t-12}")
+both_diff.plot(ax=axes[2])
+axes[2].set_title("Seasonal difference followed by ordinary difference")
+plt.tight_layout()
+plt.show()
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+plot_acf(seasonally_diff, lags=48, ax=axes[0])
+axes[0].set_title("ACF after seasonal differencing")
+plot_pacf(seasonally_diff, lags=48, ax=axes[1], method="ywm")
+axes[1].set_title("PACF after seasonal differencing")
+plt.tight_layout()
+plt.show()
+```
+
+When inspecting these plots, look separately at short lags and seasonal lags. In monthly data, lags $12,24,36,\ldots$ are especially important.
+
+## 9.19 Python example: fit SARIMA with `statsmodels`
+
+The `SARIMAX` class in `statsmodels` fits SARIMA and SARIMAX models. The argument `order=(p,d,q)` specifies the nonseasonal part, and `seasonal_order=(P,D,Q,s)` specifies the seasonal part.
+
+```{python}
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+train = series.iloc[:-24]
+test = series.iloc[-24:]
+
+model = SARIMAX(
+    train,
+    order=(1, 0, 0),
+    seasonal_order=(1, 1, 0, 12),
+    trend="c",
+    enforce_stationarity=False,
+    enforce_invertibility=False,
+)
+
+fit = model.fit(disp=False)
+print(fit.summary())
+```
+
+The fitted model is a candidate, not a conclusion. We still need residual diagnostics and forecast evaluation.
+
+## 9.20 Python example: residual diagnostics
+
+```{python}
+from statsmodels.stats.diagnostic import acorr_ljungbox
+import scipy.stats as stats
+
+resid = fit.resid.dropna()
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+resid.plot(ax=axes[0, 0])
+axes[0, 0].set_title("Residual time plot")
+axes[0, 0].axhline(0, linewidth=1)
+
+plot_acf(resid, lags=48, ax=axes[0, 1])
+axes[0, 1].set_title("Residual ACF")
+
+axes[1, 0].hist(resid, bins=20, density=True, alpha=0.7)
+axes[1, 0].set_title("Residual histogram")
+
+stats.probplot(resid, dist="norm", plot=axes[1, 1])
+axes[1, 1].set_title("Residual Q-Q plot")
+
+plt.tight_layout()
+plt.show()
+
+lb = acorr_ljungbox(resid, lags=[12, 24, 36], return_df=True)
+lb
+```
+
+A good residual ACF should not show remaining seasonal spikes. A significant Ljung--Box result at seasonal lags suggests that the model has not captured all dependence.
+
+## 9.21 Python example: compare with seasonal naive forecasting
+
+```{python}
+forecast_res = fit.get_forecast(steps=len(test))
+forecast_mean = forecast_res.predicted_mean
+forecast_ci = forecast_res.conf_int()
+
+# Seasonal naive baseline: repeat values from 12 months earlier.
+seasonal_naive = series.shift(12).loc[test.index]
+
+def mae(y_true, y_pred):
+    return np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred)))
+
+def rmse(y_true, y_pred):
+    return np.sqrt(np.mean((np.asarray(y_true) - np.asarray(y_pred))**2))
+
+comparison = pd.DataFrame({
+    "MAE": [mae(test, forecast_mean), mae(test, seasonal_naive)],
+    "RMSE": [rmse(test, forecast_mean), rmse(test, seasonal_naive)],
+}, index=["SARIMA candidate", "Seasonal naive"])
+
+print(comparison)
+
+fig, ax = plt.subplots(figsize=(10, 4))
+train.iloc[-48:].plot(ax=ax, label="train")
+test.plot(ax=ax, label="test")
+forecast_mean.plot(ax=ax, label="SARIMA forecast")
+seasonal_naive.plot(ax=ax, label="seasonal naive", linestyle="--")
+ax.fill_between(
+    test.index,
+    forecast_ci.iloc[:, 0],
+    forecast_ci.iloc[:, 1],
+    alpha=0.2,
+    label="SARIMA 95% interval",
+)
+ax.set_title("SARIMA forecast versus seasonal naive baseline")
+ax.legend()
+plt.show()
+```
+
+A SARIMA model should be judged against a baseline. If it cannot improve on seasonal naive forecasting, then the extra complexity may not be useful.
+
+## 9.22 Python example: Fourier features for multiple seasonality
+
+SARIMA is usually designed around one seasonal period. For multiple seasonalities, Fourier features provide a flexible alternative.
+
+The function below builds Fourier features for a given period $m$ and order $K$.
+
+```{python}
+def fourier_features(index, period, K, prefix):
+    t = np.arange(len(index))
+    data = {}
+    for k in range(1, K + 1):
+        data[f"{prefix}_sin_{k}"] = np.sin(2*np.pi*k*t/period)
+        data[f"{prefix}_cos_{k}"] = np.cos(2*np.pi*k*t/period)
+    return pd.DataFrame(data, index=index)
+
+# Example: yearly seasonality for monthly data has period 12.
+X_fourier = fourier_features(series.index, period=12, K=2, prefix="year")
+X_fourier.head()
+```
+
+These features can be used in regression, SARIMAX, gradient boosting, neural networks, or transformer models. In longer daily or hourly series, Fourier features are often more stable than trying to fit very high-order seasonal ARIMA terms.
+
+## 9.23 AI-assisted study: seasonal model critic
+
+Use AI as a critic, not as an oracle. A useful prompt is:
+
+> I have monthly data with strong yearly seasonality. I fit SARIMA$(1,1,1)(0,1,1)_{12}$. The residual ACF still has a significant spike at lag 12 and the Ljung--Box test at lag 24 has $p<0.01$. Give possible explanations and suggest diagnostic checks. Do not choose a final model until the residual plots and backtesting results are inspected.
+
+Then verify the response manually:
+
+1. Did the AI distinguish seasonal and nonseasonal differencing?
+2. Did it mention residual seasonality?
+3. Did it avoid claiming that AIC alone proves a model is best?
+4. Did it recommend comparing with seasonal naive forecasting?
+5. Did it ask about transformations, outliers, and structural breaks?
+
+A second useful prompt is:
+
+> Explain the difference between deterministic seasonal dummy variables, Fourier seasonal regressors, seasonal differencing, and a seasonal AR term. Give one example where each is appropriate.
+
+This helps students connect modeling choices to assumptions.
+
+## 9.24 Common mistakes
+
+1. **Forgetting the seasonal naive baseline.** A complicated SARIMA model may not beat last season's value.
+2. **Using the wrong seasonal period.** Domain knowledge matters. Daily data may have weekly, annual, and holiday patterns.
+3. **Over-differencing.** Applying both $d=1$ and $D=1$ without checking the transformed series can create artificial dependence.
+4. **Reading only short lags.** Seasonal models require inspecting $s,2s,3s,\ldots$.
+5. **Trusting AIC alone.** A model with lower AIC can forecast worse out of sample.
+6. **Ignoring calendar effects.** Holidays and interventions are not the same as regular seasonality.
+7. **Confusing deterministic and stochastic seasonality.** Seasonal dummies, Fourier features, and seasonal differencing answer different modeling questions.
+8. **Using SARIMA for every seasonal problem.** Multiple seasonality, irregular data, and many related series often need other tools.
+
+## 9.25 Mini project: monthly demand forecasting
+
+Choose a monthly seasonal data set such as airline passengers, product demand, tourism counts, or public transit ridership.
+
+Your report should include:
+
+1. a time plot and seasonal plot;
+2. variance-stabilizing transformation if needed;
+3. justification for $s$, $D$, and $d$;
+4. ACF/PACF of the transformed series;
+5. at least three candidate SARIMA models;
+6. residual diagnostics for the selected model;
+7. comparison with seasonal naive forecasting;
+8. forecast plot with intervals;
+9. a short AI-assisted critique and your verification of that critique.
+
+## 9.26 Exercises
+
+### Conceptual exercises
+
+1. Explain why SARIMA$(0,0,0)(0,1,0)_{12}$ is a seasonal random walk.
+2. For monthly data, what lags should you inspect first when diagnosing seasonal dependence?
+3. Explain the difference between $d=1$ and $D=1$.
+4. Why can seasonal differencing remove a deterministic seasonal mean but still change the stationary error process?
+5. Why is seasonal naive forecasting a strong baseline?
+
+### Mathematical exercises
+
+1. Expand $(1-B)(1-B^{12})X_t$.
+2. Expand $(1-\phi B)(1-\Phi B^{s})X_t$ and interpret each term.
+3. Expand $(1+\theta B)(1+\Theta B^{s})W_t$.
+4. Show that if $X_t=X_{t-s}+W_t$, then $\nabla_sX_t$ is white noise.
+5. For $X_t=\Phi X_{t-s}+W_t$ with $|\Phi|<1$, derive the causal representation
+   $$
+   X_t=\sum_{j=0}^{\infty}\Phi^j W_{t-js}.
+   $$
+6. For the same model, compute $\gamma(0)$ and $\gamma(s)$.
+7. Explain why the ACF of a pure seasonal MA$(1)_s$ cuts off after lag $s$ at the seasonal scale.
+8. For SARIMA$(1,0,0)(1,0,0)_{12}$, list all AR lags that appear after expansion.
+
+### Computational exercises
+
+1. Simulate a pure seasonal AR$(1)_{12}$ model for $\Phi=0.2,0.6,0.9$ and compare ACFs.
+2. Simulate a seasonal random walk and show that seasonal differencing produces a stationary-looking series.
+3. Fit SARIMA$(0,1,1)(0,1,1)_{12}$ to a monthly data set and check residuals.
+4. Compare SARIMA with seasonal naive forecasting using rolling-origin validation.
+5. Add Fourier features to a regression model and compare it with SARIMA.
+6. Create artificial holiday effects and show that SARIMA alone may leave systematic residual errors.
+
+## 9.27 Chapter checklist
+
+Before moving on, make sure you can:
+
+- write $B^sX_t=X_{t-s}$ and $\nabla_sX_t=(1-B^s)X_t$;
+- define SARIMA$(p,d,q)(P,D,Q)_s$;
+- expand simple multiplicative seasonal polynomials;
+- distinguish seasonal AR, seasonal MA, and seasonal differencing;
+- read ACF/PACF at seasonal lags;
+- fit a SARIMA model in Python;
+- diagnose residual seasonality;
+- compare against a seasonal naive baseline;
+- explain when Fourier features or modern ML models may be preferable to a single-period SARIMA model.

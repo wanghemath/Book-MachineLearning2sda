@@ -1,0 +1,271 @@
+---
+title: "Interactive HTML Modules"
+subtitle: "Browser-Based Visual Experiments for Modern Time Series Analysis and Sequence Learning"
+---
+
+# Interactive HTML Modules
+
+This page collects the interactive browser modules used throughout *Modern Time Series Analysis and Sequence Learning*. The modules are designed to help students move between four views of a model:
+
+1. the mathematical definition,
+2. the simulated data,
+3. the diagnostic plot,
+4. the modeling interpretation.
+
+The interactive examples are ordinary HTML and JavaScript components embedded in the Quarto chapters. They do not require a Python kernel, so students can use them directly in the published website.
+
+## Global Plotly setup
+
+The book loads Plotly.js once globally through `assets/header.html`. Individual chapter files should not include a second Plotly script tag.
+
+The shared header has two jobs:
+
+1. load Plotly.js once;
+2. load `assets/ts-interactives.js` using a path that works both from the book root and from pages inside `chapters/`.
+
+The interactive graphics use the shared Plotly configuration
+
+```js
+window.TSInteractives.plotlyConfig = {
+  responsive: true,
+  displayModeBar: true,
+  displaylogo: false,
+  scrollZoom: true,
+  toImageButtonOptions: {
+    format: "png",
+    filename: "time-series-interactive",
+    height: 600,
+    width: 900,
+    scale: 2
+  }
+};
+```
+
+This enables the Plotly toolbar functions, including image download, zoom, pan, box select, lasso select, zoom in, zoom out, autoscale, and reset axes.
+
+## Student guide
+
+Students should use each interactive module in three passes.
+
+First, move one slider at a time and describe what changes in the plot. Second, connect the observed change to a mathematical quantity such as an ACF value, a root modulus, a forecast horizon, a receptive field, or an attention weight. Third, write a modeling conclusion: what would this visual evidence suggest in a real data analysis?
+
+A good interactive answer should not only say what the plot shows. It should also identify the model assumption being tested.
+
+## Instructor guide
+
+The interactive modules are best used as short in-class experiments. A useful pattern is:
+
+1. ask students to predict what will happen before moving the slider;
+2. run the interactive module;
+3. connect the visual output to the theorem or definition;
+4. ask students to reproduce the same idea in the Python lab.
+
+The modules are also useful for AI-assisted learning. Students can ask an AI assistant to explain the pattern, but they should verify the explanation by citing the relevant equation or diagnostic rule from the chapter.
+
+## Module inventory
+
+The following table gives the current interactive map for the e-book.
+
+| Chapter | Interactive module | Main mathematical idea | Student task |
+|---:|---|---|---|
+| 1 | Time-series process simulator | Stochastic processes, realizations, dependence, ACF | Compare white noise, random walk, AR(1), MA(1), and seasonal signals. |
+| 2 | EDA playground | Trend, seasonality, smoothing, differencing | Decide whether detrending, differencing, or smoothing is appropriate. |
+| 3 | Stationarity and ACF playground | Weak stationarity, sample ACF, theoretical ACF | Compare sample ACF with the theoretical pattern for AR and MA processes. |
+| 4 | ARMA root and impulse-response explorer | AR roots, causality, stationarity, impulse response | Move roots across the unit circle and explain the resulting dynamics. |
+| 5 | Difference-equation dynamics explorer | Recurrence roots, damping, oscillation, explosion | Interpret real and complex roots from the shape of a recurrence. |
+| 6 | AR(1) forecast cone and BLP weights | Best linear prediction, forecast variance, orthogonality | Explain how uncertainty grows as forecast horizon increases. |
+| 7 | Model-identification and residual-diagnostics lab | ACF/PACF identification, residual whiteness, Ljung--Box logic | Choose among candidate ARMA models and justify the choice. |
+| 8 | Differencing explorer | Integrated processes, first and second differences, over-differencing | Choose a differencing order and check the ACF after differencing. |
+| 9 | Seasonal differencing and SARIMA explorer | Seasonal lag operators, seasonal ACF, SARIMA structure | Identify seasonal dependence and compare ordinary vs seasonal differencing. |
+| 10 | Kalman filter playground | State prediction, update, filtering, observation noise | Observe how process noise and measurement noise change the filtered state. |
+| 11 | Hidden-regime simulator | HMM states, transition probabilities, emissions, decoding | Relate hidden states to observed regimes and uncertainty. |
+| 12 | Spectral explorer | Frequency, period, aliasing, spectral power | Detect hidden sinusoidal components in a noisy time series. |
+| 13 | DFT and periodogram explorer | Fourier basis, FFT, periodogram, spectral leakage | Identify dominant Fourier frequencies and explain resolution limits. |
+| 14 | Filtering and wavelet explorers | Linear filters, frequency response, Haar details, denoising | Compare smoothing, differencing, and wavelet thresholding. |
+| 15 | Rolling-origin backtesting simulator | Forecast horizon, chronological validation, metrics | Compare forecast errors across horizons and validation windows. |
+| 16 | Prophet-type additive model builder | Trend, changepoints, Fourier seasonality, holidays | Decompose a forecast into trend, seasonal, holiday, and noise components. |
+| 17 | Supervised feature matrix builder | Lag features, rolling windows, horizon labels, leakage | Convert a time series into a supervised-learning design matrix. |
+| 18 | Calibration and interval-width explorer | Probabilistic forecasting, coverage, sharpness | Study the tradeoff between interval width and empirical coverage. |
+| 19 | Neural-network window builder and activation explorer | Input windows, label windows, nonlinear activations | Build valid training windows and understand nonlinear transformations. |
+| 20 | Causal dilated convolution and TCN receptive field | 1D convolution, causality, dilation, receptive field | Determine which past observations influence a forecast. |
+| 21 | RNN hidden-state and gate explorer | Hidden states, memory, LSTM/GRU gates | Compare short memory, long memory, and gated memory behavior. |
+| 22 | Causal attention heatmap and positional encoding | Scaled dot-product attention, causal mask, position information | Interpret attention weights without using future information. |
+| 23 | Embedding and bottleneck reconstruction explorer | Representation learning, autoencoders, anomaly scores | Examine how windows become low-dimensional features. |
+| 24 | VAR coupling and reconciliation explorers | Multivariate dependence, impulse response, hierarchical consistency | Analyze cross-series coupling and reconcile aggregate forecasts. |
+| 25 | AI workflow auditor and prompt builder | Information sets, leakage checks, AI-assisted critique | Audit a forecasting workflow and build a responsible prompt. |
+| 26 | Forecasting pipeline and monitoring dashboard | End-to-end pipeline, deployment drift, monitoring | Diagnose leakage, model choice, and post-deployment error drift. |
+| 27 | Project design, rolling-origin planner, and rubric dashboard | Project contract, validation plan, reproducibility | Plan a final project and evaluate readiness using the rubric. |
+
+## Chapter links
+
+Use the links below to go directly to the chapters that contain the interactive modules.
+
+| Chapter | Link |
+|---:|---|
+| 1 | [Why Time Series and Sequences?](chapters/chapter-01-why-time-series-and-sequences.qmd) |
+| 2 | [Exploratory Data Analysis](chapters/chapter-02-exploratory-data-analysis.qmd) |
+| 3 | [Stationarity, Autocovariance, and ACF](chapters/chapter-03-stationarity-autocovariance-acf.qmd) |
+| 4 | [Linear Processes, AR, MA, and ARMA](chapters/chapter-04-linear-processes-ar-ma-arma.qmd) |
+| 5 | [Difference Equations and Dynamic Behavior](chapters/chapter-05-difference-equations-dynamic-behavior.qmd) |
+| 6 | [Forecasting and Best Linear Prediction](chapters/chapter-06-forecasting-best-linear-prediction.qmd) |
+| 7 | [Estimation, Identification, and Diagnostics](chapters/chapter-07-estimation-identification-diagnostics.qmd) |
+| 8 | [ARIMA and Differencing](chapters/chapter-08-arima-differencing.qmd) |
+| 9 | [SARIMA and Multiple Seasonality](chapters/chapter-09-sarima-multiple-seasonality.qmd) |
+| 10 | [State-Space Models and Kalman Filtering](chapters/chapter-10-state-space-kalman-filtering.qmd) |
+| 11 | [Hidden Markov Models and Regime Switching](chapters/chapter-11-hidden-markov-regime-switching.qmd) |
+| 12 | [Spectral Analysis and the Frequency Domain](chapters/chapter-12-spectral-analysis-frequency-domain.qmd) |
+| 13 | [DFT, FFT, and Periodogram](chapters/chapter-13-dft-fft-periodogram.qmd) |
+| 14 | [Filtering and Wavelets](chapters/chapter-14-filtering-wavelets.qmd) |
+| 15 | [Forecast Evaluation and Backtesting](chapters/chapter-15-forecast-evaluation-backtesting.qmd) |
+| 16 | [Automated Forecasting and Prophet-Type Models](chapters/chapter-16-automated-forecasting-prophet.qmd) |
+| 17 | [Feature-Based Machine Learning](chapters/chapter-17-feature-based-machine-learning.qmd) |
+| 18 | [Probabilistic Forecasting and Uncertainty](chapters/chapter-18-probabilistic-forecasting-uncertainty.qmd) |
+| 19 | [Neural Networks for Time Series](chapters/chapter-19-neural-networks-for-time-series.qmd) |
+| 20 | [Convolutional Models for Sequences](chapters/chapter-20-convolutional-models-sequences.qmd) |
+| 21 | [RNN, LSTM, and GRU](chapters/chapter-21-rnn-lstm-gru.qmd) |
+| 22 | [Attention and Transformers for Time Series](chapters/chapter-22-attention-transformers-time-series.qmd) |
+| 23 | [Representation Learning for Time Series](chapters/chapter-23-representation-learning-time-series.qmd) |
+| 24 | [Multivariate, Panel, and Hierarchical Time Series](chapters/chapter-24-multivariate-panel-hierarchical.qmd) |
+| 25 | [AI-Assisted Time-Series Modeling](chapters/chapter-25-ai-assisted-time-series-modeling.qmd) |
+| 26 | [End-to-End Forecasting Pipeline](chapters/chapter-26-end-to-end-forecasting-pipeline.qmd) |
+| 27 | [Final Project Studio](chapters/chapter-27-final-project-studio.qmd) |
+
+## Common controls
+
+Most modules use one or more of the following controls.
+
+| Control type | Meaning in the book | Example interpretation |
+|---|---|---|
+| Model selector | Chooses the data-generating process or model family | White noise, random walk, AR(1), MA(1), SARIMA, neural model. |
+| Parameter slider | Changes one numerical model parameter | AR coefficient, MA coefficient, root radius, dilation, horizon. |
+| Window slider | Chooses a training window or forecast origin | Shows which observations are inputs and which are labels. |
+| Noise slider | Changes observation noise or innovation variance | Helps distinguish signal structure from random variation. |
+| Horizon slider | Changes how far ahead the model forecasts | Shows increasing uncertainty and horizon-specific error. |
+| Diagnostic plot | Displays evidence about model adequacy | ACF, periodogram, residual error, calibration, attention heatmap. |
+
+## Plotly toolbar functions
+
+Every Plotly module is configured to show the modebar. The most useful buttons for students are:
+
+| Button | Use |
+|---|---|
+| Download PNG | Save a figure for notes, homework, or project reports. |
+| Zoom | Inspect local structure, spikes, or high-error periods. |
+| Pan | Move across a long time axis. |
+| Autoscale | Return to a good automatic view after zooming. |
+| Reset axes | Return to the original plot view. |
+| Box select / lasso select | Explore local regions in scatter, embedding, and diagnostic plots. |
+
+## Implementation pattern
+
+A chapter-level interactive module should contain only the HTML container and the module-specific script. It should not load Plotly.js again.
+
+A safe pattern is:
+
+```html
+<div class="interactive-card">
+  <h3>Interactive module title</h3>
+  <label>
+    Parameter:
+    <input id="example-slider" type="range" min="0" max="1" step="0.01" value="0.5">
+  </label>
+  <span id="example-slider-value"></span>
+  <div id="example-plot" style="height:420px;"></div>
+</div>
+```
+
+Then the JavaScript should call Plotly using the shared configuration:
+
+```js
+Plotly.newPlot(
+  "example-plot",
+  traces,
+  layout,
+  window.TSInteractives.plotlyConfig
+);
+```
+
+For modules that update repeatedly, use `Plotly.react`:
+
+```js
+Plotly.react(
+  "example-plot",
+  traces,
+  layout,
+  window.TSInteractives.plotlyConfig
+);
+```
+
+## Quality checks for new modules
+
+Before adding a new interactive example, check the following.
+
+1. The chapter does not include another external Plotly.js script tag.
+2. The HTML ids are unique across the book.
+3. The sliders update their displayed numerical values.
+4. The graph appears on both local preview and GitHub Pages.
+5. The module works from a page inside `chapters/`.
+6. The module does not rely on a Python kernel.
+7. The mathematical interpretation is stated next to the plot.
+8. The module is usable in class, homework, and self-study.
+9. The module is connected to a Python lab exercise.
+10. The module does not create a raw HTML table that can interfere with PDF rendering.
+
+## AI-assisted learning prompts
+
+Students may use the following prompts after experimenting with an interactive module.
+
+**Prompt 1. Explain the visual change.**
+
+```text
+I changed the parameter from ___ to ___. The plot changed in the following way: ___. Explain this change using the mathematical model, not only visual intuition.
+```
+
+**Prompt 2. Connect the interactive plot to diagnostics.**
+
+```text
+Given this time-series plot and diagnostic plot, what model assumption is being checked? What evidence would support or reject the assumption?
+```
+
+**Prompt 3. Check for leakage.**
+
+```text
+In this forecasting setup, identify the forecast origin, the information set, the target horizon, and any variables that may leak future information.
+```
+
+**Prompt 4. Turn the interactive idea into Python.**
+
+```text
+Write Python code that reproduces the idea in this interactive module using NumPy, pandas, matplotlib, and statsmodels or PyTorch where appropriate. Explain how to validate the result.
+```
+
+## Development notes
+
+The interactive system uses two complementary approaches.
+
+First, the shared file `assets/ts-interactives.js` contains reusable utilities, shared Plotly configuration, and several chapter-specific initialization functions. Second, some chapters include local inline scripts for modules that are easier to keep next to the mathematical explanation.
+
+Both approaches are acceptable, provided that Plotly.js itself is loaded only once globally from `assets/header.html`.
+
+## Troubleshooting
+
+| Problem | Likely cause | Fix |
+|---|---|---|
+| The plot area is blank. | Plotly was not loaded or the script path is wrong. | Check `assets/header.html` and browser console. |
+| Browser reports `chapters/assets/ts-interactives.js` not found. | The script path is relative to the chapter folder. | Use the dynamic path logic in `assets/header.html`. |
+| Sliders move but the plot does not update. | The JavaScript listener is not attached or an id does not match. | Check that the slider id in HTML matches the id in JavaScript. |
+| The PDF build warns about raw HTML tables. | An interactive module created a literal HTML table. | Replace it with text, markdown, or a Plotly/table-free summary. |
+| A module works locally but not on GitHub Pages. | File path or case-sensitivity issue. | Check exact filenames and folder names. |
+| The toolbar covers the title. | Top plot margin is too small. | Increase `layout.margin.t` or use a shorter title. |
+
+## Recommended extension plan
+
+As the book develops, each chapter should have at least one fully chapter-specific interactive module and one Python lab that reproduces the same concept computationally. This pairing is important: the interactive module builds intuition, while the lab builds reproducible analysis skills.
+
+A useful design rule is:
+
+```text
+One theorem or diagnostic rule + one interactive experiment + one Python reproduction.
+```
+
+That rule keeps the e-book mathematically serious, computationally practical, and suitable for a modern machine learning theory course.

@@ -1,0 +1,804 @@
+# Multivariate, Panel, and Hierarchical Time Series
+
+::: {.hero}
+**Part VI. Deep Learning for Time Series and Sequence Data**  
+**Chapter goal:** extend time-series modeling from one sequence to many related sequences. We study multivariate dependence, vector autoregressions, exogenous predictors, panel/global forecasting, hierarchical aggregation, forecast reconciliation, and leakage-aware validation.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. distinguish univariate, multivariate, panel, and hierarchical time-series problems;
+2. define vector mean functions, matrix autocovariances, and cross-correlations;
+3. formulate, estimate, and forecast with vector autoregressive models;
+4. interpret cross-lag effects, impulse responses, and Granger-predictive relationships carefully;
+5. explain why global models can share information across related series;
+6. write hierarchical time-series aggregation in matrix form;
+7. diagnose incoherent base forecasts and reconcile them using projection methods;
+8. design validation splits that avoid time leakage and cross-sectional leakage;
+9. implement VAR estimation and simple hierarchical reconciliation in Python;
+10. use AI tools to critique multivariate and hierarchical forecasting workflows while verifying the mathematics.
+
+## 24.1 Why one time series is often not enough
+
+Many real forecasting problems are not isolated univariate problems. A university may forecast enrollments across programs, colleges, campuses, and modalities. A retailer forecasts sales for many products and stores. An energy system forecasts total demand, regional demand, and demand by customer type. A biomedical device records several sensor channels at once.
+
+These settings introduce three kinds of structure.
+
+**Multivariate time series.** At each time $t$, we observe a vector
+
+$$
+\mathbf y_t=(y_{1t},\ldots,y_{pt})^T\in\mathbb R^p.
+$$
+
+The components are observed at the same time points and may influence one another dynamically.
+
+**Panel time series.** We observe many related series indexed by $i=1,\ldots,m$:
+
+$$
+y_{i,t},\qquad t=1,\ldots,T_i.
+$$
+
+The series may not be aggregated versions of one another, but they share patterns such as seasonality, calendar effects, or response to covariates.
+
+**Hierarchical time series.** Some series are sums of other series. For example,
+
+$$
+y_{\text{Total},t}=y_{A,t}+y_{B,t}+y_{C,t}.
+$$
+
+A good forecasting system should not forecast the total as $100$ while the forecasted parts sum to $115$. Such forecasts are **incoherent**.
+
+::: {.callout-note}
+## Main lesson
+Classical univariate models explain temporal dependence within one sequence. Modern forecasting systems also model dependence **across variables**, **across related units**, and **across aggregation levels**.
+:::
+
+## 24.2 Vector-valued stationarity and cross-dependence
+
+Let $\{\mathbf y_t\}$ be a $p$-dimensional time series. Its mean vector is
+
+$$
+\boldsymbol\mu_t=E(\mathbf y_t).
+$$
+
+Its lag-$h$ autocovariance matrix is
+
+$$
+\Gamma(h)=\operatorname{Cov}(\mathbf y_{t+h},\mathbf y_t)
+=E\left[(\mathbf y_{t+h}-\boldsymbol\mu)(\mathbf y_t-\boldsymbol\mu)^T\right],
+$$
+
+when the process is weakly stationary. The $(i,j)$ entry of $\Gamma(h)$ is
+
+$$
+\Gamma_{ij}(h)=\operatorname{Cov}(y_{i,t+h},y_{j,t}).
+$$
+
+This quantity measures whether variable $j$ at time $t$ helps linearly explain variable $i$ at time $t+h$.
+
+A $p$-dimensional process is weakly stationary if:
+
+$$
+E(\mathbf y_t)=\boldsymbol\mu
+$$
+
+is constant and
+
+$$
+\operatorname{Cov}(\mathbf y_{t+h},\mathbf y_t)=\Gamma(h)
+$$
+
+depends only on $h$, not on $t$.
+
+The matrix autocovariance satisfies
+
+$$
+\Gamma(-h)=\Gamma(h)^T.
+$$
+
+The lag-$h$ cross-correlation between component $i$ and component $j$ is
+
+$$
+\rho_{ij}(h)=
+\frac{\Gamma_{ij}(h)}{\sqrt{\Gamma_{ii}(0)\Gamma_{jj}(0)}}.
+$$
+
+For $h>0$, $\rho_{ij}(h)$ relates $y_{j,t}$ to $y_{i,t+h}$. Thus, the direction of the lag matters.
+
+::: {.callout-warning}
+## Cross-correlation is not causal proof
+A large lagged cross-correlation can indicate predictive information, a shared driver, seasonality, a trend artifact, or leakage. It should be interpreted only after checking stationarity, calendar effects, and the data-generating context.
+:::
+
+## 24.3 Vector autoregression
+
+A vector autoregression of order $p$, written VAR($p$), is
+
+$$
+\mathbf y_t=\mathbf c+A_1\mathbf y_{t-1}+A_2\mathbf y_{t-2}+\cdots+A_p\mathbf y_{t-p}+\boldsymbol\varepsilon_t,
+$$
+
+where
+
+$$
+\boldsymbol\varepsilon_t\sim WN_p(\mathbf 0,\Sigma_\varepsilon).
+$$
+
+Here $A_k\in\mathbb R^{p\times p}$ is a matrix of lag-$k$ effects. The entry $(A_k)_{ij}$ measures the linear effect of variable $j$ at lag $k$ on variable $i$ at the current time.
+
+For VAR(1),
+
+$$
+\mathbf y_t=\mathbf c+A\mathbf y_{t-1}+\boldsymbol\varepsilon_t.
+$$
+
+If all eigenvalues of $A$ have modulus less than $1$, then the process is stable and has the causal representation
+
+$$
+\mathbf y_t=\boldsymbol\mu+\sum_{j=0}^{\infty}A^j\boldsymbol\varepsilon_{t-j},
+$$
+
+where
+
+$$
+\boldsymbol\mu=(I-A)^{-1}\mathbf c.
+$$
+
+This is the multivariate analogue of the AR(1) causal expansion
+
+$$
+y_t=\mu+\sum_{j=0}^{\infty}\phi^j\varepsilon_{t-j}.
+$$
+
+For VAR($p$), stability is checked using the companion matrix
+
+$$
+\mathcal A=
+\begin{bmatrix}
+A_1&A_2&\cdots&A_{p-1}&A_p\\
+I&0&\cdots&0&0\\
+0&I&\cdots&0&0\\
+\vdots&\vdots&\ddots&\vdots&\vdots\\
+0&0&\cdots&I&0
+\end{bmatrix}.
+$$
+
+The VAR($p$) is stable if every eigenvalue of $\mathcal A$ lies inside the unit circle.
+
+## 24.4 Forecasting with a VAR model
+
+For VAR(1), the one-step forecast from time $t$ is
+
+$$
+\widehat{\mathbf y}_{t+1|t}=\widehat{\mathbf c}+\widehat A\mathbf y_t.
+$$
+
+The two-step forecast is obtained recursively:
+
+$$
+\widehat{\mathbf y}_{t+2|t}=\widehat{\mathbf c}+\widehat A\widehat{\mathbf y}_{t+1|t}.
+$$
+
+More generally,
+
+$$
+\widehat{\mathbf y}_{t+h|t}=\widehat{\mathbf c}+\widehat A\widehat{\mathbf y}_{t+h-1|t}.
+$$
+
+For VAR($p$), the forecast uses the previous $p$ vectors and recursively substitutes forecasts for unknown future values.
+
+Forecast uncertainty is also multivariate. If the parameters are treated as known and the innovations have covariance matrix $\Sigma_\varepsilon$, then the $h$-step forecast-error covariance for a stable VAR(1) is
+
+$$
+\operatorname{Var}(\mathbf y_{t+h}-\widehat{\mathbf y}_{t+h|t})
+=\sum_{j=0}^{h-1}A^j\Sigma_\varepsilon(A^j)^T.
+$$
+
+The covariance matrix matters because forecast errors in different variables may be correlated.
+
+## 24.5 Estimation by least squares
+
+Suppose we fit a VAR($p$) to observations $\mathbf y_1,\ldots,\mathbf y_T$. Define the response matrix
+
+$$
+Y=
+\begin{bmatrix}
+\mathbf y_{p+1}^T\\
+\mathbf y_{p+2}^T\\
+\vdots\\
+\mathbf y_T^T
+\end{bmatrix}
+\in\mathbb R^{(T-p)\times p}.
+$$
+
+Define the design matrix
+
+$$
+X=
+\begin{bmatrix}
+1&\mathbf y_p^T&\mathbf y_{p-1}^T&\cdots&\mathbf y_1^T\\
+1&\mathbf y_{p+1}^T&\mathbf y_p^T&\cdots&\mathbf y_2^T\\
+\vdots&\vdots&\vdots&\ddots&\vdots\\
+1&\mathbf y_{T-1}^T&\mathbf y_{T-2}^T&\cdots&\mathbf y_{T-p}^T
+\end{bmatrix}.
+$$
+
+The VAR model can be written as the multivariate regression
+
+$$
+Y=XB+E.
+$$
+
+The least-squares estimator is
+
+$$
+\widehat B=(X^TX)^{-1}X^TY,
+$$
+
+assuming $X^TX$ is invertible. This is equivalent to fitting one regression equation for each component of $\mathbf y_t$, using the same lagged predictors.
+
+The residual covariance is estimated by
+
+$$
+\widehat\Sigma_\varepsilon=\frac{1}{T-p-k}E^TE,
+$$
+
+where $k=1+pp$ is the number of regression coefficients per equation if an intercept is included.
+
+## 24.6 Cross-lag effects and impulse responses
+
+For VAR(1), a one-unit shock in component $j$ at time $t$ changes the expected vector at time $t+h$ by
+
+$$
+A^h\mathbf e_j,
+$$
+
+where $\mathbf e_j$ is the $j$th standard basis vector. The sequence
+
+$$
+\mathbf e_j,
+A\mathbf e_j,
+A^2\mathbf e_j,
+A^3\mathbf e_j,
+\ldots
+$$
+
+is an impulse-response sequence.
+
+Impulse responses help explain how a shock propagates through a multivariate dynamic system. However, if innovation components are contemporaneously correlated, then the interpretation of a shock depends on how the shock is identified. Orthogonalized impulse responses require additional assumptions, such as an ordering of variables.
+
+## 24.7 Granger-predictive relationships
+
+Variable $x_t$ is said to Granger-predict variable $y_t$ if lagged values of $x_t$ improve prediction of $y_t$ after accounting for lagged values of $y_t$ and other variables in the system.
+
+A simple restricted model is
+
+$$
+y_t=\alpha+\sum_{k=1}^p a_k y_{t-k}+u_t.
+$$
+
+An unrestricted model is
+
+$$
+y_t=\alpha+\sum_{k=1}^p a_k y_{t-k}+\sum_{k=1}^p b_k x_{t-k}+v_t.
+$$
+
+If the coefficients $b_1,\ldots,b_p$ are jointly useful for prediction, then $x$ Granger-predicts $y$.
+
+::: {.callout-important}
+## Terminology warning
+Granger prediction is about predictive improvement under a specified information set. It is not the same as structural causality. Hidden confounders, common seasonal drivers, data revisions, and contemporaneous effects can create misleading Granger relationships.
+:::
+
+## 24.8 Dynamic regression and exogenous variables
+
+Often we forecast a response series using lagged response values and external predictors. A dynamic regression model may take the form
+
+$$
+y_t=\beta_0+\sum_{k=1}^{p}\phi_k y_{t-k}+\boldsymbol\beta^T\mathbf x_t+\varepsilon_t.
+$$
+
+If future covariates $\mathbf x_{t+h}$ are known, such as calendar indicators or scheduled prices, then they may be directly used in forecasting. If they are unknown, they must themselves be forecasted or scenario-defined.
+
+For multivariate responses, a VAR with exogenous variables, often called VARX, is
+
+$$
+\mathbf y_t=\mathbf c+\sum_{k=1}^p A_k\mathbf y_{t-k}+B\mathbf x_t+\boldsymbol\varepsilon_t.
+$$
+
+The key practical distinction is whether the future values of $\mathbf x_t$ are available at forecast time. Using future covariates that would not be known in deployment is a form of leakage.
+
+## 24.9 Panel and global forecasting models
+
+In panel forecasting, we have many related series:
+
+$$
+y_{i,t},\qquad i=1,\ldots,m.
+$$
+
+A local strategy fits one model per series:
+
+$$
+y_{i,t}=f_i(y_{i,t-1},y_{i,t-2},\ldots)+\varepsilon_{i,t}.
+$$
+
+A global strategy fits a shared model:
+
+$$
+y_{i,t}=f_\theta(y_{i,t-1},\ldots,y_{i,t-L},\mathbf z_i,\mathbf x_{i,t})+\varepsilon_{i,t},
+$$
+
+where $\mathbf z_i$ is a series identifier, static feature vector, or learned embedding.
+
+Global models can be helpful when individual series are short but the panel is large. They borrow information across related series. However, a global model can also transfer the wrong pattern if the series are heterogeneous.
+
+A simple pooled lag regression is
+
+$$
+y_{i,t}=\alpha_i+\sum_{k=1}^p \phi_k y_{i,t-k}+\boldsymbol\beta^T\mathbf x_{i,t}+\varepsilon_{i,t}.
+$$
+
+The intercept $\alpha_i$ allows each series to have its own level, while the lag coefficients $\phi_k$ are shared.
+
+## 24.10 Hierarchical time series and aggregation matrices
+
+Suppose a hierarchy has $m$ bottom-level series collected in
+
+$$
+\mathbf b_t\in\mathbb R^m.
+$$
+
+All series in the hierarchy, including totals and intermediate aggregates, are collected in
+
+$$
+\mathbf y_t\in\mathbb R^n.
+$$
+
+There is an aggregation matrix $S\in\mathbb R^{n\times m}$ such that
+
+$$
+\mathbf y_t=S\mathbf b_t.
+$$
+
+For example, if the bottom series are $A$, $B$, and $C$, and we include the total, then
+
+$$
+\mathbf y_t=\begin{bmatrix}
+\text{Total}_t\\A_t\\B_t\\C_t
+\end{bmatrix},
+\qquad
+S=
+\begin{bmatrix}
+1&1&1\\
+1&0&0\\
+0&1&0\\
+0&0&1
+\end{bmatrix},
+\qquad
+\mathbf b_t=\begin{bmatrix}A_t\\B_t\\C_t\end{bmatrix}.
+$$
+
+A forecast vector $\widehat{\mathbf y}_{t+h}$ is coherent if it belongs to the column space of $S$:
+
+$$
+\widehat{\mathbf y}_{t+h}=S\widehat{\mathbf b}_{t+h}
+$$
+
+for some bottom-level forecast $\widehat{\mathbf b}_{t+h}$.
+
+If we independently forecast all nodes in the hierarchy, we usually get incoherent forecasts:
+
+$$
+\widehat y_{\text{Total},t+h}\neq
+\widehat y_{A,t+h}+\widehat y_{B,t+h}+\widehat y_{C,t+h}.
+$$
+
+## 24.11 Forecast reconciliation
+
+Let $\widehat{\mathbf y}$ be an incoherent vector of base forecasts for all hierarchy nodes. Reconciliation replaces it with a coherent forecast
+
+$$
+\widetilde{\mathbf y}=S\widetilde{\mathbf b}.
+$$
+
+One simple method is **bottom-up reconciliation**. Forecast the bottom-level series and then aggregate:
+
+$$
+\widetilde{\mathbf y}=S\widehat{\mathbf b}.
+$$
+
+This is coherent but ignores information in the independently forecasted aggregate series.
+
+A projection-based method finds the coherent vector closest to the base forecast:
+
+$$
+\widetilde{\mathbf y}
+=S(S^TS)^{-1}S^T\widehat{\mathbf y}.
+$$
+
+More generally, weighted least-squares reconciliation uses a positive definite weight matrix $W$:
+
+$$
+\widetilde{\mathbf y}
+=S(S^TW^{-1}S)^{-1}S^TW^{-1}\widehat{\mathbf y}.
+$$
+
+If $W$ estimates the covariance matrix of base forecast errors, this is the foundation of MinT-style reconciliation. The intuition is that unreliable base forecasts should receive less weight.
+
+## 24.12 Interactive module: VAR coupling explorer
+
+This module shows how cross-lag coefficients change the behavior of a two-dimensional VAR(1):
+
+$$
+\begin{bmatrix}y_{1,t}\\y_{2,t}\end{bmatrix}
+=
+\begin{bmatrix}a_{11}&a_{12}\\a_{21}&a_{22}\end{bmatrix}
+\begin{bmatrix}y_{1,t-1}\\y_{2,t-1}\end{bmatrix}
++\boldsymbol\varepsilon_t.
+$$
+
+The spectral radius $\rho(A)$ determines stability for VAR(1). If $\rho(A)<1$, shocks decay. If $\rho(A)>1$, the system can become explosive.
+
+<div class="interactive-card">
+  <h3>Interactive Module: VAR(1) Coupling Explorer</h3>
+  <p class="small-note">Adjust own-lag and cross-lag coefficients. The plot shows simulated paths and impulse responses. Stability is determined by the eigenvalues of the coefficient matrix.</p>
+
+  <label>
+    Own-lag $a_{11}$:
+    <input id="ch24_var_a11" type="range" min="-0.95" max="0.95" step="0.05" value="0.60">
+    <span id="ch24_var_a11_value">0.60</span>
+  </label>
+
+  <label>
+    Own-lag $a_{22}$:
+    <input id="ch24_var_a22" type="range" min="-0.95" max="0.95" step="0.05" value="0.40">
+    <span id="ch24_var_a22_value">0.40</span>
+  </label>
+
+  <label>
+    Cross-lag $a_{12}$, from series 2 to series 1:
+    <input id="ch24_var_a12" type="range" min="-1.00" max="1.00" step="0.05" value="0.25">
+    <span id="ch24_var_a12_value">0.25</span>
+  </label>
+
+  <label>
+    Cross-lag $a_{21}$, from series 1 to series 2:
+    <input id="ch24_var_a21" type="range" min="-1.00" max="1.00" step="0.05" value="0.10">
+    <span id="ch24_var_a21_value">0.10</span>
+  </label>
+
+  <p id="ch24_var_output"></p>
+
+  <div id="ch24_var_series_plot" style="width:100%; height:420px;"></div>
+  <div id="ch24_var_irf_plot" style="width:100%; height:360px;"></div>
+</div>
+
+## 24.13 Interactive module: hierarchical reconciliation
+
+This module compares incoherent base forecasts with coherent reconciled forecasts. The hierarchy is
+
+$$
+\text{Total}=A+B+C.
+$$
+
+The base forecast may violate this identity. Reconciliation projects the base forecast onto the coherent subspace.
+
+<div class="interactive-card">
+  <h3>Interactive Module: Forecast Reconciliation</h3>
+  <p class="small-note">Move the base forecasts. The reconciled forecast is the ordinary least-squares projection onto the coherent hierarchy Total = A + B + C.</p>
+
+  <label>
+    Base total forecast:
+    <input id="ch24_rec_total" type="range" min="50" max="180" step="1" value="125">
+    <span id="ch24_rec_total_value">125</span>
+  </label>
+
+  <label>
+    Base forecast A:
+    <input id="ch24_rec_a" type="range" min="10" max="90" step="1" value="45">
+    <span id="ch24_rec_a_value">45</span>
+  </label>
+
+  <label>
+    Base forecast B:
+    <input id="ch24_rec_b" type="range" min="10" max="90" step="1" value="35">
+    <span id="ch24_rec_b_value">35</span>
+  </label>
+
+  <label>
+    Base forecast C:
+    <input id="ch24_rec_c" type="range" min="10" max="90" step="1" value="30">
+    <span id="ch24_rec_c_value">30</span>
+  </label>
+
+  <p id="ch24_rec_output"></p>
+
+  <div id="ch24_reconciliation_plot" style="width:100%; height:430px;"></div>
+</div>
+
+## 24.14 Python example: simulating and estimating a VAR(1)
+
+The next example simulates a stable two-dimensional VAR(1), estimates the coefficient matrix by least squares, and produces recursive forecasts.
+
+```{python}
+#| label: ch24-python-var-estimation
+#| fig-cap: "Simulated bivariate VAR(1) series and recursive forecasts."
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+T = 240
+A_true = np.array([[0.65, 0.25],
+                   [0.10, 0.45]])
+c_true = np.array([0.2, -0.1])
+Sigma = np.array([[1.00, 0.35],
+                  [0.35, 0.80]])
+
+Y = np.zeros((T, 2))
+noise = rng.multivariate_normal(np.zeros(2), Sigma, size=T)
+for t in range(1, T):
+    Y[t] = c_true + A_true @ Y[t-1] + noise[t]
+
+# Estimate VAR(1): Y_t = c + A Y_{t-1} + eps_t.
+X = np.column_stack([np.ones(T-1), Y[:-1]])
+Y_response = Y[1:]
+B_hat = np.linalg.lstsq(X, Y_response, rcond=None)[0]
+c_hat = B_hat[0]
+A_hat = B_hat[1:].T
+
+print("Estimated intercept:", np.round(c_hat, 3))
+print("Estimated A:")
+print(np.round(A_hat, 3))
+print("Eigenvalues of A_hat:", np.round(np.linalg.eigvals(A_hat), 3))
+
+# Forecast from the last observation.
+H = 24
+forecast = np.zeros((H, 2))
+current = Y[-1]
+for h in range(H):
+    current = c_hat + A_hat @ current
+    forecast[h] = current
+
+fig, ax = plt.subplots(figsize=(8, 4))
+time = np.arange(T)
+future = np.arange(T, T + H)
+ax.plot(time, Y[:, 0], label="series 1")
+ax.plot(time, Y[:, 1], label="series 2")
+ax.plot(future, forecast[:, 0], "--", label="forecast 1")
+ax.plot(future, forecast[:, 1], "--", label="forecast 2")
+ax.axvline(T - 1, linestyle=":")
+ax.set_xlabel("time")
+ax.set_ylabel("value")
+ax.set_title("VAR(1) simulation and recursive forecast")
+ax.legend()
+plt.show()
+```
+
+## 24.15 Python example: impulse responses
+
+For a VAR(1), the response after $h$ steps to a shock $\mathbf s$ is $A^h\mathbf s$.
+
+```{python}
+#| label: ch24-python-impulse-response
+#| fig-cap: "Impulse responses from a shock to the first component."
+H = 25
+shock = np.array([1.0, 0.0])
+responses = []
+Ah = np.eye(2)
+for h in range(H):
+    responses.append(Ah @ shock)
+    Ah = A_hat @ Ah
+responses = np.array(responses)
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.plot(np.arange(H), responses[:, 0], marker="o", label="response of series 1")
+ax.plot(np.arange(H), responses[:, 1], marker="o", label="response of series 2")
+ax.axhline(0, linewidth=1)
+ax.set_xlabel("horizon")
+ax.set_ylabel("response")
+ax.set_title("Estimated impulse response to a shock in series 1")
+ax.legend()
+plt.show()
+```
+
+## 24.16 Python example: hierarchical reconciliation
+
+The next example reconciles forecasts for a hierarchy with one total and three bottom-level series.
+
+```{python}
+#| label: ch24-python-hierarchical-reconciliation
+#| fig-cap: "Base forecasts and reconciled forecasts for a small hierarchy."
+import numpy as np
+import matplotlib.pyplot as plt
+
+# y = [Total, A, B, C]^T = S b, where b = [A, B, C]^T.
+S = np.array([[1, 1, 1],
+              [1, 0, 0],
+              [0, 1, 0],
+              [0, 0, 1]], dtype=float)
+
+base = np.array([125.0, 45.0, 35.0, 30.0])
+print("Base total:", base[0])
+print("Sum of base bottom forecasts:", base[1:].sum())
+
+# OLS reconciliation: project base forecast onto the coherent column space of S.
+P = S @ np.linalg.inv(S.T @ S) @ S.T
+reconciled = P @ base
+
+print("Reconciled forecasts:", np.round(reconciled, 2))
+print("Reconciled total:", round(reconciled[0], 2))
+print("Sum of reconciled bottom forecasts:", round(reconciled[1:].sum(), 2))
+
+labels = ["Total", "A", "B", "C"]
+x = np.arange(len(labels))
+width = 0.35
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.bar(x - width/2, base, width, label="base")
+ax.bar(x + width/2, reconciled, width, label="reconciled")
+ax.set_xticks(x)
+ax.set_xticklabels(labels)
+ax.set_ylabel("forecast")
+ax.set_title("Forecast reconciliation")
+ax.legend()
+plt.show()
+```
+
+## 24.17 Python example: pooled lag model for panel data
+
+This example turns many related series into one supervised-learning table. The model shares lag coefficients across series but allows different intercepts through series indicators.
+
+```{python}
+#| label: ch24-python-panel-global-model
+#| fig-cap: "Actual and predicted values for several panel series using a pooled lag model."
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import Ridge
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import mean_squared_error
+
+rng = np.random.default_rng(24)
+m = 8
+T = 120
+rows = []
+for i in range(m):
+    level = rng.normal(10, 2)
+    amp = rng.uniform(1.0, 3.0)
+    phi = rng.uniform(0.35, 0.70)
+    y = np.zeros(T)
+    eps = rng.normal(0, 0.8, T)
+    for t in range(1, T):
+        seasonal = amp * np.sin(2*np.pi*t/12 + 0.4*i)
+        y[t] = level + phi*(y[t-1] - level) + seasonal + eps[t]
+    for t in range(2, T):
+        rows.append({"series": f"S{i}", "time": t, "y": y[t], "lag1": y[t-1], "lag2": y[t-2], "month": t % 12})
+
+df = pd.DataFrame(rows)
+train = df[df["time"] < 95].copy()
+test = df[df["time"] >= 95].copy()
+
+features = ["series", "lag1", "lag2", "month"]
+preprocess = ColumnTransformer(
+    transformers=[
+        ("series_id", OneHotEncoder(drop="first", handle_unknown="ignore"), ["series"]),
+        ("numeric", "passthrough", ["lag1", "lag2", "month"]),
+    ]
+)
+model = Pipeline([
+    ("preprocess", preprocess),
+    ("ridge", Ridge(alpha=1.0))
+])
+model.fit(train[features], train["y"])
+test["pred"] = model.predict(test[features])
+rmse = mean_squared_error(test["y"], test["pred"]) ** 0.5
+print("Panel test RMSE:", round(rmse, 3))
+
+fig, ax = plt.subplots(figsize=(8, 4))
+for s in ["S0", "S1", "S2"]:
+    sub = test[test["series"] == s]
+    ax.plot(sub["time"], sub["y"], label=f"{s} actual")
+    ax.plot(sub["time"], sub["pred"], "--", label=f"{s} predicted")
+ax.set_xlabel("time")
+ax.set_ylabel("value")
+ax.set_title("Pooled lag model on panel data")
+ax.legend(ncol=2, fontsize=8)
+plt.show()
+```
+
+## 24.18 AI-assisted modeling activity
+
+::: {.callout-ai}
+## AI-assisted study box
+Ask an AI assistant to review a multivariate or hierarchical forecasting workflow. Require the response to include:
+
+1. the assumed information set available at forecast time;
+2. whether the model is local, multivariate, global, or hierarchical;
+3. the aggregation matrix $S$, if the problem is hierarchical;
+4. a time-aware validation design;
+5. at least two leakage risks;
+6. one baseline model that should be hard to beat;
+7. one diagnostic plot or statistical test;
+8. a concise statement of what would make the model fail.
+
+Then verify each item manually. In particular, check whether every feature used by the model would actually be known when the forecast is made.
+:::
+
+A useful prompt is:
+
+> I have multiple related time series with possible aggregation constraints. Help me identify whether this is a multivariate, panel, or hierarchical forecasting problem. State the mathematical model, the validation split, the aggregation constraints, possible leakage risks, and a simple baseline. Do not recommend a complex model until the baseline and reconciliation constraints are clear.
+
+## 24.19 Common mistakes
+
+1. **Random train-test splitting.** Random splits leak future information into the training set.
+2. **Ignoring aggregation constraints.** Independent forecasts for totals and parts are usually incoherent.
+3. **Using unknown future covariates.** External regressors must be known, forecasted, or scenario-defined.
+4. **Over-interpreting Granger prediction.** Predictive improvement is not structural causality.
+5. **Fitting too many parameters.** VAR models become high-dimensional quickly: a VAR($p$) with $p_y$ variables has $p\,p_y^2$ lag coefficients plus intercepts.
+6. **Pooling unrelated series.** Global models help when series share structure, but can hurt when they do not.
+7. **Reconciling after nonlinear transformations incorrectly.** If models are fit on log scale, aggregation on the original scale requires care.
+8. **Forgetting contemporaneous correlation.** Multivariate forecast errors can be correlated even when point forecasts look reasonable.
+
+## 24.20 Exercises
+
+1. Let $\mathbf y_t=(y_{1t},y_{2t})^T$ follow a VAR(1) with
+   $$
+   A=\begin{bmatrix}0.6&0.3\\0&0.4\end{bmatrix}.
+   $$
+   Determine whether the process is stable. Compute the response after $h=1,2,3$ steps to a unit shock in the second variable.
+
+2. For the hierarchy
+   $$
+   \text{Total}=A+B+C+D,
+   $$
+   write the aggregation matrix $S$ for
+   $$
+   \mathbf y_t=(\text{Total}_t,A_t,B_t,C_t,D_t)^T.
+   $$
+
+3. Suppose the base forecast is
+   $$
+   \widehat{\mathbf y}=(100,30,25,20,15)^T.
+   $$
+   Is it coherent? If not, compute the bottom-up reconciled forecast.
+
+4. Explain why using next month's realized marketing spend as a feature for next month's demand forecast can be leakage unless that spend is known at forecast time.
+
+5. Simulate a two-dimensional VAR(1) with one stable and one unstable coefficient matrix. Compare the sample paths.
+
+6. Build a pooled lag model for a panel of at least five synthetic series. Compare it with separate local AR models.
+
+7. Write a short explanation of the difference between cross-correlation, Granger prediction, and structural causality.
+
+8. Implement OLS reconciliation for a two-level hierarchy and verify numerically that the reconciled forecasts are coherent.
+
+## 24.21 Mini project
+
+Choose a dataset with multiple related time series. Examples include product-by-store demand, regional energy usage, multiple financial returns, enrollment by program, or sensor channels. Your report should include:
+
+1. a description of the series structure: multivariate, panel, hierarchical, or a combination;
+2. time plots and cross-correlation or lag-feature diagnostics;
+3. at least one simple baseline;
+4. one multivariate, global, or hierarchical model;
+5. a time-aware validation design;
+6. a check for forecast coherence if aggregation constraints exist;
+7. an explanation of leakage risks;
+8. a short AI-assisted critique and your verification of it.
+
+## 24.22 Checklist
+
+Before moving on, make sure you can answer the following questions.
+
+- What is the difference between a multivariate time series and a panel of time series?
+- What does the matrix $\Gamma(h)$ measure?
+- How do eigenvalues determine stability for a VAR(1)?
+- How is a VAR estimated by least squares?
+- What does an impulse response measure?
+- Why is Granger prediction not the same as causal proof?
+- What is an aggregation matrix $S$?
+- What does it mean for hierarchical forecasts to be coherent?
+- How does projection-based reconciliation work?
+- What leakage risks are common in panel and hierarchical forecasting?

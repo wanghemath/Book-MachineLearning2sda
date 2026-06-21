@@ -1,0 +1,90 @@
+---
+title: "Python Labs Summary"
+---
+
+# Python Labs Summary {.unnumbered}
+
+This page collects the companion Python labs for **Modern Time Series Analysis and Sequence Learning**. Each lab is a Jupyter notebook stored in the `labs/` folder of the book repository and can be opened directly in Google Colab.
+
+Repository: <https://github.com/wanghemath/Book-MachineLearning2sda>
+
+::: {.callout-tip}
+## How to use the labs
+
+Use the **Open in Colab** link when reading the online book. In Colab, choose **File $\to$ Save a copy in Drive** before editing. For local work, clone the repository and open the notebooks from the `labs/` folder.
+:::
+
+## Lab table
+
+| Chapter | Lab | Main focus |
+|---:|---|---|
+| 1 | [Why Time Series and Sequence Data Are Different](labs/chapter-01-why-time-series-and-sequences-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-01-why-time-series-and-sequences-lab.ipynb) | simulate white noise, random walks, trend, seasonality, and windowed sequence data |
+| 2 | [Exploratory Data Analysis for Time Series](labs/chapter-02-exploratory-data-analysis-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-02-exploratory-data-analysis-lab.ipynb) | time plots, smoothing, detrending, differencing, ACF, and seasonal diagnostics |
+| 3 | [Stationarity, Autocovariance, and Autocorrelation](labs/chapter-03-stationarity-autocovariance-acf-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-03-stationarity-autocovariance-acf-lab.ipynb) | strict/weak stationarity examples, sample autocovariance, ACF, AR(1), MA(1), and random walk |
+| 4 | [Linear Processes, AR, MA, and ARMA Models](labs/chapter-04-linear-processes-ar-ma-arma-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-04-linear-processes-ar-ma-arma-lab.ipynb) | simulate AR, MA, ARMA processes, root conditions, causality, invertibility, and ACF/PACF behavior |
+| 5 | [Difference Equations and Dynamic Behavior](labs/chapter-05-difference-equations-dynamic-behavior-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-05-difference-equations-dynamic-behavior-lab.ipynb) | linear recurrences, characteristic roots, damping, oscillation, and explosive dynamics |
+| 6 | [Forecasting Theory and Best Linear Prediction](labs/chapter-06-forecasting-best-linear-prediction-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-06-forecasting-best-linear-prediction-lab.ipynb) | best linear prediction, forecast variance, AR forecasts, and multi-step forecasting |
+| 7 | [Estimation, Identification, and Diagnostics](labs/chapter-07-estimation-identification-diagnostics-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-07-estimation-identification-diagnostics-lab.ipynb) | Yule-Walker, likelihood, AIC/BIC, residual ACF, Ljung-Box, and model criticism |
+| 8 | [ARIMA Models and Differencing](labs/chapter-08-arima-differencing-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-08-arima-differencing-lab.ipynb) | integrated processes, choosing differences, ARIMA fitting, over-differencing, and forecast reconstruction |
+| 9 | [Seasonal ARIMA and Multiple Seasonality](labs/chapter-09-sarima-multiple-seasonality-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-09-sarima-multiple-seasonality-lab.ipynb) | seasonal differencing, SARIMA fitting, seasonal baselines, and residual diagnostics |
+| 10 | [State-Space Models and Kalman Filtering](labs/chapter-10-state-space-kalman-filtering-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-10-state-space-kalman-filtering-lab.ipynb) | local-level models, Kalman prediction/update, missing data, smoothing, and state forecasts |
+| 11 | [Hidden Markov Models and Regime Switching](labs/chapter-11-hidden-markov-regime-switching-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-11-hidden-markov-regime-switching-lab.ipynb) | forward probabilities, Viterbi decoding, Gaussian HMMs, and regime-switching simulations |
+| 12 | [Spectral Analysis and the Frequency Domain](labs/chapter-12-spectral-analysis-frequency-domain-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-12-spectral-analysis-frequency-domain-lab.ipynb) | sinusoidal processes, aliasing, spectral density, and spectra of AR/MA models |
+| 13 | [Discrete Fourier Transform, FFT, and Periodogram](labs/chapter-13-dft-fft-periodogram-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-13-dft-fft-periodogram-lab.ipynb) | DFT basis, FFT, periodogram, leakage, tapering, and peak detection |
+| 14 | [Filtering and Wavelet Transform](labs/chapter-14-filtering-wavelets-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-14-filtering-wavelets-lab.ipynb) | linear filters, frequency response, differencing filters, Haar wavelets, and denoising |
+| 15 | [Forecast Evaluation and Backtesting](labs/chapter-15-forecast-evaluation-backtesting-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-15-forecast-evaluation-backtesting-lab.ipynb) | rolling-origin validation, baseline comparisons, horizon-wise metrics, intervals, and leakage checks |
+| 16 | [Automated Forecasting and Prophet-Type Additive Models](labs/chapter-16-automated-forecasting-prophet-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-16-automated-forecasting-prophet-lab.ipynb) | trend, changepoints, Fourier seasonality, holiday effects, Prophet-style models, and tuning |
+| 17 | [Feature-Based Machine Learning for Time Series](labs/chapter-17-feature-based-machine-learning-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-17-feature-based-machine-learning-lab.ipynb) | lag features, rolling features, calendar variables, Fourier features, tree models, and validation |
+| 18 | [Probabilistic Forecasting and Uncertainty Quantification](labs/chapter-18-probabilistic-forecasting-uncertainty-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-18-probabilistic-forecasting-uncertainty-lab.ipynb) | prediction intervals, quantile loss, conformal prediction, calibration, and risk decisions |
+| 19 | [Neural Networks for Time Series](labs/chapter-19-neural-networks-for-time-series-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-19-neural-networks-for-time-series-lab.ipynb) | sliding windows, scaling, MLP forecasting, PyTorch training, and chronological validation |
+| 20 | [Convolutional Models for Sequences](labs/chapter-20-convolutional-models-sequences-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-20-convolutional-models-sequences-lab.ipynb) | causal convolution, dilation, receptive fields, TCNs, and PyTorch Conv1d |
+| 21 | [Recurrent Neural Networks, LSTM, and GRU](labs/chapter-21-rnn-lstm-gru-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-21-rnn-lstm-gru-lab.ipynb) | RNN hidden states, LSTM/GRU gates, sequence-to-one forecasting, and recurrent training |
+| 22 | [Attention and Transformer Models for Time Series](labs/chapter-22-attention-transformers-time-series-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-22-attention-transformers-time-series-lab.ipynb) | scaled dot-product attention, causal masks, positional encodings, and transformer forecasting |
+| 23 | [Representation Learning for Time Series](labs/chapter-23-representation-learning-time-series-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-23-representation-learning-time-series-lab.ipynb) | embeddings, PCA, autoencoders, masked reconstruction, contrastive ideas, and anomaly detection |
+| 24 | [Multivariate, Panel, and Hierarchical Time Series](labs/chapter-24-multivariate-panel-hierarchical-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-24-multivariate-panel-hierarchical-lab.ipynb) | VAR models, coupling, Granger-style prediction, global models, and reconciliation |
+| 25 | [AI-Assisted Time-Series Modeling](labs/chapter-25-ai-assisted-time-series-modeling-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-25-ai-assisted-time-series-modeling-lab.ipynb) | AI workflow auditing, prompt design, leakage review, code review, and report checking |
+| 26 | [End-to-End Forecasting Pipeline](labs/chapter-26-end-to-end-forecasting-pipeline-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-26-end-to-end-forecasting-pipeline-lab.ipynb) | forecasting contracts, preprocessing, baselines, validation, intervals, and monitoring |
+| 27 | [Final Project Studio](labs/chapter-27-final-project-studio-lab.ipynb)<br>[Open in Colab](https://colab.research.google.com/github/wanghemath/Book-MachineLearning2sda/blob/main/labs/chapter-27-final-project-studio-lab.ipynb) | project design, validation planning, baselines, diagnostics, rubric alignment, and final reporting |
+
+## Lab design pattern
+
+Most labs follow a common workflow:
+
+1. State the modeling question and identify the forecasting information set.
+2. Simulate or load a time-series/sequence dataset.
+3. Visualize the series, dependence structure, and diagnostics.
+4. Fit at least one baseline model before fitting a more advanced model.
+5. Evaluate with chronological or rolling-origin validation.
+6. Interpret residuals, uncertainty, and failure modes.
+7. Use AI assistance only after defining the mathematical task and then verify the output manually.
+
+## Recommended local setup
+
+```bash
+git clone https://github.com/wanghemath/Book-MachineLearning2sda.git
+cd Book-MachineLearning2sda
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+jupyter lab
+```
+
+Alternatively, use Conda:
+
+```bash
+conda env create -f environment.yml
+conda activate ts-sequence-learning
+jupyter lab
+```
+
+## Responsible AI checklist for labs
+
+Before submitting any lab, verify the following.
+
+- The train/validation/test split respects time order.
+- Scaling, imputation, feature engineering, and model selection use only information available at the forecast origin.
+- Every advanced model is compared with a baseline such as naive, seasonal naive, linear AR, ARIMA, or a simple feature model.
+- Residuals or forecast errors are examined, not only point metrics.
+- AI-generated code or explanations are checked against the mathematics and the data-generating process.
+- The final notebook is reproducible from a clean runtime.
+

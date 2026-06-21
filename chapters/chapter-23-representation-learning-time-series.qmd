@@ -1,0 +1,749 @@
+# Representation Learning for Time Series
+
+::: {.hero}
+**Part VI. Deep Learning for Time Series and Sequence Data**  
+**Chapter goal:** understand how modern models learn useful representations of time series. We study window embeddings, autoencoders, masked reconstruction, contrastive learning, anomaly detection, clustering, retrieval, validation, and AI-assisted representation diagnosis.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain what a learned representation is and why it is useful for forecasting, classification, clustering, retrieval, and anomaly detection;
+2. formulate a time-series encoder as a map from an observed window to a latent vector;
+3. distinguish handcrafted features, linear embeddings, autoencoder embeddings, and self-supervised embeddings;
+4. derive the reconstruction objective for an autoencoder and relate a linear autoencoder to PCA;
+5. use latent embeddings for clustering, nearest-neighbor search, and anomaly detection;
+6. describe masked reconstruction and contrastive learning as pretext tasks for unlabeled sequence data;
+7. identify validation leakage in representation-learning pipelines;
+8. implement simple representation-learning workflows in Python;
+9. use AI tools to critique representation quality while verifying the assumptions mathematically and computationally.
+
+## 23.1 Motivation: from prediction to representation
+
+In earlier chapters, we built models that map a past window directly to a forecast. For example, a supervised forecaster may use
+
+$$
+(y_{t-L+1},\ldots,y_t) \mapsto \widehat y_{t+h}.
+$$
+
+Representation learning introduces an intermediate object. Instead of mapping the observed window directly to an output, we first encode the window into a lower-dimensional vector:
+
+$$
+\mathbf z_t = f_\theta(\mathbf x_t),
+$$
+
+where
+
+$$
+\mathbf x_t = (y_{t-L+1},\ldots,y_t)^T \in \mathbb R^L,
+\qquad
+\mathbf z_t \in \mathbb R^d,
+\qquad d \ll L.
+$$
+
+The vector $\mathbf z_t$ is called a **representation**, **embedding**, or **latent feature vector**. The representation can then be used for many tasks:
+
+$$
+\text{forecasting: } \widehat y_{t+h}=g_\phi(\mathbf z_t),
+$$
+
+$$
+\text{classification: } \widehat c_t = h_\psi(\mathbf z_t),
+$$
+
+$$
+\text{anomaly detection: } a_t = A(\mathbf z_t),
+$$
+
+$$
+\text{retrieval: } \operatorname{similarity}(\mathbf x_i,\mathbf x_j)
+= \operatorname{similarity}(\mathbf z_i,\mathbf z_j).
+$$
+
+The key idea is that a good representation should keep information that matters for the task and discard nuisance variation such as irrelevant noise, arbitrary phase shifts, or small measurement errors.
+
+::: {.callout-note}
+## Connection with the previous chapters
+A representation can be produced by many architectures: handcrafted statistical features, PCA, convolutional encoders, recurrent encoders, attention encoders, autoencoders, or self-supervised transformers. The representation-learning viewpoint unifies classical feature engineering and modern deep sequence learning.
+:::
+
+## 23.2 Windows, encoders, and latent spaces
+
+Let $\{y_t\}_{t=1}^T$ be a univariate time series. A standard first step is to create overlapping windows
+
+$$
+\mathbf x_i = (y_i,y_{i+1},\ldots,y_{i+L-1})^T,
+\qquad i=1,\ldots,N,
+$$
+
+where $N=T-L+1$. For a multivariate time series $\mathbf y_t\in\mathbb R^p$, a window is a matrix
+
+$$
+X_i =
+\begin{bmatrix}
+\mathbf y_i^T\\
+\mathbf y_{i+1}^T\\
+\vdots\\
+\mathbf y_{i+L-1}^T
+\end{bmatrix}
+\in \mathbb R^{L\times p}.
+$$
+
+An encoder is a function
+
+$$
+f_\theta: \mathbb R^{L\times p}\to \mathbb R^d.
+$$
+
+Examples include:
+
+$$
+f_\theta(X_i)=\text{handcrafted features},
+$$
+
+$$
+f_\theta(X_i)=W\operatorname{vec}(X_i)+\mathbf b,
+$$
+
+$$
+f_\theta(X_i)=\text{CNN}(X_i),
+$$
+
+$$
+f_\theta(X_i)=\text{RNN}(X_i),
+$$
+
+$$
+f_\theta(X_i)=\text{Transformer}(X_i).
+$$
+
+The latent space $\mathbb R^d$ is useful only if geometric relationships in latent space correspond to meaningful relationships between sequences. A common hope is:
+
+$$
+\|\mathbf z_i-\mathbf z_j\| \text{ small}
+\quad \Longrightarrow \quad
+X_i \text{ and } X_j \text{ have similar behavior}.
+$$
+
+But this implication is not automatic. It depends on the training objective, preprocessing, windowing scheme, and validation design.
+
+## 23.3 Handcrafted representations
+
+Before training a neural representation model, it is useful to understand handcrafted representations. For a window $\mathbf x=(x_1,\ldots,x_L)^T$, we may compute features such as
+
+$$
+\widehat \mu = \frac1L\sum_{t=1}^L x_t,
+$$
+
+$$
+\widehat \sigma^2 = \frac1L\sum_{t=1}^L (x_t-\widehat\mu)^2,
+$$
+
+$$
+\widehat\rho(1)=
+\frac{\sum_{t=2}^L (x_t-\widehat\mu)(x_{t-1}-\widehat\mu)}
+{\sum_{t=1}^L (x_t-\widehat\mu)^2},
+$$
+
+and frequency features such as
+
+$$
+A(\omega)=\left|\sum_{t=1}^L x_t e^{-2\pi i \omega t}\right|.
+$$
+
+A feature map might be
+
+$$
+\Phi(\mathbf x)=
+\big(\widehat \mu,\widehat\sigma,\widehat\rho(1),A(\omega_1),A(\omega_2),\ldots\big)^T.
+$$
+
+This is a representation. It is not learned, but it already maps a raw sequence window into a lower-dimensional vector.
+
+::: {.callout-tip}
+## Why start with handcrafted features?
+Handcrafted features are interpretable baselines. If a deep embedding does not outperform simple features such as mean, variance, autocorrelation, trend slope, and spectral energy, then the deep model may not be adding value.
+:::
+
+## 23.4 Linear representations and PCA
+
+Suppose we form a matrix of centered windows
+
+$$
+X=
+\begin{bmatrix}
+\mathbf x_1^T\\
+\mathbf x_2^T\\
+\vdots\\
+\mathbf x_N^T
+\end{bmatrix}
+\in\mathbb R^{N\times L}.
+$$
+
+Principal component analysis finds orthonormal directions $\mathbf v_1,\ldots,\mathbf v_d$ that maximize projected variance. The representation of window $\mathbf x_i$ is
+
+$$
+\mathbf z_i=
+\begin{bmatrix}
+\mathbf v_1^T\mathbf x_i\\
+\vdots\\
+\mathbf v_d^T\mathbf x_i
+\end{bmatrix}.
+$$
+
+Equivalently, if $V_d=[\mathbf v_1,\ldots,\mathbf v_d]$, then
+
+$$
+\mathbf z_i = V_d^T\mathbf x_i,
+\qquad
+\widehat{\mathbf x}_i = V_d\mathbf z_i.
+$$
+
+The reconstruction error is
+
+$$
+\|\mathbf x_i-\widehat{\mathbf x}_i\|_2^2.
+$$
+
+PCA is a representation-learning method with a closed-form solution. It is linear, unsupervised, and useful as a baseline for autoencoders.
+
+## 23.5 Autoencoders
+
+An autoencoder learns an encoder and a decoder:
+
+$$
+\mathbf z_i=f_\theta(\mathbf x_i),
+\qquad
+\widehat{\mathbf x}_i=g_\phi(\mathbf z_i).
+$$
+
+The training objective is usually reconstruction loss:
+
+$$
+\min_{\theta,\phi}\frac1N\sum_{i=1}^N
+\|\mathbf x_i-g_\phi(f_\theta(\mathbf x_i))\|_2^2.
+$$
+
+If $d<L$, then the model is forced to compress the window through a bottleneck. A good bottleneck may retain trend, oscillation, local shape, volatility, and regime information while discarding small noise.
+
+For a neural autoencoder, the encoder may be an MLP, CNN, RNN, or transformer:
+
+$$
+f_\theta(\mathbf x)=F_K\circ F_{K-1}\circ\cdots\circ F_1(\mathbf x).
+$$
+
+The decoder maps the latent vector back to the window space. For sequence data, the decoder may produce an entire reconstructed sequence.
+
+::: {.callout-warning}
+## Reconstruction is not the same as usefulness
+A representation with low reconstruction error is not necessarily good for forecasting or classification. It may waste latent capacity reconstructing irrelevant noise. Always evaluate the representation on the downstream task or on a carefully chosen proxy task.
+:::
+
+## 23.6 Interactive module: embedding explorer
+
+This module creates synthetic windows from several time-series families. It maps each window to a two-dimensional feature embedding. The purpose is to show that even simple features can separate different temporal behaviors.
+
+<div class="interactive-card">
+  <h3>Interactive Module: Time-Series Embedding Explorer</h3>
+  <p class="small-note">Change the window length and noise level. Click points in the embedding to inspect the corresponding time-series window.</p>
+
+  <label>
+    Window length L:
+    <input id="ch23_embed_length" type="range" min="40" max="140" step="10" value="80">
+    <span id="ch23_embed_length_value">80</span>
+  </label>
+
+  <label>
+    Noise level:
+    <input id="ch23_embed_noise" type="range" min="0.05" max="1.20" step="0.05" value="0.35">
+    <span id="ch23_embed_noise_value">0.35</span>
+  </label>
+
+  <label>
+    Random seed:
+    <input id="ch23_embed_seed" type="range" min="1" max="20" step="1" value="7">
+    <span id="ch23_embed_seed_value">7</span>
+  </label>
+
+  <p id="ch23_embedding_output"></p>
+
+  <div id="ch23_embedding_plot" style="width:100%; height:470px;"></div>
+  <div id="ch23_selected_window_plot" style="width:100%; height:330px;"></div>
+</div>
+
+The interactive embedding is deliberately simple. A deep encoder tries to learn a better map $f_\theta$ automatically, but the same question remains: does the geometry of the embedding reflect meaningful time-series structure?
+
+## 23.7 Interactive module: bottlenecks and reconstruction
+
+This module uses a Fourier bottleneck as an interpretable analogue of a linear autoencoder. Keeping only a few smooth components reconstructs the large-scale pattern but misses spikes and high-frequency details. This illustrates why reconstruction error can be useful for anomaly detection.
+
+<div class="interactive-card">
+  <h3>Interactive Module: Bottleneck Reconstruction and Anomaly Score</h3>
+  <p class="small-note">Increase the latent dimension to make the reconstruction more flexible. Increase the anomaly size to see how residual error changes.</p>
+
+  <label>
+    Latent dimension k:
+    <input id="ch23_bottleneck_k" type="range" min="1" max="20" step="1" value="5">
+    <span id="ch23_bottleneck_k_value">5</span>
+  </label>
+
+  <label>
+    Anomaly size:
+    <input id="ch23_bottleneck_anomaly" type="range" min="0" max="5" step="0.25" value="2.5">
+    <span id="ch23_bottleneck_anomaly_value">2.50</span>
+  </label>
+
+  <label>
+    Noise level:
+    <input id="ch23_bottleneck_noise" type="range" min="0" max="0.80" step="0.05" value="0.20">
+    <span id="ch23_bottleneck_noise_value">0.20</span>
+  </label>
+
+  <p id="ch23_bottleneck_output"></p>
+
+  <div id="ch23_bottleneck_reconstruction_plot" style="width:100%; height:430px;"></div>
+  <div id="ch23_bottleneck_error_plot" style="width:100%; height:300px;"></div>
+</div>
+
+## 23.8 Self-supervised learning for time series
+
+A major reason representation learning is important is that labeled sequence data are often expensive, while unlabeled sequence data are abundant. Self-supervised learning creates artificial training tasks from the data itself.
+
+### Masked reconstruction
+
+Given a window $\mathbf x_i$, choose a mask $M_i\subset\{1,\ldots,L\}$. The model receives a corrupted version $\widetilde{\mathbf x}_i$ and must reconstruct the hidden entries:
+
+$$
+\min_{\theta}\sum_i \sum_{t\in M_i}
+\left(x_{i,t}-\widehat x_{i,t}\right)^2.
+$$
+
+This teaches the encoder to use surrounding context. For time series, masks may hide isolated points, contiguous blocks, channels, or future values.
+
+### Forecasting as a pretext task
+
+A representation may also be trained by predicting the near future:
+
+$$
+\mathbf z_t=f_\theta(y_{t-L+1:t}),
+\qquad
+\widehat y_{t+1:t+H}=g_\phi(\mathbf z_t),
+$$
+
+with loss
+
+$$
+\min_{\theta,\phi}\sum_t
+\left\|y_{t+1:t+H}-g_\phi(f_\theta(y_{t-L+1:t}))\right\|_2^2.
+$$
+
+After training, the encoder $f_\theta$ can be reused for clustering, anomaly detection, or classification.
+
+### Contrastive learning
+
+Contrastive learning constructs pairs. A positive pair should have similar embeddings; a negative pair should have different embeddings. For example, $\mathbf x_i$ and an augmented version $a(\mathbf x_i)$ form a positive pair. Other windows form negative pairs.
+
+A common contrastive objective is the InfoNCE loss:
+
+$$
+\mathcal L_i
+= -\log
+\frac{\exp(\operatorname{sim}(\mathbf z_i,\mathbf z_i^+)/\tau)}
+{\exp(\operatorname{sim}(\mathbf z_i,\mathbf z_i^+)/\tau)+
+\sum_{j\in\mathcal N_i}\exp(\operatorname{sim}(\mathbf z_i,\mathbf z_j^-)/\tau)}.
+$$
+
+Here $\tau>0$ is a temperature parameter and $\operatorname{sim}$ is often cosine similarity:
+
+$$
+\operatorname{sim}(\mathbf a,\mathbf b)=
+\frac{\mathbf a^T\mathbf b}{\|\mathbf a\|_2\|\mathbf b\|_2}.
+$$
+
+The choice of augmentation is crucial. Reasonable time-series augmentations may include small jitter, scaling, time masking, crop-and-resize, or frequency perturbation. But augmentations must preserve the label-relevant structure.
+
+::: {.callout-warning}
+## Augmentation can change the meaning
+For ECG data, small timing changes may preserve the medical label, but aggressive time warping may destroy clinically important intervals. For finance, shuffling destroys temporal dependence. For forecasting, using future values inside an augmentation can leak information.
+:::
+
+## 23.9 Anomaly detection with representations
+
+Representation learning is often used for anomaly detection. A common autoencoder score is reconstruction error:
+
+$$
+a_i=\|\mathbf x_i-\widehat{\mathbf x}_i\|_2^2.
+$$
+
+If the model is trained mostly on normal behavior, anomalous windows may have larger error because they do not lie near the learned normal manifold.
+
+Another approach is latent-distance scoring. Let $\widehat{\boldsymbol\mu}$ and $\widehat\Sigma$ be the empirical mean and covariance of normal latent vectors. Then a Mahalanobis score is
+
+$$
+a_i=(\mathbf z_i-\widehat{\boldsymbol\mu})^T
+\widehat\Sigma^{-1}
+(\mathbf z_i-\widehat{\boldsymbol\mu}).
+$$
+
+Large values indicate that the latent vector is far from the normal latent distribution.
+
+For sequence anomalies, the score should often be attached to a time interval rather than a single time point. If a window score $a_i$ corresponds to window $i:i+L-1$, then one can aggregate scores over windows covering time $t$:
+
+$$
+A_t=\frac{1}{|\mathcal W_t|}\sum_{i\in\mathcal W_t}a_i,
+$$
+
+where $\mathcal W_t$ is the set of windows containing time $t$.
+
+## 23.10 Representation quality: what should be checked?
+
+A representation should be evaluated in relation to a task. Useful checks include:
+
+1. **Baseline comparison.** Does the learned representation outperform simple features or PCA?
+2. **Temporal validation.** Were all transformations fitted only on training data?
+3. **Neighborhood quality.** Do nearest neighbors in latent space look similar in the original time domain?
+4. **Downstream usefulness.** Does the representation improve forecasting, classification, retrieval, or anomaly detection?
+5. **Stability.** Does the embedding change dramatically with random seed or small perturbations?
+6. **Interpretability.** Can latent dimensions be related to trend, periodicity, volatility, or regime?
+7. **Leakage audit.** Did any representation step use future values, test labels, global scaling, or windows crossing the train-test boundary?
+
+::: {.callout-important}
+## Leakage in representation learning
+Representation learning is especially vulnerable to leakage. Scaling, PCA, autoencoder training, contrastive pair construction, and imputation must be fitted using training data only when evaluating predictive performance.
+:::
+
+## 23.11 Python example: handcrafted features and PCA embeddings
+
+The following example creates synthetic windows from four families and embeds them using simple features followed by PCA.
+
+```{python}
+#| label: ch23-python-feature-embedding
+#| fig-cap: "PCA embedding of handcrafted time-series features."
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+rng = np.random.default_rng(7)
+L = 80
+n_per_class = 70
+
+def make_window(kind, L=80, rng=None, noise=0.30):
+    if rng is None:
+        rng = np.random.default_rng()
+    t = np.arange(L)
+    phase = rng.uniform(0, 2*np.pi)
+
+    if kind == "low_frequency":
+        x = np.sin(2*np.pi*t/40 + phase)
+    elif kind == "high_frequency":
+        x = np.sin(2*np.pi*t/10 + phase)
+    elif kind == "trend":
+        slope = rng.uniform(0.015, 0.035)
+        x = slope*t + 0.25*np.sin(2*np.pi*t/25 + phase)
+    elif kind == "spike":
+        x = 0.6*np.sin(2*np.pi*t/30 + phase)
+        center = rng.integers(L//4, 3*L//4)
+        x[center:center+3] += rng.uniform(2.0, 3.5)
+    else:
+        raise ValueError("unknown kind")
+
+    x = x + noise*rng.normal(size=L)
+    return (x - x.mean()) / (x.std() + 1e-12)
+
+def acf1(x):
+    x = x - x.mean()
+    denom = np.dot(x, x)
+    return np.dot(x[1:], x[:-1]) / denom if denom > 0 else 0.0
+
+def spectral_amp(x, period):
+    t = np.arange(len(x))
+    c = np.cos(2*np.pi*t/period)
+    s = np.sin(2*np.pi*t/period)
+    return np.sqrt(np.dot(x, c)**2 + np.dot(x, s)**2) / len(x)
+
+def features(x):
+    t = np.arange(len(x))
+    slope = np.polyfit(t, x, 1)[0]
+    return np.array([
+        x.mean(),
+        x.std(),
+        acf1(x),
+        slope,
+        spectral_amp(x, 40),
+        spectral_amp(x, 10),
+        np.max(np.abs(np.diff(x)))
+    ])
+
+classes = ["low_frequency", "high_frequency", "trend", "spike"]
+X = []
+y = []
+for c in classes:
+    for _ in range(n_per_class):
+        w = make_window(c, L=L, rng=rng)
+        X.append(features(w))
+        y.append(c)
+
+X = np.vstack(X)
+y = np.array(y)
+
+Z = PCA(n_components=2, random_state=0).fit_transform(StandardScaler().fit_transform(X))
+
+plt.figure(figsize=(7, 5))
+for c in classes:
+    idx = y == c
+    plt.scatter(Z[idx, 0], Z[idx, 1], label=c, alpha=0.75)
+plt.xlabel("PC 1")
+plt.ylabel("PC 2")
+plt.title("Feature-based representation of time-series windows")
+plt.legend()
+plt.show()
+```
+
+The plot should not be interpreted as proof that PCA discovered the true data-generating process. It only shows that the chosen features contain enough information to separate the four synthetic families.
+
+## 23.12 Python example: PCA as a linear autoencoder
+
+PCA gives the best rank-$k$ linear reconstruction in squared error. This makes it a useful baseline for autoencoders.
+
+```{python}
+#| label: ch23-python-pca-reconstruction
+#| fig-cap: "A low-dimensional PCA representation reconstructs smooth windows better than spiky windows."
+from sklearn.decomposition import PCA
+from sklearn.metrics import mean_squared_error
+
+rng = np.random.default_rng(11)
+L = 100
+normal = np.vstack([make_window("low_frequency", L=L, rng=rng, noise=0.20) for _ in range(250)])
+spiky = np.vstack([make_window("spike", L=L, rng=rng, noise=0.20) for _ in range(40)])
+
+k = 5
+pca = PCA(n_components=k, random_state=0)
+pca.fit(normal)
+
+normal_hat = pca.inverse_transform(pca.transform(normal))
+spiky_hat = pca.inverse_transform(pca.transform(spiky))
+
+normal_err = np.mean((normal - normal_hat)**2, axis=1)
+spiky_err = np.mean((spiky - spiky_hat)**2, axis=1)
+
+print(f"Median normal reconstruction error: {np.median(normal_err):.4f}")
+print(f"Median spiky reconstruction error:  {np.median(spiky_err):.4f}")
+
+example_normal = normal[0]
+example_spiky = spiky[0]
+example_normal_hat = pca.inverse_transform(pca.transform(example_normal.reshape(1, -1)))[0]
+example_spiky_hat = pca.inverse_transform(pca.transform(example_spiky.reshape(1, -1)))[0]
+
+plt.figure(figsize=(8, 4))
+plt.plot(example_normal, label="normal window")
+plt.plot(example_normal_hat, label="PCA reconstruction")
+plt.title("Normal window reconstruction")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(8, 4))
+plt.plot(example_spiky, label="spiky window")
+plt.plot(example_spiky_hat, label="PCA reconstruction")
+plt.title("Spiky window reconstruction")
+plt.legend()
+plt.show()
+```
+
+## 23.13 Python example: a small neural autoencoder
+
+The next example trains a small MLP autoencoder. This is not meant to be a state-of-the-art model. It is a minimal representation-learning template.
+
+```{python}
+#| label: ch23-python-mlp-autoencoder
+#| fig-cap: "Training loss for a small MLP autoencoder."
+import torch
+from torch import nn
+from torch.utils.data import TensorDataset, DataLoader
+
+torch.set_num_threads(1)
+torch.manual_seed(0)
+
+rng = np.random.default_rng(21)
+L = 80
+train_windows = np.vstack([
+    make_window("low_frequency", L=L, rng=rng, noise=0.25)
+    for _ in range(300)
+]).astype("float32")
+
+tensor = torch.tensor(train_windows)
+loader = DataLoader(TensorDataset(tensor), batch_size=64, shuffle=True)
+
+class Autoencoder(nn.Module):
+    def __init__(self, L, d):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Linear(L, 32),
+            nn.ReLU(),
+            nn.Linear(32, d)
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(d, 32),
+            nn.ReLU(),
+            nn.Linear(32, L)
+        )
+
+    def forward(self, x):
+        z = self.encoder(x)
+        xhat = self.decoder(z)
+        return xhat, z
+
+model = Autoencoder(L=L, d=4)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+loss_fn = nn.MSELoss()
+losses = []
+
+for epoch in range(60):
+    total = 0.0
+    count = 0
+    for (xb,) in loader:
+        optimizer.zero_grad()
+        xhat, _ = model(xb)
+        loss = loss_fn(xhat, xb)
+        loss.backward()
+        optimizer.step()
+        total += loss.item() * xb.shape[0]
+        count += xb.shape[0]
+    losses.append(total / count)
+
+plt.figure(figsize=(7, 4))
+plt.plot(losses)
+plt.xlabel("epoch")
+plt.ylabel("MSE reconstruction loss")
+plt.title("Autoencoder training loss")
+plt.show()
+
+with torch.no_grad():
+    xhat, z = model(tensor[:5])
+print("Latent representation shape:", z.shape)
+```
+
+The tensor `z` contains the learned representation. A downstream model could use `z` instead of the original $L$-dimensional window.
+
+## 23.14 Python example: masked reconstruction pretext task
+
+Masked reconstruction trains a model to infer missing parts from context. Here is a simple non-neural demonstration of the idea.
+
+```{python}
+#| label: ch23-python-masked-reconstruction
+#| fig-cap: "Masked reconstruction as a self-supervised pretext task."
+rng = np.random.default_rng(31)
+L = 120
+t = np.arange(L)
+x = np.sin(2*np.pi*t/35) + 0.35*np.sin(2*np.pi*t/9) + 0.15*rng.normal(size=L)
+
+mask = np.zeros(L, dtype=bool)
+mask[45:65] = True
+observed_t = t[~mask]
+observed_x = x[~mask]
+
+# A simple interpolation baseline for the masked block.
+x_recon = x.copy()
+x_recon[mask] = np.interp(t[mask], observed_t, observed_x)
+
+masked_mse = np.mean((x[mask] - x_recon[mask])**2)
+print(f"Masked-block reconstruction MSE: {masked_mse:.4f}")
+
+plt.figure(figsize=(8, 4))
+plt.plot(t, x, label="true sequence")
+plt.plot(t, x_recon, label="masked reconstruction")
+plt.scatter(t[mask], x[mask], label="hidden values")
+plt.xlabel("time")
+plt.title("Self-supervised masked reconstruction task")
+plt.legend()
+plt.show()
+```
+
+A neural masked-reconstruction model replaces interpolation with a learned encoder-decoder, usually trained over many random masks.
+
+## 23.15 AI-assisted representation critique
+
+::: {.callout-ai}
+## AI-assisted study box
+Ask an AI assistant to review a representation-learning pipeline. Require the answer to address the following points:
+
+1. What is the input window $X_i$ and what is the latent representation $\mathbf z_i$?
+2. Is the representation trained supervised, unsupervised, or self-supervised?
+3. What objective function is being minimized?
+4. What downstream task is used to evaluate the representation?
+5. Which preprocessing steps could leak test information?
+6. What baseline representation should be compared against?
+7. How should nearest neighbors in latent space be inspected?
+8. What would constitute evidence that the representation learned only noise?
+
+Then verify the answer using code. Do not accept vague statements such as “the embedding captures temporal patterns” unless the statement is connected to a diagnostic, task metric, or visualization.
+:::
+
+A useful prompt template is:
+
+> I am training a representation model for time-series windows. The encoder maps $L$ past observations to a $d$-dimensional latent vector. Please audit the pipeline for leakage, propose baseline representations, recommend diagnostics for latent-space quality, and identify failure modes. Give concrete tests I can run in Python.
+
+## 23.16 Common mistakes
+
+1. **Using random train-test splits for overlapping windows.** Adjacent windows share most observations, so random splits can create severe leakage.
+2. **Fitting PCA or scalers on the full dataset before splitting.** This uses test information in the representation.
+3. **Judging an embedding only by a pretty two-dimensional plot.** Visualization is useful, but downstream validation is necessary.
+4. **Confusing reconstruction with prediction.** Low reconstruction error does not imply good forecast performance.
+5. **Using invalid augmentations.** An augmentation must preserve task-relevant structure.
+6. **Ignoring baselines.** Handcrafted features and PCA are essential comparisons.
+7. **Overcompressing.** If $d$ is too small, important temporal information may be destroyed.
+8. **Undercompressing.** If $d$ is too large, the representation may memorize noise.
+9. **Failing to inspect nearest neighbors.** If nearest neighbors look unrelated in the original time domain, the embedding geometry may be poor.
+
+## 23.17 Exercises
+
+1. Let $X\in\mathbb R^{N\times L}$ be a centered matrix of time-series windows. Show that the PCA reconstruction $\widehat X=XV_dV_d^T$ minimizes squared reconstruction error among all rank-$d$ linear projections.
+2. Construct two different feature maps $\Phi_1$ and $\Phi_2$ for time-series windows. One should emphasize time-domain features and the other should emphasize frequency-domain features.
+3. Simulate three classes of windows: low-frequency, high-frequency, and spiky. Compare PCA embeddings from raw windows and PCA embeddings from handcrafted features.
+4. Train a small autoencoder on normal windows and evaluate reconstruction error on anomalous windows.
+5. Design a contrastive-learning augmentation set for one of the following: electricity demand, ECG signals, stock returns, or climate data. Explain which augmentations are valid and which are invalid.
+6. Suppose a representation is trained on the entire dataset and then used for forecasting evaluation. Explain precisely why this can leak information.
+7. Use nearest-neighbor retrieval in latent space. For five query windows, plot their nearest neighbors and describe whether the latent geometry is meaningful.
+8. Compare reconstruction error and downstream forecasting error as the latent dimension $d$ changes.
+
+## 23.18 Mini project
+
+Choose a real or simulated time-series dataset. Build three representations:
+
+1. handcrafted features;
+2. PCA or another linear embedding;
+3. a neural autoencoder embedding.
+
+Evaluate the representations on at least one downstream task, such as clustering, anomaly detection, sequence classification, or forecasting. Your report should include:
+
+- a clear definition of the input windows;
+- the representation dimension $d$;
+- the training/validation/test split;
+- a leakage audit;
+- a two-dimensional visualization;
+- nearest-neighbor examples;
+- one downstream metric;
+- a comparison with a simple baseline;
+- a short discussion of failure modes.
+
+## 23.19 Checklist
+
+Before moving to the next chapter, make sure you can answer the following questions.
+
+- What is the difference between a raw window and a latent representation?
+- What does an encoder do?
+- Why is PCA a linear representation-learning method?
+- What objective does an autoencoder minimize?
+- Why can reconstruction loss be useful for anomaly detection?
+- Why might reconstruction loss fail to measure downstream usefulness?
+- What is a masked reconstruction pretext task?
+- What is the role of positive and negative pairs in contrastive learning?
+- How can scaling, PCA, or autoencoder training leak test information?
+- How would you check whether nearest neighbors in latent space are meaningful?
+
+## 23.20 Further reading
+
+- Shumway and Stoffer, *Time Series Analysis and Its Applications*, for classical time-series structure and diagnostics.
+- Goodfellow, Bengio, and Courville, *Deep Learning*, for autoencoders and representation learning.
+- Recent literature on self-supervised learning for time series, including masked modeling, contrastive predictive coding, and transformer-based sequence pretraining.

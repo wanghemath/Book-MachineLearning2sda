@@ -1,0 +1,664 @@
+# Final Project Studio
+
+::: {.hero}
+**Part VII. Responsible AI, Projects, and Deployment**  
+**Chapter goal:** design, execute, and communicate a rigorous final project in modern time series analysis and sequence learning. The project should connect mathematical assumptions, an information-set formulation, leakage-safe validation, interpretable diagnostics, uncertainty, reproducible Python code, interactive visualization, and AI-assisted model criticism.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. translate an applied time-series or sequence-data question into a precise mathematical problem;
+2. write a project contract specifying target, forecast origin, horizon, information set, loss, baselines, and deliverables;
+3. select an appropriate method family from classical statistics, spectral analysis, feature-based ML, deep learning, or representation learning;
+4. design a validation scheme that respects time ordering and prevents leakage;
+5. evaluate point forecasts, probabilistic forecasts, classifications, anomaly scores, or learned representations;
+6. build an interactive HTML component that helps explain the project idea;
+7. use AI assistance for critique, code review, and communication while verifying all claims;
+8. prepare a reproducible notebook and a clear written report.
+
+## 27.1 What counts as a strong final project?
+
+A strong final project is not just a competition to obtain the smallest error. It is a complete mathematical and computational argument. The report should answer four questions:
+
+1. **What is the prediction or inference problem?**
+2. **What information is available when the decision is made?**
+3. **What model assumptions are being made?**
+4. **What evidence supports or contradicts those assumptions?**
+
+The project may focus on forecasting, anomaly detection, sequence classification, regime detection, multivariate modeling, spectral analysis, representation learning, or an AI-assisted forecasting workflow. In every case, the project should be organized around an ordered data set
+
+$$
+\bigl\{(t_i, y_i, x_i): i=1,\ldots,n\bigr\},
+$$
+
+where $t_i$ is the time or sequence index, $y_i$ is the target or response, and $x_i$ is an optional vector of covariates.
+
+A useful high-level template is
+
+$$
+\text{scientific question}
+\longrightarrow
+\text{statistical task}
+\longrightarrow
+\text{information set}
+\longrightarrow
+\text{model class}
+\longrightarrow
+\text{validation design}
+\longrightarrow
+\text{diagnostic evidence}.
+$$
+
+::: {.callout-tip}
+## Project principle
+A final project should make it easy for another student to reproduce the result and understand why the validation design is valid for ordered data.
+:::
+
+## 27.2 The project contract
+
+Before fitting any model, write a **project contract**. This is the mathematical specification of the problem.
+
+For forecasting, define the forecast target as
+
+$$
+Y_{t+h}, \qquad h\in \mathcal H,
+$$
+
+where $t$ is the forecast origin and $\mathcal H$ is the set of horizons. The information available at the origin is the filtration or information set
+
+$$
+\mathcal F_t
+=
+\sigma\bigl(Y_s, X_s, C_u: s\le t,\ u\le t+h\text{ and known at time }t\bigr),
+$$
+
+where $C_u$ may include calendar variables known in advance. A valid forecast must have the form
+
+$$
+\widehat Y_{t+h|t}=g_h(\mathcal F_t).
+$$
+
+If a variable is not known at time $t$, it must not be used as a feature for predicting $Y_{t+h}$ unless a separate model forecasts that variable first.
+
+For sequence classification, define a sequence window
+
+$$
+\mathbf X_i=(X_{i,1},\ldots,X_{i,L_i})
+$$
+
+and a label $Z_i\in\{1,\ldots,K\}$. A classifier has the form
+
+$$
+\widehat p_\theta(k\mid \mathbf X_i)
+= P_\theta(Z_i=k\mid \mathbf X_i).
+$$
+
+For anomaly detection, define a score
+
+$$
+A_t=s(Y_t,Y_{t-1},\ldots,X_t,X_{t-1},\ldots),
+$$
+
+where larger values indicate stronger evidence against normal behavior. A threshold rule has the form
+
+$$
+\widehat Z_t=\mathbf 1\{A_t>c\}.
+$$
+
+For representation learning, define an encoder
+
+$$
+z_t = e_\theta(W_t),
+$$
+
+where $W_t=(Y_{t-L+1},\ldots,Y_t)$ is a time window. The representation should be evaluated through a downstream task such as clustering, classification, anomaly detection, or forecasting.
+
+## 27.3 Choosing the project type
+
+The project type should match the structure of the data and the available time.
+
+| Project type | Good data situation | Main output | Typical methods |
+|---|---|---|---|
+| Forecasting | one or many ordered series | $\widehat Y_{t+h|t}$ | naive, ARIMA, SARIMA, Prophet, ML, neural nets |
+| Probabilistic forecasting | decision requires uncertainty | intervals or quantiles | bootstrap, conformal, Bayesian, quantile regression |
+| Anomaly detection | rare unusual events | anomaly score $A_t$ | residual methods, autoencoders, isolation forests |
+| Sequence classification | each sequence has a label | class probability | feature extraction, CNN, RNN, transformer |
+| Regime detection | hidden states or structural breaks | inferred state $S_t$ | HMM, state-space, change-point methods |
+| Spectral analysis | oscillations are central | dominant frequencies | periodogram, smoothing, wavelets |
+| Representation learning | many windows or many series | embeddings $z_t$ | PCA, autoencoder, contrastive learning |
+| Multivariate forecasting | many interacting variables | vector forecast | VAR, dynamic regression, global ML |
+
+A good project is usually narrow enough to finish but rich enough to demonstrate both theory and computation.
+
+::: {.callout-warning}
+## Avoid a project that is too broad
+"Forecast the stock market using deep learning" is too broad. A better project is: "Compare a naive baseline, ARIMA, and a lag-feature gradient-boosting model for one-day-ahead realized volatility forecasting on a fixed set of assets, evaluated by rolling-origin validation."
+:::
+
+## 27.4 Interactive module: project design matrix
+
+Use this module to think about project scope. The plot is not a grade. It is a planning tool. A project with high data complexity and high model ambition requires more careful validation and stronger reproducibility.
+
+<div class="interactive-card">
+<h3>Interactive Module: Project Design Matrix</h3>
+<p class="small-note">Adjust the design choices and inspect the resulting feasibility profile.</p>
+
+<div class="control-grid">
+  <label>Data length
+    <input id="ch27_design_length" type="range" min="100" max="5000" step="100" value="1200">
+    <span id="ch27_design_length_value">1200</span>
+  </label>
+  <label>Number of related series
+    <input id="ch27_design_series" type="range" min="1" max="100" step="1" value="8">
+    <span id="ch27_design_series_value">8</span>
+  </label>
+  <label>Missingness / irregularity
+    <input id="ch27_design_missing" type="range" min="0" max="0.5" step="0.05" value="0.10">
+    <span id="ch27_design_missing_value">0.10</span>
+  </label>
+  <label>Forecast horizon or sequence length
+    <input id="ch27_design_horizon" type="range" min="1" max="60" step="1" value="14">
+    <span id="ch27_design_horizon_value">14</span>
+  </label>
+  <label>Model family
+    <select id="ch27_design_model">
+      <option value="baseline">baseline + classical model</option>
+      <option value="ml" selected>feature-based ML</option>
+      <option value="deep">deep sequence model</option>
+      <option value="hybrid">hybrid statistical + neural</option>
+    </select>
+  </label>
+  <label>Uncertainty required?
+    <select id="ch27_design_uncertainty">
+      <option value="no">no</option>
+      <option value="interval" selected>prediction intervals</option>
+      <option value="quantile">quantiles / probabilities</option>
+    </select>
+  </label>
+</div>
+
+<p id="ch27_design_output" class="small-note"></p>
+<div id="ch27_design_plot" style="height:440px;"></div>
+</div>
+
+## 27.5 Validation design
+
+For forecasting, validation should mimic deployment. Suppose $\mathcal T$ is the set of forecast origins and $\mathcal H$ is the set of horizons. For a loss function $\ell$, the rolling-origin validation error is
+
+$$
+\widehat R
+=
+\frac{1}{|\mathcal T||\mathcal H|}
+\sum_{\tau\in\mathcal T}\sum_{h\in\mathcal H}
+\ell\left(Y_{\tau+h},\widehat Y_{\tau+h|\tau}\right).
+$$
+
+A horizon-specific error is
+
+$$
+\widehat R_h
+=
+\frac{1}{|\mathcal T|}
+\sum_{\tau\in\mathcal T}
+\ell\left(Y_{\tau+h},\widehat Y_{\tau+h|\tau}\right).
+$$
+
+This matters because some models perform well for $h=1$ but poorly for longer horizons.
+
+For sequence classification, use a split that respects grouping and chronology. If windows overlap heavily, random window splitting can leak nearly identical examples into training and test sets. If a sequence belongs to a patient, asset, device, or user, the split should respect that grouping.
+
+For anomaly detection, avoid setting the threshold using future anomalies unless that would also happen in deployment. If labeled anomalies are scarce, use a validation period that is separated from the final test period.
+
+## 27.6 Interactive module: rolling-origin planner
+
+<div class="interactive-card">
+<h3>Interactive Module: Rolling-Origin Validation Planner</h3>
+<p class="small-note">Visualize how many backtesting forecasts your project will require.</p>
+
+<div class="control-grid">
+  <label>Total observations
+    <input id="ch27_roll_n" type="range" min="100" max="1000" step="20" value="360">
+    <span id="ch27_roll_n_value">360</span>
+  </label>
+  <label>Initial training size
+    <input id="ch27_roll_train" type="range" min="40" max="700" step="10" value="160">
+    <span id="ch27_roll_train_value">160</span>
+  </label>
+  <label>Maximum horizon
+    <input id="ch27_roll_horizon" type="range" min="1" max="60" step="1" value="21">
+    <span id="ch27_roll_horizon_value">21</span>
+  </label>
+  <label>Step between origins
+    <input id="ch27_roll_step" type="range" min="1" max="30" step="1" value="14">
+    <span id="ch27_roll_step_value">14</span>
+  </label>
+  <label>Window type
+    <select id="ch27_roll_window">
+      <option value="expanding" selected>expanding</option>
+      <option value="sliding">sliding</option>
+    </select>
+  </label>
+  <label>Sliding window length
+    <input id="ch27_roll_window_length" type="range" min="40" max="500" step="10" value="140">
+    <span id="ch27_roll_window_length_value">140</span>
+  </label>
+</div>
+
+<p id="ch27_roll_output" class="small-note"></p>
+<div id="ch27_roll_plot" style="height:460px;"></div>
+</div>
+
+## 27.7 Baselines and model comparison
+
+Every project should include at least one baseline. Baselines are not optional. They prevent students from mistaking complexity for performance.
+
+For a univariate forecasting project, common baselines include:
+
+$$
+\widehat Y_{t+h|t}^{\mathrm{naive}}=Y_t,
+$$
+
+and for seasonal data with period $s$,
+
+$$
+\widehat Y_{t+h|t}^{\mathrm{seasonal}}=Y_{t+h-ks},
+$$
+
+where $k$ is chosen so that $t+h-ks\le t$.
+
+For sequence classification, compare against majority-class prediction, logistic regression on summary features, or a simple CNN before using a large transformer. For anomaly detection, compare against a residual threshold or rolling z-score before using an autoencoder.
+
+A recommended project model ladder is:
+
+$$
+\text{baseline}
+\rightarrow
+\text{interpretable statistical model}
+\rightarrow
+\text{feature-based ML}
+\rightarrow
+\text{deep model, if justified}.
+$$
+
+The final model does not need to be the most complex model. It should be the model best supported by validation and diagnostics.
+
+## 27.8 Python example: a small final-project prototype
+
+The following example simulates daily demand data, creates a chronological split, evaluates naive and seasonal-naive baselines, and fits a small lag-feature regression model. It illustrates the minimum level of computational reproducibility expected in a project.
+
+```{python}
+#| label: py-ch27-project-prototype
+#| fig-cap: "Prototype final-project workflow with baselines and a lag-feature regression model."
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import Ridge
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+rng = np.random.default_rng(7339)
+
+n = 420
+t = np.arange(n)
+weekly = 8 * np.sin(2 * np.pi * t / 7)
+annualish = 3 * np.sin(2 * np.pi * t / 90)
+trend = 0.04 * t
+noise = rng.normal(0, 2.0, size=n)
+y = 80 + trend + weekly + annualish + noise
+
+df = pd.DataFrame({"t": t, "y": y})
+for lag in [1, 7, 14, 28]:
+    df[f"lag_{lag}"] = df["y"].shift(lag)
+df["sin7"] = np.sin(2 * np.pi * df["t"] / 7)
+df["cos7"] = np.cos(2 * np.pi * df["t"] / 7)
+df = df.dropna().reset_index(drop=True)
+
+train_size = 300
+train = df.iloc[:train_size].copy()
+test = df.iloc[train_size:].copy()
+
+feature_cols = ["lag_1", "lag_7", "lag_14", "lag_28", "sin7", "cos7"]
+model = Ridge(alpha=1.0)
+model.fit(train[feature_cols], train["y"])
+
+test = test.assign(
+    naive=test["lag_1"],
+    seasonal_naive=test["lag_7"],
+    ridge=model.predict(test[feature_cols])
+)
+
+summary = []
+for name in ["naive", "seasonal_naive", "ridge"]:
+    mae = mean_absolute_error(test["y"], test[name])
+    rmse = mean_squared_error(test["y"], test[name]) ** 0.5
+    summary.append({"model": name, "MAE": mae, "RMSE": rmse})
+
+summary_df = pd.DataFrame(summary)
+print(summary_df.round(3))
+
+plt.figure(figsize=(9, 4))
+plt.plot(train["t"], train["y"], label="training data")
+plt.plot(test["t"], test["y"], label="test data")
+plt.plot(test["t"], test["seasonal_naive"], label="seasonal naive")
+plt.plot(test["t"], test["ridge"], label="ridge forecast")
+plt.axvline(train["t"].iloc[-1], linestyle="--", linewidth=1)
+plt.xlabel("time")
+plt.ylabel("demand")
+plt.title("Prototype forecast comparison")
+plt.legend()
+plt.show()
+```
+
+The example is intentionally modest. A final project should extend this idea by adding rolling-origin validation, residual diagnostics, uncertainty quantification, and a discussion of assumptions.
+
+## 27.9 Python example: rolling-origin evaluation
+
+The next example evaluates a one-step-ahead ridge model over many forecast origins. The important point is that the model is refit at each origin using only past information.
+
+```{python}
+#| label: py-ch27-rolling-origin
+#| fig-cap: "Rolling-origin validation errors for a lag-feature forecasting model."
+
+from sklearn.base import clone
+
+origins = np.arange(220, len(df) - 1, 7)
+records = []
+
+for origin in origins:
+    train_o = df.iloc[:origin].copy()
+    test_o = df.iloc[[origin]].copy()
+
+    mdl = clone(model)
+    mdl.fit(train_o[feature_cols], train_o["y"])
+
+    pred_ridge = float(mdl.predict(test_o[feature_cols])[0])
+    pred_naive = float(test_o["lag_1"].iloc[0])
+    pred_seasonal = float(test_o["lag_7"].iloc[0])
+    actual = float(test_o["y"].iloc[0])
+
+    records.extend([
+        {"origin": int(origin), "model": "ridge", "error": actual - pred_ridge},
+        {"origin": int(origin), "model": "naive", "error": actual - pred_naive},
+        {"origin": int(origin), "model": "seasonal_naive", "error": actual - pred_seasonal},
+    ])
+
+err_df = pd.DataFrame(records)
+roll_summary = (
+    err_df.assign(abs_error=lambda d: d["error"].abs())
+    .groupby("model", as_index=False)
+    .agg(MAE=("abs_error", "mean"), Bias=("error", "mean"))
+)
+print(roll_summary.round(3))
+
+plt.figure(figsize=(8, 4))
+for name, g in err_df.groupby("model"):
+    plt.plot(g["origin"], g["error"], marker="o", linewidth=1, label=name)
+plt.axhline(0, linewidth=1)
+plt.xlabel("forecast origin")
+plt.ylabel("forecast error")
+plt.title("Rolling-origin forecast errors")
+plt.legend()
+plt.show()
+```
+
+## 27.10 Diagnostics and evidence
+
+The project report should include evidence that the chosen model is adequate for the task. The diagnostic evidence depends on the project type.
+
+For forecasting, include:
+
+- time plot of actual values and forecasts;
+- horizon-wise error table;
+- residual ACF or error autocorrelation;
+- residual plot over time;
+- comparison against baselines;
+- prediction-interval coverage, if intervals are used.
+
+For classification, include:
+
+- train/validation/test split description;
+- confusion matrix;
+- precision, recall, F1, and calibration if probabilities are used;
+- an explanation of how overlapping windows are handled;
+- a baseline classifier.
+
+For anomaly detection, include:
+
+- anomaly-score time plot;
+- threshold selection rule;
+- false-positive/false-negative discussion if labels exist;
+- examples of detected anomalies;
+- sensitivity analysis for the threshold.
+
+For spectral analysis, include:
+
+- time plot;
+- periodogram or smoothed spectral estimate;
+- discussion of aliasing and sampling frequency;
+- comparison against time-domain evidence;
+- uncertainty or robustness checks.
+
+## 27.11 Interactive module: project rubric dashboard
+
+This dashboard translates the final-project expectations into a self-check score. It is designed for project planning, not for automatic grading.
+
+<div class="interactive-card">
+<h3>Interactive Module: Final Project Rubric Dashboard</h3>
+<p class="small-note">Move the sliders to estimate the current state of your project draft.</p>
+
+<div class="control-grid">
+  <label>Problem contract
+    <input id="ch27_rubric_contract" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_contract_value">3</span>
+  </label>
+  <label>Mathematical theory
+    <input id="ch27_rubric_theory" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_theory_value">3</span>
+  </label>
+  <label>Validation design
+    <input id="ch27_rubric_validation" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_validation_value">3</span>
+  </label>
+  <label>Baselines and comparison
+    <input id="ch27_rubric_baselines" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_baselines_value">3</span>
+  </label>
+  <label>Diagnostics and uncertainty
+    <input id="ch27_rubric_diagnostics" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_diagnostics_value">3</span>
+  </label>
+  <label>Reproducibility
+    <input id="ch27_rubric_repro" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_repro_value">3</span>
+  </label>
+  <label>Interactive explanation
+    <input id="ch27_rubric_interactive" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_interactive_value">3</span>
+  </label>
+  <label>Communication
+    <input id="ch27_rubric_comm" type="range" min="0" max="5" step="1" value="3">
+    <span id="ch27_rubric_comm_value">3</span>
+  </label>
+</div>
+
+<p id="ch27_rubric_output" class="small-note"></p>
+<div id="ch27_rubric_plot" style="height:460px;"></div>
+</div>
+
+## 27.12 AI-assisted project workflow
+
+AI tools can help students plan, code, debug, and communicate. They should not replace statistical reasoning. In this course, AI assistance should be used as a **critic** and **co-pilot**, not as an authority.
+
+A useful AI-assisted workflow is:
+
+1. Write the project contract yourself.
+2. Ask AI to identify possible leakage and invalid validation.
+3. Ask AI to propose baseline methods.
+4. Ask AI to review code for time-index mistakes.
+5. Ask AI to critique residual diagnostics.
+6. Ask AI to rewrite the report for clarity.
+7. Verify every technical claim independently.
+
+::: {.callout-ai}
+## AI-assisted study box
+Use this prompt after you have a first draft:
+
+> I am writing a final project for a graduate course on modern time series analysis and sequence learning. My task is [forecasting / anomaly detection / classification / representation learning]. My target is [...]. My information set at the decision time is [...]. My validation design is [...]. My baselines are [...]. My main model is [...]. Please act as a skeptical reviewer. Identify possible leakage, weak assumptions, missing diagnostics, unsupported conclusions, and unclear mathematical definitions. For each issue, suggest one concrete verification step.
+:::
+
+## 27.13 Required final-project deliverables
+
+Each final project should include the following deliverables.
+
+### Written report
+
+The written report should contain:
+
+1. title and abstract;
+2. data description;
+3. project contract;
+4. mathematical formulation;
+5. baseline methods;
+6. main model or models;
+7. validation design;
+8. results and diagnostics;
+9. uncertainty or limitations;
+10. AI-assisted workflow note;
+11. conclusion.
+
+### Reproducible notebook
+
+The notebook should run from top to bottom and produce the main results. It should include:
+
+- package imports;
+- data-loading or simulation section;
+- preprocessing section;
+- baseline models;
+- main model;
+- validation loop;
+- figures and tables;
+- diagnostic checks;
+- final summary.
+
+### Interactive HTML component
+
+The interactive component can be simple. It should teach one important idea from the project, such as:
+
+- how a forecast horizon changes the training examples;
+- how a changepoint changes forecast behavior;
+- how an anomaly threshold changes false positives;
+- how an attention map changes across a sequence;
+- how rolling-origin validation differs from random splitting;
+- how a frequency peak appears in the periodogram.
+
+### Short presentation
+
+The presentation should explain:
+
+1. the problem;
+2. the model;
+3. the validation design;
+4. the main result;
+5. one limitation.
+
+## 27.14 Suggested project topics
+
+### Forecasting topics
+
+- electricity demand forecasting;
+- public transportation ridership;
+- financial volatility;
+- retail demand;
+- air quality or temperature forecasting;
+- web traffic or app usage;
+- academic enrollment or course demand.
+
+### Sequence-learning topics
+
+- sensor sequence classification;
+- ECG or biomedical signal classification;
+- anomaly detection in machine monitoring;
+- activity recognition;
+- sequence embeddings and clustering;
+- transformer-based sequence classification.
+
+### Spectral and multiresolution topics
+
+- detecting dominant frequencies in climate or signal data;
+- comparing Fourier and wavelet analysis;
+- filtering and denoising;
+- detecting transient bursts;
+- seasonal-frequency interpretation.
+
+### AI-assisted modeling topics
+
+- compare human-designed and AI-suggested forecasting workflows;
+- audit AI-generated time-series code for leakage;
+- build an AI-assisted residual-diagnostics checklist;
+- evaluate whether AI can correctly identify ARIMA/SARIMA structure from plots.
+
+## 27.15 Common mistakes
+
+::: {.callout-warning}
+## Common mistakes
+
+1. **Using random train-test splits for forecasting.** This usually leaks future structure.
+2. **Skipping baselines.** A complex model that does not beat seasonal naive is not useful.
+3. **Scaling on the full data set.** Fit scalers only on training data within each split.
+4. **Using future covariates.** Only use variables known at the forecast origin.
+5. **Reporting only one split.** A single lucky split can be misleading.
+6. **Ignoring horizon-specific errors.** One-step performance may not reflect long-horizon behavior.
+7. **Showing a model without diagnostics.** Validation error is not the whole story.
+8. **Trusting AI-generated code without inspection.** AI code may accidentally use future observations.
+:::
+
+## 27.16 Exercises
+
+1. **Project contract.** Write a project contract for a one-week-ahead demand forecasting problem. Identify $Y_t$, $\mathcal F_t$, $\mathcal H$, the loss function, and two baselines.
+2. **Leakage audit.** Give three examples of leakage in a feature-based forecasting project. For each one, write a unit test or diagnostic check.
+3. **Rolling-origin design.** Suppose $n=1000$, initial training size is $500$, horizon is $H=20$, and origins are spaced every $10$ observations. How many forecast origins are available?
+4. **Baseline comparison.** Simulate a seasonal time series and compare naive, seasonal naive, and a lag-feature linear model.
+5. **Interactive design.** Propose one interactive visualization for a final project on anomaly detection.
+6. **AI critique.** Ask an AI assistant to critique your project design. Then write a paragraph explaining which suggestions you accepted, rejected, or verified.
+
+## 27.17 Mini project
+
+Choose one of the following mini-project prompts and complete a two-page report plus one notebook.
+
+### Option A: Forecasting mini project
+
+Use a real or simulated time series. Compare at least three models: naive, seasonal naive, and one learned model. Use rolling-origin validation and report MAE/RMSE. Include one residual diagnostic and one limitation.
+
+### Option B: Anomaly detection mini project
+
+Create or find a time series with anomalies. Build at least two anomaly scores. Compare threshold behavior. Include an interactive threshold explorer.
+
+### Option C: Sequence classification mini project
+
+Use labeled sequences or simulated sequences. Compare summary-feature logistic regression with a neural sequence model. Use a split that avoids overlap leakage.
+
+### Option D: AI-assisted modeling mini project
+
+Generate a time-series modeling plan with an AI assistant. Audit the plan for leakage, missing baselines, invalid diagnostics, and unclear assumptions. Implement a corrected version.
+
+## 27.18 Final checklist
+
+Before submitting the final project, check the following.
+
+- The problem is mathematically defined.
+- The information set $\mathcal F_t$ is explicit.
+- The validation split respects time or sequence grouping.
+- At least one baseline is included.
+- The main model is justified by the data and task.
+- The report includes diagnostic plots or tables.
+- The notebook runs from top to bottom.
+- The interactive HTML component works without loading Plotly.js again.
+- The AI-assisted component is documented and verified.
+- The conclusion states limitations, not only successes.
+
+::: {.callout-note}
+## End of the book
+This final chapter turns the methods of the course into an independent project. A successful project demonstrates mathematical formulation, computational skill, diagnostic judgment, communication, and responsible use of AI tools.
+:::

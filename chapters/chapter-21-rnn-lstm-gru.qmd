@@ -1,0 +1,767 @@
+# Recurrent Neural Networks, LSTM, and GRU
+
+::: {.hero}
+**Part VI. Deep Learning for Time Series and Sequence Data**  
+**Chapter goal:** understand recurrent neural networks for ordered data. We study hidden states, backpropagation through time, vanishing and exploding gradients, LSTM gates, GRU gates, forecasting architectures, validation design, and AI-assisted sequence-model critique.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. write the mathematical recurrence for a vanilla RNN and interpret the hidden state as a learned summary of the past;
+2. distinguish sequence-to-one, sequence-to-sequence, one-step, and multi-step forecasting architectures;
+3. explain backpropagation through time and why gradients can vanish or explode;
+4. derive the LSTM gate equations and explain the role of the cell state;
+5. derive the GRU gate equations and compare GRU memory with LSTM memory;
+6. build RNN, LSTM, and GRU forecasting models in PyTorch using leakage-aware time-series splits;
+7. diagnose whether a recurrent model is improving on simple baselines;
+8. use AI tools to inspect recurrent-model code while independently checking data leakage, tensor shapes, and validation design.
+
+## 21.1 Motivation: memory in sequence models
+
+A feedforward window model predicts from a fixed vector,
+
+$$
+(Y_{t-L+1},\ldots,Y_t).
+$$
+
+A convolutional model scans learned filters over local neighborhoods. A recurrent model takes a different approach: it processes the sequence one step at a time and updates a hidden state. The hidden state is meant to summarize information from the past that is useful for the current task.
+
+For a sequence of inputs
+
+$$
+\mathbf x_1,\mathbf x_2,\ldots,\mathbf x_T,
+\qquad
+\mathbf x_t\in\mathbb R^d,
+$$
+
+a recurrent model constructs states
+
+$$
+\mathbf h_t\in\mathbb R^m,
+$$
+
+where $m$ is the hidden dimension. The state $\mathbf h_t$ is a learned representation of the history
+
+$$
+\mathcal H_t=(\mathbf x_1,\ldots,\mathbf x_t).
+$$
+
+For forecasting, the input might be lagged observations, calendar features, exogenous covariates, or learned embeddings. For sequence classification, $\mathbf h_T$ may summarize the entire sequence. For sequence-to-sequence prediction, every $\mathbf h_t$ may produce an output.
+
+::: {.callout-note}
+## Classical connection
+A recurrent model resembles a nonlinear state-space model. The hidden state evolves recursively, and predictions are produced from the state. Unlike a classical state-space model, the transition and observation maps are learned by gradient descent rather than specified as linear Gaussian equations.
+:::
+
+## 21.2 Vanilla RNN model
+
+The simplest recurrent neural network is
+
+$$
+\mathbf h_t = \phi(W_x\mathbf x_t + W_h\mathbf h_{t-1}+\mathbf b_h),
+$$
+
+$$
+\widehat{\mathbf y}_t = g(W_y\mathbf h_t+\mathbf b_y),
+$$
+
+where
+
+$$
+W_x\in\mathbb R^{m\times d},
+\qquad
+W_h\in\mathbb R^{m\times m},
+\qquad
+W_y\in\mathbb R^{r\times m}.
+$$
+
+Here $\phi$ is usually a nonlinear activation such as $\tanh$ or ReLU, and $g$ depends on the task. For regression, $g$ is often the identity map. For classification, $g$ may be a sigmoid or softmax map.
+
+The same matrices $W_x,W_h,W_y$ are reused at every time step. This weight sharing is the central structural assumption of a vanilla RNN. It says that the same local update rule is applied throughout the sequence.
+
+For a univariate time series, a scalar version is
+
+$$
+h_t=\phi(a h_{t-1}+b x_t+c),
+\qquad
+\widehat y_t=w h_t+d.
+$$
+
+If $\phi$ is the identity and $c=0$, then
+
+$$
+h_t=a h_{t-1}+b x_t.
+$$
+
+Iterating gives
+
+$$
+h_t=b x_t+ab x_{t-1}+a^2b x_{t-2}+\cdots+a^{t-1}b x_1+a^t h_0.
+$$
+
+Thus the recurrent weight $a$ controls memory. If $|a|<1$, the remote past is exponentially downweighted. If $|a|>1$, the state may explode. Nonlinear activations moderate this behavior, but the same intuition remains important.
+
+## 21.3 Computational graph and backpropagation through time
+
+Training a recurrent model means minimizing a loss over time. For a forecasting problem, a common loss is
+
+$$
+\mathcal L(\Theta)=\frac{1}{N}\sum_{i=1}^N\sum_{t\in \mathcal T_i}
+\ell(\widehat y_{i,t},y_{i,t}),
+$$
+
+where $i$ indexes training windows or sequences. For squared-error forecasting,
+
+$$
+\ell(\widehat y_{i,t},y_{i,t})=(\widehat y_{i,t}-y_{i,t})^2.
+$$
+
+The RNN is a composition of repeated maps. To compute gradients, we unroll the recurrence through time and apply the chain rule. This is called **backpropagation through time**.
+
+For the vanilla RNN,
+
+$$
+\mathbf a_t=W_x\mathbf x_t+W_h\mathbf h_{t-1}+\mathbf b_h,
+\qquad
+\mathbf h_t=\phi(\mathbf a_t).
+$$
+
+The Jacobian of $\mathbf h_t$ with respect to $\mathbf h_{t-1}$ is
+
+$$
+\frac{\partial \mathbf h_t}{\partial \mathbf h_{t-1}}
+=
+D_t W_h,
+$$
+
+where
+
+$$
+D_t=\operatorname{diag}(\phi'(\mathbf a_t)).
+$$
+
+Therefore, the sensitivity of a later state to an earlier state contains products such as
+
+$$
+\frac{\partial \mathbf h_t}{\partial \mathbf h_{t-k}}
+=
+(D_t W_h)(D_{t-1}W_h)\cdots(D_{t-k+1}W_h).
+$$
+
+This product explains the **vanishing gradient** and **exploding gradient** problems. If these matrices repeatedly shrink vectors, gradients vanish and the model has difficulty learning long-range dependence. If they repeatedly expand vectors, gradients explode and training becomes unstable.
+
+::: {.callout-warning}
+## Practical consequence
+A vanilla RNN can work well for short memory. For long memory, LSTM, GRU, attention, temporal convolutional networks, or state-space sequence models often train more reliably.
+:::
+
+## 21.4 Forecasting architectures
+
+There are several ways to use recurrent networks for forecasting.
+
+### Sequence-to-one forecasting
+
+A window
+
+$$
+(Y_{t-L+1},\ldots,Y_t)
+$$
+
+is fed into the recurrent network, and the final hidden state $\mathbf h_L$ is used to predict one or more future values:
+
+$$
+(\widehat Y_{t+1},\ldots,\widehat Y_{t+H})=F_\Theta(\mathbf h_L).
+$$
+
+This is common for direct multi-horizon forecasting.
+
+### Sequence-to-sequence forecasting
+
+The model produces an output at each input time or each decoder time:
+
+$$
+\widehat Y_t=g(W_y\mathbf h_t+\mathbf b_y).
+$$
+
+For multi-step forecasting, an encoder RNN can summarize the observed history, and a decoder RNN can generate the future path.
+
+### Recursive forecasting
+
+A one-step model predicts
+
+$$
+\widehat Y_{t+1}=F_\Theta(Y_{t-L+1},\ldots,Y_t),
+$$
+
+then feeds its own prediction back into the input window to predict $\widehat Y_{t+2}$, and so on. Recursive forecasting is simple but can accumulate error.
+
+### Teacher forcing
+
+During sequence-to-sequence training, the decoder can be given the true previous value instead of its own previous prediction. This is called teacher forcing. It stabilizes training, but creates a mismatch between training and deployment. At deployment time, future true values are unavailable.
+
+## 21.5 LSTM: long short-term memory
+
+The LSTM was designed to make long-range memory easier to train. It maintains two states:
+
+$$
+\mathbf h_t \quad \text{hidden state},
+\qquad
+\mathbf c_t \quad \text{cell state}.
+$$
+
+A common LSTM formulation is
+
+$$
+\mathbf f_t=\sigma(W_f\mathbf x_t+U_f\mathbf h_{t-1}+\mathbf b_f),
+$$
+
+$$
+\mathbf i_t=\sigma(W_i\mathbf x_t+U_i\mathbf h_{t-1}+\mathbf b_i),
+$$
+
+$$
+\widetilde{\mathbf c}_t=\tanh(W_c\mathbf x_t+U_c\mathbf h_{t-1}+\mathbf b_c),
+$$
+
+$$
+\mathbf c_t=\mathbf f_t\odot \mathbf c_{t-1}+\mathbf i_t\odot\widetilde{\mathbf c}_t,
+$$
+
+$$
+\mathbf o_t=\sigma(W_o\mathbf x_t+U_o\mathbf h_{t-1}+\mathbf b_o),
+$$
+
+$$
+\mathbf h_t=\mathbf o_t\odot \tanh(\mathbf c_t).
+$$
+
+The symbols have the following meanings:
+
+- $\mathbf f_t$ is the **forget gate**;
+- $\mathbf i_t$ is the **input gate**;
+- $\widetilde{\mathbf c}_t$ is the candidate memory;
+- $\mathbf o_t$ is the **output gate**;
+- $\odot$ denotes componentwise multiplication.
+
+The cell-state equation
+
+$$
+\mathbf c_t=\mathbf f_t\odot \mathbf c_{t-1}+\mathbf i_t\odot\widetilde{\mathbf c}_t
+$$
+
+is the core idea. It creates a path along which information can be retained, forgotten, or updated. When a component of $\mathbf f_t$ is close to $1$ and the corresponding component of $\mathbf i_t$ is close to $0$, that component of memory is carried forward with little change.
+
+## 21.6 GRU: gated recurrent unit
+
+A GRU is a simpler gated recurrent architecture. It uses an update gate and a reset gate. A common formulation is
+
+$$
+\mathbf z_t=\sigma(W_z\mathbf x_t+U_z\mathbf h_{t-1}+\mathbf b_z),
+$$
+
+$$
+\mathbf r_t=\sigma(W_r\mathbf x_t+U_r\mathbf h_{t-1}+\mathbf b_r),
+$$
+
+$$
+\widetilde{\mathbf h}_t=\tanh(W_h\mathbf x_t+U_h(\mathbf r_t\odot \mathbf h_{t-1})+\mathbf b_h),
+$$
+
+$$
+\mathbf h_t=(1-\mathbf z_t)\odot \mathbf h_{t-1}+\mathbf z_t\odot\widetilde{\mathbf h}_t.
+$$
+
+The update gate $\mathbf z_t$ controls how much the state changes. If $\mathbf z_t$ is near $0$, the previous state is mostly retained. If $\mathbf z_t$ is near $1$, the candidate state mostly replaces the previous state. The reset gate $\mathbf r_t$ controls how much of the previous state is used when constructing the candidate state.
+
+::: {.callout-tip}
+## LSTM versus GRU
+LSTMs have separate hidden and cell states and more gates. GRUs are simpler and often faster. There is no universal winner. In applied forecasting, compare both against strong baselines using the same chronological validation design.
+:::
+
+## 21.7 Data windows and tensor shapes
+
+In PyTorch, recurrent layers commonly use a tensor shape
+
+$$
+\text{batch size}\times \text{sequence length}\times \text{number of features}
+$$
+
+when `batch_first=True`. For univariate forecasting with input length $L$, a batch of $B$ windows has shape
+
+$$
+B\times L\times 1.
+$$
+
+For direct $H$-step forecasting, the target may have shape
+
+$$
+B\times H.
+$$
+
+A clean supervised construction is
+
+$$
+\mathbf X_i=(Y_i,Y_{i+1},\ldots,Y_{i+L-1}),
+$$
+
+$$
+\mathbf y_i=(Y_{i+L},Y_{i+L+1},\ldots,Y_{i+L+H-1}).
+$$
+
+The split between training, validation, and test data must respect time order. Scaling parameters should be fit on the training portion only.
+
+## 21.8 Interactive module: vanilla RNN hidden-state dynamics
+
+This module shows how the recurrent weight and input weight influence memory. The scalar recurrence is
+
+$$
+h_t=\phi(a h_{t-1}+b x_t).
+$$
+
+Large positive $a$ creates persistence, negative $a$ creates oscillatory sign changes, and $|a|>1$ can cause instability when the activation is linear.
+
+<div class="interactive-card">
+  <h3>Interactive Module 21.1: RNN Hidden-State Dynamics</h3>
+  <p class="small-note">Change the recurrent weight, input weight, activation, and input pattern. The Plotly toolbar is enabled globally: zoom, pan, reset, autoscale, and download are available.</p>
+
+  <div class="control-grid">
+    <label>Recurrent weight $a$
+      <input id="ch21_rnn_a" type="range" min="-1.4" max="1.4" step="0.05" value="0.65">
+      <span id="ch21_rnn_a_value">0.65</span>
+    </label>
+
+    <label>Input weight $b$
+      <input id="ch21_rnn_b" type="range" min="0" max="2" step="0.05" value="0.85">
+      <span id="ch21_rnn_b_value">0.85</span>
+    </label>
+
+    <label>Activation
+      <select id="ch21_rnn_activation">
+        <option value="tanh" selected>tanh</option>
+        <option value="linear">linear</option>
+        <option value="relu">ReLU</option>
+      </select>
+    </label>
+
+    <label>Input pattern
+      <select id="ch21_rnn_input">
+        <option value="pulse" selected>pulse + seasonal</option>
+        <option value="sine">smooth sine wave</option>
+        <option value="step">step change</option>
+        <option value="alternating">alternating signs</option>
+      </select>
+    </label>
+  </div>
+
+  <p id="ch21_rnn_state_output" class="small-note"></p>
+  <div id="ch21_rnn_state_plot" style="width:100%; height:500px;"></div>
+</div>
+
+## 21.9 Interactive module: gated memory in LSTM and GRU
+
+The next module gives a simplified gate-level view. The gates are fixed sliders rather than learned functions of $x_t$ and $h_{t-1}$. This is not a full trained LSTM or GRU; it is a controlled visualization of what the gates do.
+
+For the LSTM view, the scalar equations are
+
+$$
+c_t=f c_{t-1}+i\widetilde c_t,
+\qquad
+h_t=o\tanh(c_t).
+$$
+
+For the GRU view, the scalar equations are
+
+$$
+\widetilde h_t=\tanh(gx_t+r h_{t-1}),
+\qquad
+h_t=(1-z)h_{t-1}+z\widetilde h_t.
+$$
+
+<div class="interactive-card">
+  <h3>Interactive Module 21.2: LSTM/GRU Gate Explorer</h3>
+  <p class="small-note">Use the sliders to see how gated recurrence stores, overwrites, or exposes memory.</p>
+
+  <div class="control-grid">
+    <label>Model
+      <select id="ch21_gate_model">
+        <option value="lstm" selected>LSTM simplified gates</option>
+        <option value="gru">GRU simplified gates</option>
+      </select>
+    </label>
+
+    <label><span id="ch21_gate1_label">Forget gate $f$</span>
+      <input id="ch21_gate1" type="range" min="0" max="1" step="0.02" value="0.88">
+      <span id="ch21_gate1_value">0.88</span>
+    </label>
+
+    <label><span id="ch21_gate2_label">Input gate $i$</span>
+      <input id="ch21_gate2" type="range" min="0" max="1" step="0.02" value="0.35">
+      <span id="ch21_gate2_value">0.35</span>
+    </label>
+
+    <label><span id="ch21_gate3_label">Output gate $o$</span>
+      <input id="ch21_gate3" type="range" min="0" max="1" step="0.02" value="0.80">
+      <span id="ch21_gate3_value">0.80</span>
+    </label>
+
+    <label>Candidate input gain $g$
+      <input id="ch21_gate_gain" type="range" min="0" max="3" step="0.05" value="1.25">
+      <span id="ch21_gate_gain_value">1.25</span>
+    </label>
+  </div>
+
+  <p id="ch21_gate_output" class="small-note"></p>
+  <div id="ch21_gate_plot" style="width:100%; height:500px;"></div>
+</div>
+
+## 21.10 Python example: building supervised sequence windows
+
+The first implementation step is not the neural network. It is the supervised-learning data set.
+
+```{python}
+#| label: ch21-window-dataset
+#| fig-cap: "Synthetic time series used for RNN, LSTM, and GRU examples."
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(21)
+T = 420
+t = np.arange(T)
+
+signal = (
+    0.012 * t
+    + 1.4 * np.sin(2 * np.pi * t / 32)
+    + 0.6 * np.sin(2 * np.pi * t / 9)
+)
+noise = rng.normal(scale=0.35, size=T)
+y = signal + noise
+
+L = 36     # input length
+H = 6      # forecast horizon
+
+X, Y = [], []
+for start in range(T - L - H + 1):
+    X.append(y[start:start + L])
+    Y.append(y[start + L:start + L + H])
+
+X = np.array(X)
+Y = np.array(Y)
+
+print("X shape:", X.shape)  # windows x input length
+print("Y shape:", Y.shape)  # windows x forecast horizon
+
+plt.figure(figsize=(8, 3.5))
+plt.plot(t, y, label="observed")
+plt.axvspan(0, 300, alpha=0.15, label="training region")
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Synthetic sequence for recurrent forecasting")
+plt.legend()
+plt.show()
+```
+
+## 21.11 Python example: leakage-aware scaling and chronological split
+
+We split windows by their forecast origin. Scaling uses only the training windows.
+
+```{python}
+#| label: ch21-split-scale
+from sklearn.preprocessing import StandardScaler
+
+n_windows = len(X)
+train_end = int(0.70 * n_windows)
+val_end = int(0.85 * n_windows)
+
+X_train, Y_train = X[:train_end], Y[:train_end]
+X_val, Y_val = X[train_end:val_end], Y[train_end:val_end]
+X_test, Y_test = X[val_end:], Y[val_end:]
+
+x_scaler = StandardScaler()
+y_scaler = StandardScaler()
+
+X_train_scaled = x_scaler.fit_transform(X_train.reshape(-1, 1)).reshape(X_train.shape)
+X_val_scaled = x_scaler.transform(X_val.reshape(-1, 1)).reshape(X_val.shape)
+X_test_scaled = x_scaler.transform(X_test.reshape(-1, 1)).reshape(X_test.shape)
+
+Y_train_scaled = y_scaler.fit_transform(Y_train.reshape(-1, 1)).reshape(Y_train.shape)
+Y_val_scaled = y_scaler.transform(Y_val.reshape(-1, 1)).reshape(Y_val.shape)
+Y_test_scaled = y_scaler.transform(Y_test.reshape(-1, 1)).reshape(Y_test.shape)
+
+print("train/val/test windows:", len(X_train), len(X_val), len(X_test))
+```
+
+## 21.12 Python example: RNN direct multi-horizon forecaster
+
+The following model reads a length-$L$ sequence and predicts the next $H$ values from the last hidden state.
+
+```{python}
+#| label: ch21-rnn-pytorch
+#| fig-cap: "RNN direct multi-horizon forecast on a held-out test window."
+import torch
+from torch import nn
+from torch.utils.data import TensorDataset, DataLoader
+from sklearn.metrics import mean_squared_error
+
+np.random.seed(21)
+torch.manual_seed(21)
+
+def to_tensor_windows(A):
+    return torch.tensor(A, dtype=torch.float32).unsqueeze(-1)
+
+def to_tensor_targets(A):
+    return torch.tensor(A, dtype=torch.float32)
+
+train_ds = TensorDataset(to_tensor_windows(X_train_scaled), to_tensor_targets(Y_train_scaled))
+val_ds = TensorDataset(to_tensor_windows(X_val_scaled), to_tensor_targets(Y_val_scaled))
+test_ds = TensorDataset(to_tensor_windows(X_test_scaled), to_tensor_targets(Y_test_scaled))
+
+train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_ds, batch_size=64, shuffle=False)
+
+class RNNForecaster(nn.Module):
+    def __init__(self, hidden_size=24, horizon=6):
+        super().__init__()
+        self.rnn = nn.RNN(
+            input_size=1,
+            hidden_size=hidden_size,
+            num_layers=1,
+            nonlinearity="tanh",
+            batch_first=True
+        )
+        self.head = nn.Linear(hidden_size, horizon)
+
+    def forward(self, x):
+        out, h_last = self.rnn(x)
+        last_hidden = out[:, -1, :]
+        return self.head(last_hidden)
+
+model = RNNForecaster(hidden_size=24, horizon=H)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+loss_fn = nn.MSELoss()
+
+for epoch in range(8):
+    model.train()
+    train_losses = []
+    for xb, yb in train_loader:
+        optimizer.zero_grad()
+        pred = model(xb)
+        loss = loss_fn(pred, yb)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+        train_losses.append(loss.item())
+
+    model.eval()
+    val_losses = []
+    with torch.no_grad():
+        for xb, yb in val_loader:
+            val_losses.append(loss_fn(model(xb), yb).item())
+
+    print(f"epoch {epoch + 1:02d} | train MSE {np.mean(train_losses):.4f} | val MSE {np.mean(val_losses):.4f}")
+
+model.eval()
+with torch.no_grad():
+    pred_scaled = model(to_tensor_windows(X_test_scaled)).numpy()
+
+pred = y_scaler.inverse_transform(pred_scaled.reshape(-1, 1)).reshape(pred_scaled.shape)
+rmse = mean_squared_error(Y_test.ravel(), pred.ravel()) ** 0.5
+print("test RMSE:", round(rmse, 3))
+
+idx = 4
+history = X_test[idx]
+truth = Y_test[idx]
+forecast = pred[idx]
+
+plt.figure(figsize=(8, 3.5))
+plt.plot(np.arange(L), history, label="history")
+plt.plot(np.arange(L, L + H), truth, marker="o", label="future truth")
+plt.plot(np.arange(L, L + H), forecast, marker="o", label="RNN forecast")
+plt.axvline(L - 0.5, linestyle="--", linewidth=1)
+plt.xlabel("relative time")
+plt.ylabel("value")
+plt.title("Direct multi-horizon RNN forecast")
+plt.legend()
+plt.show()
+```
+
+## 21.13 Python example: swapping RNN, LSTM, and GRU cells
+
+The same forecasting head can be used with `nn.RNN`, `nn.LSTM`, or `nn.GRU`.
+
+```{python}
+#| label: ch21-cell-comparison
+class RecurrentForecaster(nn.Module):
+    def __init__(self, cell="gru", hidden_size=24, horizon=6):
+        super().__init__()
+        cell = cell.lower()
+        if cell == "rnn":
+            self.recurrent = nn.RNN(1, hidden_size, batch_first=True)
+        elif cell == "lstm":
+            self.recurrent = nn.LSTM(1, hidden_size, batch_first=True)
+        elif cell == "gru":
+            self.recurrent = nn.GRU(1, hidden_size, batch_first=True)
+        else:
+            raise ValueError("cell must be 'rnn', 'lstm', or 'gru'")
+        self.head = nn.Linear(hidden_size, horizon)
+
+    def forward(self, x):
+        out, state = self.recurrent(x)
+        return self.head(out[:, -1, :])
+
+for cell in ["rnn", "lstm", "gru"]:
+    demo_model = RecurrentForecaster(cell=cell, hidden_size=16, horizon=H)
+    xb, yb = next(iter(train_loader))
+    with torch.no_grad():
+        demo_pred = demo_model(xb)
+    print(cell.upper(), "input shape", tuple(xb.shape), "output shape", tuple(demo_pred.shape))
+```
+
+## 21.14 Python example: gradient-flow intuition
+
+For a scalar linear recurrence
+
+$$
+h_t=a h_{t-1}+b x_t,
+$$
+
+we have
+
+$$
+\frac{\partial h_t}{\partial h_{t-k}}=a^k.
+$$
+
+This small calculation shows why long memory is hard when $|a|$ is far below $1$ and why training is unstable when $|a|$ is above $1$.
+
+```{python}
+#| label: ch21-gradient-flow
+#| fig-cap: "Gradient factor a^k for different recurrent weights."
+k = np.arange(0, 51)
+weights = [0.5, 0.8, 0.95, 1.05]
+
+plt.figure(figsize=(8, 3.5))
+for a in weights:
+    plt.plot(k, np.abs(a) ** k, label=f"|a|={abs(a)}")
+plt.yscale("log")
+plt.xlabel("lag k")
+plt.ylabel(r"$|a|^k$")
+plt.title("Vanishing and exploding gradient intuition")
+plt.legend()
+plt.show()
+```
+
+## 21.15 Baselines and diagnostics
+
+A recurrent model should not be considered successful merely because it trains. It should improve on baselines. Common baselines include:
+
+- last-value forecast: $\widehat Y_{t+h}=Y_t$;
+- seasonal naive forecast: $\widehat Y_{t+h}=Y_{t+h-s}$;
+- linear autoregression or ridge regression on lag features;
+- convolutional or MLP window model.
+
+For each model, inspect:
+
+$$
+\text{RMSE}_h=\bigg[\frac{1}{N}\sum_{i=1}^N(\widehat Y_{i,h}-Y_{i,h})^2\bigg]^{1/2},
+$$
+
+for each horizon $h=1,\ldots,H$. Also inspect residuals over time. A model may look good on average while failing during regime changes, high-volatility intervals, or seasonal transitions.
+
+```{python}
+#| label: ch21-baseline-comparison
+# last-value baseline for every horizon
+last_value = X_test[:, -1:]
+naive_pred = np.repeat(last_value, H, axis=1)
+
+rnn_rmse_by_h = np.sqrt(np.mean((pred - Y_test) ** 2, axis=0))
+naive_rmse_by_h = np.sqrt(np.mean((naive_pred - Y_test) ** 2, axis=0))
+
+for h in range(H):
+    print(
+        f"h={h + 1}: RNN RMSE={rnn_rmse_by_h[h]:.3f}, "
+        f"last-value RMSE={naive_rmse_by_h[h]:.3f}"
+    )
+
+plt.figure(figsize=(7, 3.5))
+plt.plot(np.arange(1, H + 1), rnn_rmse_by_h, marker="o", label="RNN")
+plt.plot(np.arange(1, H + 1), naive_rmse_by_h, marker="o", label="last-value baseline")
+plt.xlabel("forecast horizon")
+plt.ylabel("RMSE")
+plt.title("Horizon-wise forecast error")
+plt.legend()
+plt.show()
+```
+
+## 21.16 AI-assisted modeling activity
+
+::: {.callout-ai}
+## AI-assisted code review prompt
+Give an AI assistant your RNN, LSTM, or GRU training code and ask:
+
+1. Identify the tensor shapes at every major step.
+2. Identify any possible data leakage.
+3. Check whether scaling is fit only on the training set.
+4. Check whether validation respects time order.
+5. Explain whether the model predicts one step, multiple steps directly, or multiple steps recursively.
+6. Suggest one baseline that must be included before claiming improvement.
+7. Suggest one diagnostic plot for forecast errors.
+
+Then verify the answer by reading the code yourself. Do not accept a model recommendation unless the validation design is correct.
+:::
+
+## 21.17 Common mistakes
+
+1. **Randomly splitting windows.** Adjacent windows overlap heavily. A random split lets nearly identical histories appear in both training and test sets.
+2. **Scaling on the full series.** This leaks future distributional information into the training set.
+3. **Confusing hidden size with memory length.** A larger hidden dimension does not automatically solve long-range dependence.
+4. **Using teacher forcing without deployment awareness.** If the model uses true previous future values during training, deployment performance may be worse.
+5. **Not comparing with baselines.** RNNs often look impressive but may fail to beat seasonal naive, ARIMA, lag-feature regression, or TCN models.
+6. **Ignoring tensor shapes.** Many recurrent model bugs are silent shape bugs.
+7. **Overtraining small time series.** A recurrent network can memorize a short sequence without learning a robust forecasting rule.
+
+## 21.18 Exercises
+
+1. For the scalar recurrence $h_t=a h_{t-1}+b x_t$, derive $h_t$ as a weighted sum of $x_t,x_{t-1},\ldots,x_1$ and $h_0$.
+2. Show that $\partial h_t/\partial h_{t-k}=a^k$ in the scalar linear case.
+3. Explain why $\tanh$ can reduce exploding states but does not completely solve vanishing gradients.
+4. Write the LSTM equations and identify which gate controls memory retention.
+5. Write the GRU equations and explain the update gate in words.
+6. Build a direct $H=12$ horizon GRU forecaster and compare it with a last-value baseline.
+7. Repeat the experiment with an LSTM and report horizon-wise RMSE.
+8. Create a sequence with a long delayed effect. Compare a vanilla RNN, LSTM, and TCN.
+9. Ask an AI assistant to diagnose your model. List one suggestion that was correct and one suggestion that needed verification or correction.
+
+## 21.19 Mini project
+
+Choose a univariate or multivariate time series. Build three models:
+
+1. a baseline model;
+2. an LSTM or GRU model;
+3. a non-recurrent model from an earlier chapter, such as ARIMA, lag-feature gradient boosting, or TCN.
+
+Your report should include:
+
+- a description of the forecasting task and horizon;
+- the chronological split;
+- the scaling procedure;
+- tensor shapes for the recurrent model;
+- horizon-wise errors;
+- at least one forecast plot;
+- one diagnostic of failure cases;
+- a short AI-assisted code-review section explaining what was checked manually.
+
+## 21.20 Checklist
+
+Before moving on, make sure you can answer the following questions.
+
+- What does the hidden state represent?
+- Why are RNN weights shared across time?
+- What is backpropagation through time?
+- Why do products of Jacobians cause vanishing or exploding gradients?
+- What is the difference between an LSTM hidden state and cell state?
+- What do the forget, input, and output gates do?
+- What do the GRU update and reset gates do?
+- What tensor shape does PyTorch expect when `batch_first=True`?
+- How do you avoid leakage when creating overlapping windows?
+- Which baseline must your recurrent model beat?

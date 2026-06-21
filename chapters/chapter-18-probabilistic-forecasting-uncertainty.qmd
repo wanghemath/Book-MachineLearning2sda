@@ -1,0 +1,1190 @@
+# Probabilistic Forecasting and Uncertainty Quantification
+
+::: {.hero}
+**Part V. Forecasting at Scale and Machine Learning Methods**  
+**Chapter goal:** move from point forecasts to distributional forecasts. We study prediction intervals, quantiles, scoring rules, calibration, residual bootstrap methods, conformal prediction, and uncertainty-aware forecasting workflows for classical and machine-learning time-series models.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. distinguish point forecasting from probabilistic forecasting;
+2. define forecast distributions, prediction intervals, central intervals, quantiles, and prediction sets;
+3. explain why uncertainty usually grows with the forecast horizon;
+4. derive Gaussian prediction intervals from a conditional mean and conditional variance;
+5. compute empirical coverage and interval width from backtesting results;
+6. use quantile loss and proper scoring rules to train and evaluate probabilistic forecasts;
+7. construct residual-bootstrap prediction intervals;
+8. construct split conformal and rolling conformal intervals for time-series forecasts;
+9. diagnose miscalibrated uncertainty using coverage, interval-width, and PIT-style plots;
+10. use AI assistants to critique forecast uncertainty while independently checking validation and assumptions.
+
+## 18.1 Why point forecasts are not enough
+
+A point forecast gives a single number, such as
+
+$$
+\widehat Y_{t+h|t}.
+$$
+
+For many decisions, the single number is not enough. A hospital wants to know whether tomorrow's patient volume might exceed capacity. An energy company wants an upper-tail demand forecast. A financial-risk analyst wants downside risk. A supply-chain planner wants a distribution of possible demand values, not only the conditional mean.
+
+A probabilistic forecast tries to describe the full conditional distribution
+
+$$
+F_{t,h}(y)=\mathbb P(Y_{t+h}\le y\mid \mathcal F_t),
+$$
+
+where $\mathcal F_t$ is the information available at forecast origin $t$. From this distribution we can extract:
+
+- a conditional mean $\mathbb E[Y_{t+h}\mid\mathcal F_t]$;
+- a conditional median;
+- conditional quantiles;
+- prediction intervals;
+- tail probabilities such as $\mathbb P(Y_{t+h}>c\mid\mathcal F_t)$.
+
+::: {.callout-note}
+## Forecasting as a distributional problem
+A forecast should answer not only **what value is most likely?** but also **how wrong could we be, and in which direction?**
+:::
+
+## 18.2 Information sets and forecast distributions
+
+Let $\{Y_t\}$ be a time series and let
+
+$$
+\mathcal F_t=\sigma(Y_s, X_s: s\le t)
+$$
+
+represent the data known at time $t$. Here $X_s$ may include exogenous variables, calendar features, known future schedules, or model-generated state estimates.
+
+A probabilistic forecast for horizon $h$ is a conditional distribution
+
+$$
+\mathcal L(Y_{t+h}\mid \mathcal F_t),
+$$
+
+or equivalently a conditional cumulative distribution function
+
+$$
+F_{t,h}(y)=\mathbb P(Y_{t+h}\le y\mid\mathcal F_t).
+$$
+
+A point forecast is a functional of this distribution. Under squared loss, the optimal point forecast is
+
+$$
+\widehat y_{t+h|t}^{\text{mean}}
+=
+\mathbb E[Y_{t+h}\mid\mathcal F_t].
+$$
+
+Under absolute loss, the optimal point forecast is a conditional median:
+
+$$
+\widehat y_{t+h|t}^{\text{median}}
+\in
+\{m:F_{t,h}(m)\ge 1/2,\;1-F_{t,h}(m^- )\ge 1/2\}.
+$$
+
+For asymmetric cost, the optimal point forecast is a conditional quantile.
+
+## 18.3 Quantiles and prediction intervals
+
+For $\tau\in(0,1)$, the $\tau$-quantile of the conditional forecast distribution is
+
+$$
+q_{t,h}(\tau)=F_{t,h}^{-1}(\tau)
+=
+\inf\{y:F_{t,h}(y)\ge \tau\}.
+$$
+
+A central $(1-\alpha)$ prediction interval is
+
+$$
+\left[q_{t,h}\left(\frac{\alpha}{2}\right),
+q_{t,h}\left(1-\frac{\alpha}{2}\right)\right].
+$$
+
+For example, a 90% central interval uses $\alpha=0.1$:
+
+$$
+\left[q_{t,h}(0.05),q_{t,h}(0.95)\right].
+$$
+
+If the forecast distribution is conditionally Gaussian,
+
+$$
+Y_{t+h}\mid\mathcal F_t\sim N(\mu_{t,h},\sigma_{t,h}^2),
+$$
+
+then the central $(1-\alpha)$ interval is
+
+$$
+\mu_{t,h}\pm z_{1-\alpha/2}\sigma_{t,h},
+$$
+
+where $z_{1-\alpha/2}$ is the corresponding standard normal quantile.
+
+::: {.theorem-box}
+## The interval has two jobs
+A prediction interval should be **calibrated** and **sharp**. Calibration means that the event $Y_{t+h}$ falls inside the nominal 90% interval about 90% of the time. Sharpness means that, subject to calibration, the interval should be as narrow as possible.
+:::
+
+## 18.4 Forecast error decomposition
+
+Suppose a model produces a conditional mean forecast
+
+$$
+\widehat\mu_{t,h}=\widehat{\mathbb E}[Y_{t+h}\mid\mathcal F_t].
+$$
+
+The forecast error is
+
+$$
+e_{t,h}=Y_{t+h}-\widehat\mu_{t,h}.
+$$
+
+A useful conceptual decomposition is
+
+$$
+e_{t,h}
+=
+\underbrace{Y_{t+h}-\mathbb E[Y_{t+h}\mid\mathcal F_t]}_{\text{irreducible uncertainty}}
++
+\underbrace{\mathbb E[Y_{t+h}\mid\mathcal F_t]-\widehat\mu_{t,h}}_{\text{model and estimation error}}.
+$$
+
+The first term is unavoidable even with the correct model. The second term can be reduced through better modeling, more data, and better validation.
+
+In time-series forecasting, uncertainty often increases with horizon because the model must propagate uncertainty through future unobserved states or future forecast errors.
+
+## 18.5 Gaussian forecast intervals for AR(1)
+
+Consider the stationary AR(1) model
+
+$$
+Y_t=\phi Y_{t-1}+W_t,\qquad W_t\sim WN(0,\sigma_W^2),\qquad |\phi|<1.
+$$
+
+The $h$-step conditional mean is
+
+$$
+\mathbb E[Y_{t+h}\mid Y_t]=\phi^hY_t.
+$$
+
+The forecast error is
+
+$$
+Y_{t+h}-\phi^hY_t
+=
+W_{t+h}+\phi W_{t+h-1}+\cdots+\phi^{h-1}W_{t+1}.
+$$
+
+Therefore,
+
+$$
+\operatorname{Var}(Y_{t+h}-\phi^hY_t\mid\mathcal F_t)
+=
+\sigma_W^2\sum_{j=0}^{h-1}\phi^{2j}
+=
+\sigma_W^2\frac{1-\phi^{2h}}{1-\phi^2}.
+$$
+
+Under Gaussian noise, a central $(1-\alpha)$ prediction interval is
+
+$$
+\phi^hY_t
+\pm
+z_{1-\alpha/2}\sigma_W
+\sqrt{\frac{1-\phi^{2h}}{1-\phi^2}}.
+$$
+
+As $h\to\infty$, the conditional mean goes to zero and the forecast variance approaches the unconditional variance
+
+$$
+\frac{\sigma_W^2}{1-\phi^2}.
+$$
+
+::: {.callout-important}
+## Model-based intervals depend on model assumptions
+The AR(1) interval above is valid only to the extent that the AR(1), stationarity, and Gaussian-noise assumptions are a good approximation to the data-generating process.
+:::
+
+## 18.6 Interactive demonstration: coverage versus interval width
+
+The module below simulates a forecasting problem where the point forecast is fixed but the interval multiplier can be changed. Students can see the tension between empirical coverage and interval width.
+
+<div class="interactive-card">
+  <h3>Interactive Module: Calibration and Sharpness Explorer</h3>
+  <p class="small-note">Change the interval multiplier. Wider intervals usually increase coverage, but they may become less useful for decision-making.</p>
+
+  <label for="ch18-width-slider"><strong>Interval multiplier:</strong> <span id="ch18-width-value">1.64</span></label>
+  <input id="ch18-width-slider" type="range" min="0.50" max="3.00" step="0.02" value="1.64" style="width:100%;">
+
+  <label for="ch18-noise-slider"><strong>True noise scale:</strong> <span id="ch18-noise-value">1.00</span></label>
+  <input id="ch18-noise-slider" type="range" min="0.50" max="2.50" step="0.05" value="1.00" style="width:100%;">
+
+  <p id="ch18-calibration-summary"></p>
+  <div id="ch18-calibration-plot" style="height:460px;"></div>
+</div>
+
+<script>
+(function () {
+  function seededNoise(n) {
+    let seed = 7339;
+    const out = [];
+    function rand() {
+      seed = (1664525 * seed + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    }
+    for (let i = 0; i < n; i += 2) {
+      const u1 = Math.max(rand(), 1e-12);
+      const u2 = rand();
+      const r = Math.sqrt(-2 * Math.log(u1));
+      out.push(r * Math.cos(2 * Math.PI * u2));
+      if (out.length < n) out.push(r * Math.sin(2 * Math.PI * u2));
+    }
+    return out;
+  }
+
+  function initCh18CalibrationExplorer() {
+    const plot = document.getElementById("ch18-calibration-plot");
+    const widthSlider = document.getElementById("ch18-width-slider");
+    const noiseSlider = document.getElementById("ch18-noise-slider");
+    const widthValue = document.getElementById("ch18-width-value");
+    const noiseValue = document.getElementById("ch18-noise-value");
+    const summary = document.getElementById("ch18-calibration-summary");
+    if (!plot || !widthSlider || !noiseSlider || !widthValue || !noiseValue || !summary) return;
+
+    const n = 120;
+    const x = Array.from({length:n}, (_, i) => i + 1);
+    const z = seededNoise(n);
+    const mu = x.map(t => 10 + 0.04 * t + 1.6 * Math.sin(2 * Math.PI * t / 24));
+
+    function update() {
+      const k = parseFloat(widthSlider.value);
+      const noise = parseFloat(noiseSlider.value);
+      widthValue.textContent = k.toFixed(2);
+      noiseValue.textContent = noise.toFixed(2);
+
+      const y = mu.map((m, i) => m + noise * z[i]);
+      const lower = mu.map(m => m - k);
+      const upper = mu.map(m => m + k);
+      const inside = y.map((v, i) => v >= lower[i] && v <= upper[i]);
+      const coverage = inside.reduce((a, b) => a + (b ? 1 : 0), 0) / n;
+      const avgWidth = 2 * k;
+
+      summary.innerHTML =
+        `Empirical coverage: <strong>${(100 * coverage).toFixed(1)}%</strong>; ` +
+        `average interval width: <strong>${avgWidth.toFixed(2)}</strong>. ` +
+        `A nominal 90% Gaussian interval would use multiplier about 1.64 when the forecast scale is correct.`;
+
+      const traces = [
+        {x:x, y:upper, mode:"lines", name:"upper interval", line:{width:1}},
+        {x:x, y:lower, mode:"lines", name:"lower interval", line:{width:1}, fill:"tonexty"},
+        {x:x, y:mu, mode:"lines", name:"point forecast", line:{width:3}},
+        {x:x, y:y, mode:"markers", name:"observed value", marker:{size:6, symbol:inside.map(v => v ? "circle" : "x")}}
+      ];
+
+      const layout = {
+        title:"Prediction Interval Coverage",
+        xaxis:{title:"forecast case"},
+        yaxis:{title:"value"},
+        margin:{t:70, r:30, b:50, l:60},
+        legend:{orientation:"h", y:-0.2}
+      };
+      Plotly.react(plot, traces, layout, window.TSInteractives ? window.TSInteractives.plotlyConfig : {responsive:true, displayModeBar:true});
+    }
+
+    widthSlider.addEventListener("input", update);
+    noiseSlider.addEventListener("input", update);
+    update();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initCh18CalibrationExplorer);
+  } else {
+    initCh18CalibrationExplorer();
+  }
+})();
+</script>
+
+## 18.7 Python example: model-based AR(1) forecast intervals
+
+```{python}
+#| label: ch18-ar1-intervals
+#| fig-cap: "AR(1) simulation with model-based multi-step prediction intervals."
+#| warning: false
+#| message: false
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+
+phi = 0.75
+sigma_w = 1.0
+n = 220
+y = np.zeros(n)
+for t in range(1, n):
+    y[t] = phi * y[t-1] + rng.normal(0, sigma_w)
+
+origin = 180
+H = 30
+last = y[origin]
+h = np.arange(1, H + 1)
+mean_fcst = (phi ** h) * last
+var_fcst = sigma_w**2 * (1 - phi ** (2 * h)) / (1 - phi**2)
+se_fcst = np.sqrt(var_fcst)
+z90 = 1.6448536269514722
+lower = mean_fcst - z90 * se_fcst
+upper = mean_fcst + z90 * se_fcst
+
+future_index = np.arange(origin + 1, origin + H + 1)
+
+plt.figure(figsize=(9, 4))
+plt.plot(np.arange(origin - 80, origin + 1), y[origin-80:origin+1], label="observed")
+plt.plot(future_index, y[origin+1:origin+H+1], label="future observed")
+plt.plot(future_index, mean_fcst, label="AR(1) mean forecast")
+plt.fill_between(future_index, lower, upper, alpha=0.25, label="90% interval")
+plt.axvline(origin, linestyle="--", linewidth=1)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Model-based AR(1) prediction interval")
+plt.legend()
+plt.show()
+```
+
+The formula used in the code is
+
+$$
+\widehat Y_{t+h|t}=\phi^hY_t,
+\qquad
+\widehat{\operatorname{Var}}(Y_{t+h}-\widehat Y_{t+h|t})
+=\sigma_W^2\sum_{j=0}^{h-1}\phi^{2j}.
+$$
+
+In practice, $\phi$ and $\sigma_W$ are estimated. Estimation uncertainty is usually ignored in simple textbook intervals but may matter for small data sets.
+
+## 18.8 Empirical coverage and interval width
+
+Suppose we have forecasts for origins $t\in\mathcal T$ and horizon $h$. Let
+
+$$
+[L_{t,h},U_{t,h}]
+$$
+
+be a nominal $(1-\alpha)$ prediction interval. The empirical coverage is
+
+$$
+\widehat{\operatorname{Cov}}_h
+=
+\frac{1}{|\mathcal T|}\sum_{t\in\mathcal T}
+\mathbf 1\{L_{t,h}\le Y_{t+h}\le U_{t,h}\}.
+$$
+
+The average interval width is
+
+$$
+\widehat W_h
+=
+\frac{1}{|\mathcal T|}\sum_{t\in\mathcal T}(U_{t,h}-L_{t,h}).
+$$
+
+Good intervals should have empirical coverage near the nominal level and should not be unnecessarily wide.
+
+```{python}
+#| label: ch18-coverage-width
+#| fig-cap: "Coverage and width can be summarized by forecast horizon."
+#| warning: false
+#| message: false
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(18)
+origins = np.arange(80)
+horizons = np.arange(1, 8)
+rows = []
+for h in horizons:
+    for t in origins:
+        true_mean = 20 + 0.1 * t + 0.4 * h
+        true_sd = 0.8 + 0.15 * h
+        y_true = true_mean + rng.normal(0, true_sd)
+        # Deliberately underestimates uncertainty at long horizons.
+        model_sd = 0.9 + 0.08 * h
+        lo = true_mean - 1.64485 * model_sd
+        hi = true_mean + 1.64485 * model_sd
+        rows.append((t, h, y_true, lo, hi))
+
+bt = pd.DataFrame(rows, columns=["origin", "horizon", "y", "lower", "upper"])
+bt["covered"] = (bt["y"] >= bt["lower"]) & (bt["y"] <= bt["upper"])
+bt["width"] = bt["upper"] - bt["lower"]
+summary = bt.groupby("horizon").agg(
+    coverage=("covered", "mean"),
+    avg_width=("width", "mean")
+).reset_index()
+
+print(summary)
+
+plt.figure(figsize=(7, 4))
+plt.plot(summary["horizon"], summary["coverage"], marker="o", label="empirical coverage")
+plt.axhline(0.90, linestyle="--", label="nominal 90%")
+plt.xlabel("forecast horizon")
+plt.ylabel("coverage")
+plt.ylim(0.4, 1.0)
+plt.title("Interval coverage by horizon")
+plt.legend()
+plt.show()
+```
+
+::: {.callout-tip}
+## Always evaluate by horizon
+A model can have acceptable average coverage across all horizons while failing badly at longer horizons. Coverage, width, and error should be reported by horizon whenever possible.
+:::
+
+## 18.9 Proper scoring rules
+
+A point forecast can be evaluated using MAE or RMSE. A probabilistic forecast needs a score that rewards calibrated and sharp distributions.
+
+A scoring rule $S(F,y)$ assigns a loss to forecast distribution $F$ when the realized value is $y$. It is **proper** if the expected score is minimized when $F$ equals the true conditional distribution.
+
+### Log score
+
+If the forecast density is $f$, the log score is
+
+$$
+S_{\log}(f,y)=-\log f(y).
+$$
+
+It strongly penalizes assigning very low probability density to the observed outcome.
+
+### Pinball loss for quantiles
+
+For a quantile level $\tau\in(0,1)$ and quantile forecast $q$, the pinball loss is
+
+$$
+\rho_\tau(y-q)
+=(\tau-\mathbf 1\{y<q\})(y-q).
+$$
+
+Equivalently,
+
+$$
+\ell_\tau(y,q)=
+\begin{cases}
+\tau(y-q), & y\ge q,\\
+(1-\tau)(q-y), & y<q.
+\end{cases}
+$$
+
+The conditional minimizer is the $\tau$-quantile:
+
+$$
+q^*(x)\in\arg\min_q \mathbb E[\ell_\tau(Y,q)\mid X=x].
+$$
+
+### Winkler interval score
+
+For a central $(1-\alpha)$ interval $[L,U]$, the Winkler interval score is
+
+$$
+S_\alpha(L,U;y)
+=(U-L)
++\frac{2}{\alpha}(L-y)\mathbf 1\{y<L\}
++\frac{2}{\alpha}(y-U)\mathbf 1\{y>U\}.
+$$
+
+It rewards narrow intervals but penalizes misses.
+
+```{python}
+#| label: ch18-pinball-loss
+#| fig-cap: "Pinball loss is asymmetric and targets a conditional quantile."
+#| warning: false
+#| message: false
+import numpy as np
+import matplotlib.pyplot as plt
+
+def pinball(y, q, tau):
+    u = y - q
+    return np.maximum(tau * u, (tau - 1) * u)
+
+q_grid = np.linspace(-3, 3, 300)
+y_obs = 0.0
+plt.figure(figsize=(7, 4))
+for tau in [0.1, 0.5, 0.9]:
+    plt.plot(q_grid, pinball(y_obs, q_grid, tau), label=f"tau={tau}")
+plt.xlabel("quantile forecast q")
+plt.ylabel("pinball loss")
+plt.title("Pinball loss for one observed value")
+plt.legend()
+plt.show()
+```
+
+## 18.10 Quantile regression for forecasting
+
+A machine-learning forecast can directly estimate conditional quantiles. For horizon $h$, choose a feature vector $X_t$ and fit
+
+$$
+\widehat q_h(\tau,x)
+\approx
+F^{-1}_{Y_{t+h}\mid X_t=x}(\tau).
+$$
+
+The empirical quantile-risk problem is
+
+$$
+\widehat q_{h,\tau}
+\in
+\arg\min_{g\in\mathcal G}
+\frac{1}{n}\sum_{t\in\mathcal T_{\text{train}}}
+\ell_\tau(Y_{t+h},g(X_t)).
+$$
+
+By fitting two models, one for $\tau=0.05$ and one for $\tau=0.95$, we obtain a 90% interval.
+
+```{python}
+#| label: ch18-quantile-regression
+#| fig-cap: "Quantile regression produces asymmetric intervals when the data are heteroskedastic."
+#| warning: false
+#| message: false
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.ensemble import GradientBoostingRegressor
+
+rng = np.random.default_rng(7339)
+n = 420
+t = np.arange(n)
+season = np.sin(2 * np.pi * t / 24)
+trend = 0.01 * t
+sigma = 0.4 + 0.5 * (season + 1)  # larger uncertainty at seasonal peaks
+y = 5 + trend + 2 * season + rng.normal(0, sigma)
+
+def make_lag_table(y, max_lag=24, horizon=1):
+    rows = []
+    targets = []
+    times = []
+    for i in range(max_lag, len(y) - horizon):
+        rows.append(y[i-max_lag+1:i+1][::-1])
+        targets.append(y[i+horizon])
+        times.append(i)
+    return np.asarray(rows), np.asarray(targets), np.asarray(times)
+
+X, target, times = make_lag_table(y, max_lag=24, horizon=1)
+train = times < 300
+X_train, y_train = X[train], target[train]
+X_test, y_test, test_times = X[~train], target[~train], times[~train] + 1
+
+models = {}
+for tau in [0.05, 0.5, 0.95]:
+    model = GradientBoostingRegressor(
+        loss="quantile" if tau != 0.5 else "squared_error",
+        alpha=tau if tau != 0.5 else 0.9,
+        n_estimators=150,
+        max_depth=2,
+        learning_rate=0.05,
+        random_state=18
+    )
+    model.fit(X_train, y_train)
+    models[tau] = model
+
+q05 = models[0.05].predict(X_test)
+q50 = models[0.5].predict(X_test)
+q95 = models[0.95].predict(X_test)
+coverage = np.mean((y_test >= q05) & (y_test <= q95))
+print(f"Empirical 90% interval coverage: {coverage:.3f}")
+
+plt.figure(figsize=(9, 4))
+plt.plot(t, y, linewidth=1, label="observed")
+plt.plot(test_times, q50, label="median forecast")
+plt.fill_between(test_times, q05, q95, alpha=0.25, label="estimated 90% interval")
+plt.axvline(300, linestyle="--", linewidth=1)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Quantile-regression forecast interval")
+plt.legend()
+plt.show()
+```
+
+## 18.11 Quantile crossing
+
+If we fit quantile models independently, we may get crossing quantiles:
+
+$$
+\widehat q(0.95,x)<\widehat q(0.05,x),
+$$
+
+which is impossible for a valid distribution. Common fixes include:
+
+1. sorting predicted quantiles after prediction;
+2. fitting models with monotonic constraints;
+3. fitting a full distributional model;
+4. using conformal calibration on top of point or quantile forecasts;
+5. using joint neural-network quantile outputs with a non-crossing parameterization.
+
+For a classroom project, post-processing by sorting quantiles is a reasonable first fix, but students should state that it is a repair rather than a statistical model.
+
+## 18.12 Residual-bootstrap prediction intervals
+
+A residual bootstrap approximates the forecast-error distribution from past errors.
+
+Suppose a fitted model gives one-step forecasts $\widehat Y_{t+1|t}$. The residuals are
+
+$$
+\widehat e_{t,1}=Y_{t+1}-\widehat Y_{t+1|t}.
+$$
+
+A simple bootstrap interval for a new one-step forecast $\widehat Y_{T+1|T}$ is
+
+$$
+\left[
+\widehat Y_{T+1|T}+\widehat Q_{\alpha/2}(\widehat e),
+\widehat Y_{T+1|T}+\widehat Q_{1-\alpha/2}(\widehat e)
+\right],
+$$
+
+where $\widehat Q_\tau(\widehat e)$ is an empirical residual quantile.
+
+For multi-step forecasts, residuals should be grouped by horizon:
+
+$$
+\widehat e_{t,h}=Y_{t+h}-\widehat Y_{t+h|t}.
+$$
+
+Then horizon-specific intervals use horizon-specific residual quantiles.
+
+```{python}
+#| label: ch18-residual-bootstrap
+#| fig-cap: "Residual quantiles give a simple nonparametric prediction interval."
+#| warning: false
+#| message: false
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import Ridge
+
+rng = np.random.default_rng(2026)
+n = 360
+t = np.arange(n)
+y = 12 + 0.02*t + 1.5*np.sin(2*np.pi*t/7) + rng.normal(0, 0.8, size=n)
+
+max_lag = 14
+X, target, times = make_lag_table(y, max_lag=max_lag, horizon=1)
+train = times < 260
+cal = (times >= 260) & (times < 310)
+test = times >= 310
+
+model = Ridge(alpha=1.0)
+model.fit(X[train], target[train])
+
+cal_pred = model.predict(X[cal])
+cal_resid = target[cal] - cal_pred
+lo_resid, hi_resid = np.quantile(cal_resid, [0.05, 0.95])
+
+test_pred = model.predict(X[test])
+lo = test_pred + lo_resid
+hi = test_pred + hi_resid
+coverage = np.mean((target[test] >= lo) & (target[test] <= hi))
+print(f"Bootstrap-style 90% coverage on test set: {coverage:.3f}")
+
+plt.figure(figsize=(9, 4))
+test_index = times[test] + 1
+plt.plot(t, y, linewidth=1, label="observed")
+plt.plot(test_index, test_pred, label="point forecast")
+plt.fill_between(test_index, lo, hi, alpha=0.25, label="residual-quantile interval")
+plt.axvline(310, linestyle="--", linewidth=1)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Residual-bootstrap style interval")
+plt.legend()
+plt.show()
+```
+
+::: {.callout-warning}
+## Bootstrap residuals are not automatically valid
+Residual bootstrap intervals can fail when residuals are dependent, heteroskedastic, seasonally structured, or drawn from a distribution that changes over time. For time series, calibration residuals should be chosen from a validation period that resembles future deployment.
+:::
+
+## 18.13 Conformal prediction: distribution-free calibration idea
+
+Conformal prediction constructs intervals with finite-sample coverage guarantees under exchangeability. In time series, exchangeability is usually not exactly true, but conformal methods are still useful when adapted carefully through rolling calibration windows, blocked calibration, or online updates.
+
+For split conformal regression, fit a point model $\widehat f$ on a training set. On a separate calibration set, compute conformity scores
+
+$$
+s_i=|Y_i-\widehat f(X_i)|.
+$$
+
+Let $\widehat q_{1-\alpha}$ be an appropriate empirical quantile of the calibration scores. Then the conformal interval for a new feature vector $X_{\text{new}}$ is
+
+$$
+\left[
+\widehat f(X_{\text{new}})-\widehat q_{1-\alpha},
+\widehat f(X_{\text{new}})+\widehat q_{1-\alpha}
+\right].
+$$
+
+A finite-sample conformal quantile is often chosen as
+
+$$
+\widehat q_{1-\alpha}
+=\text{the }\left\lceil (n_{\text{cal}}+1)(1-\alpha)\right\rceil\text{-th smallest calibration score}.
+$$
+
+```{python}
+#| label: ch18-split-conformal
+#| fig-cap: "Split conformal intervals calibrate a point forecaster using held-out residual scores."
+#| warning: false
+#| message: false
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+
+rng = np.random.default_rng(333)
+n = 480
+t = np.arange(n)
+y = 20 + 2*np.sin(2*np.pi*t/12) + 0.8*np.sin(2*np.pi*t/48)
+y = y + rng.normal(0, 0.9 + 0.2*np.sin(2*np.pi*t/12)**2, size=n)
+
+X, target, times = make_lag_table(y, max_lag=24, horizon=1)
+train = times < 280
+cal = (times >= 280) & (times < 380)
+test = times >= 380
+
+rf = RandomForestRegressor(n_estimators=200, min_samples_leaf=4, random_state=18)
+rf.fit(X[train], target[train])
+
+cal_pred = rf.predict(X[cal])
+scores = np.abs(target[cal] - cal_pred)
+alpha = 0.10
+n_cal = len(scores)
+rank = int(np.ceil((n_cal + 1) * (1 - alpha)))
+rank = min(rank, n_cal)
+qhat = np.sort(scores)[rank - 1]
+
+pred = rf.predict(X[test])
+lo = pred - qhat
+hi = pred + qhat
+covered = (target[test] >= lo) & (target[test] <= hi)
+print(f"Conformal qhat: {qhat:.3f}")
+print(f"Test coverage: {covered.mean():.3f}")
+
+plt.figure(figsize=(9, 4))
+test_index = times[test] + 1
+plt.plot(t, y, linewidth=1, label="observed")
+plt.plot(test_index, pred, label="RF point forecast")
+plt.fill_between(test_index, lo, hi, alpha=0.25, label="split conformal interval")
+plt.axvline(380, linestyle="--", linewidth=1)
+plt.xlabel("time")
+plt.ylabel("value")
+plt.title("Split conformal interval for time-series forecasting")
+plt.legend()
+plt.show()
+```
+
+## 18.14 Time-series conformal prediction
+
+Standard split conformal prediction assumes exchangeable calibration and test points. Time series violate this because observations are ordered and dependent. Several practical adaptations are useful:
+
+1. **Chronological split conformal.** Train on early data, calibrate on later data, test on the future. This respects time order but relies on the calibration period being representative.
+2. **Rolling conformal.** Use a moving calibration window near the forecast origin.
+3. **Horizon-specific conformal.** Calibrate a separate score distribution for each horizon $h$.
+4. **Locally weighted conformal.** Weight recent calibration errors more heavily.
+5. **Normalized conformal.** Calibrate scaled scores such as
+
+$$
+s_t=\frac{|Y_t-\widehat\mu_t|}{\widehat\sigma_t},
+$$
+
+then form
+
+$$
+[\widehat\mu_t-\widehat q\widehat\sigma_t,
+\widehat\mu_t+\widehat q\widehat\sigma_t].
+$$
+
+::: {.callout-note}
+## Practical rule
+For this course, use chronological or rolling calibration and report empirical coverage on a later test period. Do not randomly shuffle time-series residuals unless the task explicitly justifies exchangeability.
+:::
+
+## 18.15 Prediction intervals versus confidence intervals
+
+A confidence interval describes uncertainty about a fixed unknown parameter, such as a mean $\mu$ or regression coefficient $\beta_j$. A prediction interval describes uncertainty about a future random observation.
+
+For example, in a simple Gaussian model
+
+$$
+Y_i\sim N(\mu,\sigma^2),
+$$
+
+a confidence interval for $\mu$ shrinks roughly at rate $1/\sqrt n$. But a prediction interval for a future observation $Y_{n+1}$ does not shrink to zero width, because the new observation still has noise variance $\sigma^2$.
+
+In forecasting, confusing these two intervals leads to severe underestimation of uncertainty.
+
+## 18.16 Probabilistic forecasting with simulation
+
+Some models do not give an easy closed-form forecast distribution. Simulation is often the simplest method.
+
+For a fitted model, generate future paths
+
+$$
+Y_{T+1}^{(b)},\ldots,Y_{T+H}^{(b)},\qquad b=1,\ldots,B.
+$$
+
+Then estimate quantiles at each horizon:
+
+$$
+\widehat q_h(\tau)=\operatorname{Quantile}_\tau\{Y_{T+h}^{(1)},\ldots,Y_{T+h}^{(B)}\}.
+$$
+
+Simulation is especially useful for:
+
+- nonlinear state-space models;
+- models with non-Gaussian errors;
+- models with constraints, such as nonnegative demand;
+- hierarchical forecasts;
+- neural-network ensembles;
+- scenario analysis.
+
+```{python}
+#| label: ch18-simulation-forecast-paths
+#| fig-cap: "Simulated forecast paths give an empirical forecast distribution."
+#| warning: false
+#| message: false
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(91)
+H = 40
+B = 500
+last_y = 15.0
+phi = 0.82
+level = 12.0
+sigma = 0.7
+paths = np.zeros((B, H))
+for b in range(B):
+    y_prev = last_y
+    for h in range(H):
+        y_new = level + phi * (y_prev - level) + rng.normal(0, sigma)
+        paths[b, h] = y_new
+        y_prev = y_new
+
+median = np.quantile(paths, 0.5, axis=0)
+lo = np.quantile(paths, 0.05, axis=0)
+hi = np.quantile(paths, 0.95, axis=0)
+
+plt.figure(figsize=(9, 4))
+for b in range(30):
+    plt.plot(np.arange(1, H+1), paths[b], alpha=0.2, linewidth=0.8)
+plt.plot(np.arange(1, H+1), median, linewidth=2.5, label="median")
+plt.fill_between(np.arange(1, H+1), lo, hi, alpha=0.25, label="90% simulation interval")
+plt.xlabel("horizon")
+plt.ylabel("future value")
+plt.title("Simulated future paths")
+plt.legend()
+plt.show()
+```
+
+## 18.17 Bayesian predictive distributions
+
+In Bayesian forecasting, parameters are treated as random variables. If $\theta$ denotes model parameters, then the posterior predictive distribution is
+
+$$
+p(y_{T+h}\mid y_{1:T})
+=
+\int p(y_{T+h}\mid y_{1:T},\theta)p(\theta\mid y_{1:T})\,d\theta.
+$$
+
+This integral includes two kinds of uncertainty:
+
+1. **observation uncertainty**, from $p(y_{T+h}\mid y_{1:T},\theta)$;
+2. **parameter uncertainty**, from $p(\theta\mid y_{1:T})$.
+
+In many classical plug-in intervals, we estimate $\theta$ once and ignore parameter uncertainty:
+
+$$
+p(y_{T+h}\mid y_{1:T},\widehat\theta).
+$$
+
+Bayesian and ensemble methods often produce wider intervals when the training data are limited.
+
+## 18.18 Ensembles as approximate uncertainty tools
+
+An ensemble trains multiple models and combines their forecasts. Let
+
+$$
+\widehat y_{t+h|t}^{(1)},\ldots,\widehat y_{t+h|t}^{(B)}
+$$
+
+be forecasts from $B$ models. The ensemble mean is
+
+$$
+\overline y_{t+h|t}=\frac1B\sum_{b=1}^B\widehat y_{t+h|t}^{(b)}.
+$$
+
+The spread of the ensemble can approximate model uncertainty, but it is not automatically a calibrated prediction interval. Ensemble spread usually captures only part of total uncertainty. Observation noise and calibration still need to be included.
+
+A practical method is:
+
+1. train an ensemble;
+2. compute point forecasts and ensemble spread;
+3. calibrate residual or normalized residual scores on a validation period;
+4. evaluate coverage on a future test period.
+
+## 18.19 Distributional neural forecasts
+
+A neural network can forecast distributional parameters instead of a single value. For example, assume
+
+$$
+Y_{t+h}\mid X_t\sim N(\mu_\theta(X_t,h),\sigma_\theta^2(X_t,h)).
+$$
+
+The network outputs $\mu_\theta$ and a positive scale $\sigma_\theta$. Positivity can be enforced by
+
+$$
+\sigma_\theta=\operatorname{softplus}(a_\theta)+\epsilon.
+$$
+
+The negative log-likelihood loss is
+
+$$
+\mathcal L(\theta)
+=
+\frac12\log(2\pi)
++
+\log \sigma_\theta(X_t,h)
++
+\frac{(Y_{t+h}-\mu_\theta(X_t,h))^2}{2\sigma_\theta^2(X_t,h)}.
+$$
+
+Other distributional choices include Student-$t$, negative binomial, Poisson, log-normal, mixture density networks, and quantile-output neural networks.
+
+::: {.callout-ai}
+## AI component: checking distributional assumptions
+Ask an AI assistant:
+
+> My forecast model assumes Gaussian residuals with constant variance. What plots and tests should I use to check this assumption for time-series forecasts? Which checks must be horizon-specific?
+
+Then verify the answer using residual plots, residual ACF, Q-Q plots, and coverage-by-horizon calculations.
+:::
+
+## 18.20 Calibration diagnostics
+
+A probabilistic forecast is calibrated if events predicted to happen with probability $p$ happen about proportion $p$ of the time.
+
+For intervals, calibration means
+
+$$
+\mathbb P(L_{t,h}\le Y_{t+h}\le U_{t,h})\approx 1-\alpha.
+$$
+
+For a full forecast CDF $F_{t,h}$, the probability integral transform is
+
+$$
+U_{t,h}=F_{t,h}(Y_{t+h}).
+$$
+
+If the predictive CDFs are calibrated and continuous, then $U_{t,h}$ should be approximately uniform on $[0,1]$.
+
+Common diagnostic plots include:
+
+1. empirical coverage by horizon;
+2. average interval width by horizon;
+3. coverage by season, regime, or demand level;
+4. PIT histogram;
+5. forecast residuals versus predicted uncertainty;
+6. interval misses over time;
+7. separate upper-tail and lower-tail miss rates.
+
+```{python}
+#| label: ch18-pit-diagnostic
+#| fig-cap: "A PIT histogram can reveal forecast distribution miscalibration."
+#| warning: false
+#| message: false
+import numpy as np
+import matplotlib.pyplot as plt
+from math import erf, sqrt
+
+rng = np.random.default_rng(44)
+n = 1200
+# True observations have heavier tails than the forecast distribution assumes.
+y = rng.standard_t(df=4, size=n)
+forecast_mu = np.zeros(n)
+forecast_sigma = np.ones(n)
+
+def norm_cdf_array(x):
+    return np.array([0.5 * (1 + erf(v / sqrt(2))) for v in x])
+
+pit = norm_cdf_array((y - forecast_mu) / forecast_sigma)
+
+plt.figure(figsize=(7, 4))
+plt.hist(pit, bins=20, density=True, edgecolor="black", alpha=0.7)
+plt.axhline(1.0, linestyle="--", linewidth=1)
+plt.xlabel("PIT value")
+plt.ylabel("density")
+plt.title("PIT histogram: heavy-tailed observations under Gaussian forecasts")
+plt.show()
+```
+
+## 18.21 Tail risk and decision thresholds
+
+Probabilistic forecasting is especially useful for threshold decisions. Suppose a decision maker cares whether
+
+$$
+Y_{t+h}>c.
+$$
+
+A forecast distribution provides
+
+$$
+\mathbb P(Y_{t+h}>c\mid\mathcal F_t)=1-F_{t,h}(c).
+$$
+
+Examples:
+
+- probability hospital demand exceeds staffed beds;
+- probability energy demand exceeds capacity;
+- probability inventory demand exceeds stock;
+- probability a sensor reading crosses a safety threshold;
+- probability revenue falls below a target.
+
+The forecast can be connected to expected loss. If under-staffing costs $C_u$ and over-staffing costs $C_o$, the optimal quantile level in a newsvendor-style problem is
+
+$$
+\tau^*=\frac{C_u}{C_u+C_o}.
+$$
+
+This is why quantile forecasts are directly decision-relevant.
+
+## 18.22 Python example: decision threshold probability
+
+```{python}
+#| label: ch18-threshold-risk
+#| fig-cap: "Forecast distributions can estimate threshold-exceedance probabilities."
+#| warning: false
+#| message: false
+import numpy as np
+import matplotlib.pyplot as plt
+from math import erf, sqrt
+
+h = np.arange(1, 31)
+mu = 80 + 0.8 * h + 7 * np.sin(2 * np.pi * h / 14)
+sigma = 4 + 0.18 * h
+capacity = 95
+
+def normal_cdf_scalar(x):
+    return 0.5 * (1 + erf(x / sqrt(2)))
+
+prob_exceed = np.array([1 - normal_cdf_scalar((capacity - m) / s) for m, s in zip(mu, sigma)])
+
+plt.figure(figsize=(8, 4))
+plt.plot(h, prob_exceed, marker="o")
+plt.axhline(0.5, linestyle="--", linewidth=1)
+plt.xlabel("forecast horizon")
+plt.ylabel("P(Y exceeds capacity)")
+plt.title("Threshold-exceedance probability")
+plt.ylim(0, 1)
+plt.show()
+```
+
+## 18.23 AI-assisted uncertainty workflow
+
+::: {.callout-ai}
+## Prompt 1: uncertainty model design
+Ask:
+
+> I am forecasting a daily time series with trend, weekly seasonality, and changing variance. Propose three ways to generate 90% prediction intervals: one classical, one machine-learning based, and one conformal. For each, state the assumptions and diagnostics.
+
+Check whether the answer respects chronological validation and whether each method can handle heteroskedasticity.
+:::
+
+::: {.callout-ai}
+## Prompt 2: coverage audit
+Ask:
+
+> Given empirical interval coverage by horizon, interval width by horizon, and residual plots, diagnose whether my intervals are too narrow, too wide, biased, or seasonally miscalibrated.
+
+Then use code to verify every claim.
+:::
+
+::: {.callout-ai}
+## Prompt 3: decision-focused forecast
+Ask:
+
+> The decision maker cares about the probability that demand exceeds capacity. Should I optimize RMSE, pinball loss, log score, or threshold-weighted loss? Explain the tradeoff.
+
+Use this as a starting point for selecting an evaluation metric.
+:::
+
+## 18.24 Common mistakes
+
+1. **Reporting only RMSE.** RMSE says little about uncertainty calibration.
+2. **Using confidence intervals instead of prediction intervals.** Prediction intervals must include future observation noise.
+3. **Random calibration split.** This can leak future regimes into calibration.
+4. **Ignoring horizon.** Coverage often deteriorates at longer horizons.
+5. **Assuming Gaussian residuals without checking.** Heavy tails and skewness matter for intervals.
+6. **Using training residuals for calibration.** Training residuals are often too optimistic.
+7. **Forgetting exogenous uncertainty.** Future covariates may themselves need forecasts.
+8. **Ignoring heteroskedasticity.** Constant-width intervals fail when uncertainty changes with level, season, or regime.
+9. **Overtrusting ensemble spread.** Ensemble spread is not the same as total predictive uncertainty.
+10. **Not connecting uncertainty to decisions.** A 90% interval may not be the right object for an asymmetric-cost problem.
+
+## 18.25 Mini project: calibrated probabilistic forecast
+
+Choose a time series with a meaningful forecast horizon. Build and evaluate at least two probabilistic forecasting methods.
+
+Your report should include:
+
+1. problem statement and decision context;
+2. train/calibration/test split using chronological order;
+3. point-forecast baseline;
+4. at least two uncertainty methods, such as Gaussian intervals, residual bootstrap, quantile regression, or conformal intervals;
+5. empirical coverage by horizon;
+6. average interval width by horizon;
+7. residual or PIT-style diagnostic;
+8. interval examples on a time plot;
+9. discussion of calibration versus sharpness;
+10. recommendation for deployment.
+
+Suggested data sets include electricity demand, ridership, website traffic, retail demand, call-center arrivals, weather, or synthetic data with controlled heteroskedasticity.
+
+## 18.26 Exercises
+
+1. **Gaussian interval.** Derive the 95% prediction interval for $Y_{t+h}\mid\mathcal F_t\sim N(\mu_{t,h},\sigma_{t,h}^2)$.
+2. **AR(1) uncertainty.** For $Y_t=\phi Y_{t-1}+W_t$, derive the $h$-step forecast variance.
+3. **Coverage calculation.** Given ten prediction intervals and ten outcomes, compute empirical coverage and average width.
+4. **Pinball loss.** Prove that the minimizer of expected pinball loss is a conditional quantile.
+5. **Interval score.** Compute the Winkler interval score for three cases: observation inside, below, and above the interval.
+6. **Bootstrap interval.** Implement residual-quantile intervals for a lagged ridge model.
+7. **Conformal quantile.** For calibration scores $s_1,\ldots,s_n$, compute the finite-sample conformal quantile for $\alpha=0.1$.
+8. **Time-series calibration.** Explain why random split conformal is risky for time-series forecasting.
+9. **PIT interpretation.** Sketch what PIT histograms might look like when intervals are too narrow, too wide, or biased.
+10. **Decision threshold.** Given a forecast distribution, compute $\mathbb P(Y_{t+h}>c\mid\mathcal F_t)$ and describe how it changes the decision.
+11. **Quantile crossing.** Simulate two independently fitted quantile models and check whether crossings occur.
+12. **AI critique.** Ask an AI assistant to explain why your forecast intervals miss too often. Identify which claims are testable and which are speculation.
+
+## 18.27 Chapter checklist
+
+Before moving on, make sure you can:
+
+- [ ] define a probabilistic forecast as a conditional distribution;
+- [ ] distinguish conditional mean, median, and quantiles;
+- [ ] construct central prediction intervals from quantiles;
+- [ ] compute Gaussian prediction intervals;
+- [ ] compute empirical coverage and average interval width;
+- [ ] explain calibration and sharpness;
+- [ ] use pinball loss for quantile forecasts;
+- [ ] use residual quantiles for bootstrap-style intervals;
+- [ ] construct a split conformal interval with chronological calibration;
+- [ ] diagnose uncertainty by horizon and regime;
+- [ ] connect probabilistic forecasts to threshold decisions;
+- [ ] use AI-generated uncertainty suggestions only after checking assumptions and validation.
+
+## 18.28 Companion Python lab
+
+Open the companion notebook: [`chapter-18-probabilistic-forecasting-uncertainty-lab.ipynb`](../labs/chapter-18-probabilistic-forecasting-uncertainty-lab.ipynb).
+
+The lab asks you to compare Gaussian, residual-bootstrap, quantile-regression, and conformal intervals on a synthetic or real time series; evaluate empirical coverage and average width by horizon; and write a short uncertainty-audit report.

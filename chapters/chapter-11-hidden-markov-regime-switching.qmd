@@ -1,0 +1,1132 @@
+# Hidden Markov Models and Regime Switching
+
+::: {.hero}
+**Part III. Nonstationary and Seasonal Models**  
+**Chapter goal:** learn how to model sequence data whose behavior changes across unobserved states. We develop hidden Markov models, forward filtering, backward smoothing, Viterbi decoding, Baum--Welch estimation, Gaussian emissions, regime-switching time series, forecasting, diagnostics, and AI-assisted model critique.
+:::
+
+## Learning objectives
+
+After studying this chapter, you should be able to:
+
+1. explain why hidden regimes are useful for time series and sequence data;
+2. distinguish an observed sequence from an unobserved state sequence;
+3. write the joint probability of a hidden Markov model;
+4. implement the forward algorithm for likelihood evaluation;
+5. implement backward smoothing probabilities;
+6. use the Viterbi algorithm to decode the most likely hidden path;
+7. describe the Baum--Welch algorithm as an expectation--maximization method;
+8. fit and interpret a Gaussian HMM for regime-switching time series;
+9. compare HMMs with Kalman filters, ARIMA models, and recurrent neural networks;
+10. use AI tools to audit assumptions, code, diagnostics, and interpretation without outsourcing mathematical verification.
+
+## 11.1 Why hidden regimes?
+
+Many time series do not behave the same way at all times. A financial return series may alternate between calm and volatile periods. A machine sensor may switch between normal, warning, and failure modes. A biological signal may move between resting and active states. A user's behavior sequence may switch between browsing, comparing, and purchasing modes.
+
+A single stationary ARMA model may be too rigid for such data. Instead of assuming one global dependence structure, we allow the sequence to move through hidden regimes:
+
+$$
+S_t \in \{1,2,\ldots,K\},
+$$
+
+where $S_t$ is not directly observed. The observed value $Y_t$ is generated from a distribution that depends on $S_t$.
+
+For example, a two-regime return model might be
+
+$$
+Y_t \mid S_t=1 \sim N(0,\sigma_1^2),
+\qquad
+Y_t \mid S_t=2 \sim N(0,\sigma_2^2),
+$$
+
+where $\sigma_2^2 \gg \sigma_1^2$. State 1 represents a low-volatility regime and state 2 represents a high-volatility regime.
+
+::: {.callout-note}
+## The hidden-state viewpoint
+An HMM separates two questions:
+
+1. **State dynamics:** how the hidden regime evolves over time.
+2. **Emission model:** how the observed data are generated once the state is known.
+
+This is the discrete-state analogue of the state-space model from Chapter 10.
+:::
+
+## 11.2 Markov chains for latent states
+
+The hidden state sequence $S_1,S_2,\ldots,S_T$ is usually modeled as a Markov chain:
+
+$$
+P(S_t=j\mid S_{1:t-1})=P(S_t=j\mid S_{t-1}).
+$$
+
+For $K$ states, define the transition matrix
+
+$$
+\mathbf{A}=(a_{ij})_{i,j=1}^K,
+\qquad
+ a_{ij}=P(S_t=j\mid S_{t-1}=i).
+$$
+
+Each row of $\mathbf{A}$ is a probability vector:
+
+$$
+a_{ij}\geq 0,
+\qquad
+\sum_{j=1}^K a_{ij}=1.
+$$
+
+The initial distribution is
+
+$$
+\boldsymbol{\pi}=(\pi_1,\ldots,\pi_K),
+\qquad
+\pi_j=P(S_1=j).
+$$
+
+For a two-state model,
+
+$$
+\mathbf{A}=\begin{bmatrix}
+p_{11} & 1-p_{11}\\
+1-p_{22} & p_{22}
+\end{bmatrix}.
+$$
+
+Large values of $p_{11}$ and $p_{22}$ make regimes persistent. In applications, persistence is often important: volatility clusters, machines remain in a degraded state for some time, and users stay in a behavioral mode for several steps.
+
+### Expected regime duration
+
+If state $j$ has self-transition probability $a_{jj}$, then the duration spent in state $j$ before leaving is geometrically distributed:
+
+$$
+P(D_j=d)=a_{jj}^{d-1}(1-a_{jj}),
+\qquad d=1,2,\ldots.
+$$
+
+Therefore,
+
+$$
+E[D_j]=\frac{1}{1-a_{jj}}.
+$$
+
+This gives a useful interpretation of transition probabilities. If $a_{jj}=0.95$, the expected duration is $20$ time steps.
+
+## 11.3 Hidden Markov model definition
+
+A hidden Markov model has three pieces:
+
+$$
+\lambda=(\boldsymbol{\pi},\mathbf{A},\mathbf{B}),
+$$
+
+where $\boldsymbol{\pi}$ is the initial distribution, $\mathbf{A}$ is the transition matrix, and $\mathbf{B}$ describes the emission distributions.
+
+For observations $Y_1,\ldots,Y_T$, the model assumptions are:
+
+1. The hidden states form a Markov chain:
+
+$$
+P(S_t\mid S_{1:t-1})=P(S_t\mid S_{t-1}).
+$$
+
+2. Given the current state, the current observation is conditionally independent of all other variables:
+
+$$
+P(Y_t\mid S_{1:T},Y_{1:t-1},Y_{t+1:T})=P(Y_t\mid S_t).
+$$
+
+3. The emission density or probability mass function for state $j$ is
+
+$$
+b_j(y)=p(y\mid S_t=j).
+$$
+
+The joint probability of one hidden path $s_{1:T}$ and observed sequence $y_{1:T}$ is
+
+$$
+P(s_{1:T},y_{1:T})
+=\pi_{s_1} b_{s_1}(y_1)
+\prod_{t=2}^T a_{s_{t-1},s_t} b_{s_t}(y_t).
+$$
+
+This single formula is the source of the main algorithms in this chapter.
+
+::: {.callout-tip}
+## HMMs for different data types
+The emission model can be changed depending on the observation type:
+
+- categorical sequence: $b_j(y)$ is a categorical distribution;
+- count sequence: $b_j(y)$ may be Poisson or negative binomial;
+- real-valued time series: $b_j(y)$ may be Gaussian or Student-$t$;
+- multivariate sensor data: $b_j(\mathbf{y})$ may be multivariate Gaussian;
+- text or event sequences: emissions may be learned embeddings or neural distributions.
+:::
+
+## 11.4 The three computational problems
+
+For a given HMM, there are three classical computational tasks.
+
+### Problem 1: Evaluation
+
+Compute the likelihood
+
+$$
+p(y_{1:T}\mid \lambda)
+=\sum_{s_1=1}^K\cdots\sum_{s_T=1}^K
+P(s_{1:T},y_{1:T}\mid \lambda).
+$$
+
+A direct sum over all possible hidden paths has $K^T$ terms, which is impossible for large $T$. The forward algorithm computes the same likelihood in $O(TK^2)$ time.
+
+### Problem 2: Decoding
+
+Find the most likely hidden path:
+
+$$
+\widehat{s}_{1:T}
+=\arg\max_{s_{1:T}} P(s_{1:T}\mid y_{1:T},\lambda).
+$$
+
+The Viterbi algorithm solves a closely related dynamic-programming problem efficiently.
+
+### Problem 3: Learning
+
+Estimate the parameters $\lambda=(\boldsymbol{\pi},\mathbf{A},\mathbf{B})$ from data. When the states are hidden, maximum likelihood is usually solved by the Baum--Welch algorithm, an expectation--maximization method.
+
+## 11.5 Forward algorithm: filtering and likelihood
+
+Define the forward variable
+
+$$
+\alpha_t(j)=P(y_1,\ldots,y_t,S_t=j\mid \lambda).
+$$
+
+This is the joint probability of observing the data through time $t$ and ending in state $j$.
+
+### Initialization
+
+$$
+\alpha_1(j)=\pi_j b_j(y_1),
+\qquad j=1,\ldots,K.
+$$
+
+### Recursion
+
+For $t=2,\ldots,T$,
+
+$$
+\alpha_t(j)=b_j(y_t)\sum_{i=1}^K \alpha_{t-1}(i)a_{ij}.
+$$
+
+### Likelihood
+
+At the end,
+
+$$
+p(y_{1:T}\mid \lambda)=\sum_{j=1}^K \alpha_T(j).
+$$
+
+The recursion is dynamic programming. Instead of enumerating all paths, it aggregates all paths that end in the same current state.
+
+::: {.callout-important}
+## Scaling is necessary
+For long sequences, $\alpha_t(j)$ becomes extremely small. In practice we use scaled forward probabilities or log probabilities. Without scaling, numerical underflow can make the likelihood appear to be zero.
+:::
+
+### Scaled forward recursion
+
+Let $\widetilde{\alpha}_t(j)$ be the unnormalized forward update. Define
+
+$$
+c_t=\sum_{j=1}^K \widetilde{\alpha}_t(j),
+\qquad
+\widehat{\alpha}_t(j)=\frac{\widetilde{\alpha}_t(j)}{c_t}.
+$$
+
+Then $\widehat{\alpha}_t(j)$ is a normalized filtering distribution:
+
+$$
+\widehat{\alpha}_t(j)=P(S_t=j\mid y_{1:t},\lambda).
+$$
+
+The log-likelihood is recovered as
+
+$$
+\log p(y_{1:T}\mid \lambda)=\sum_{t=1}^T \log c_t.
+$$
+
+This scaled form is the version students should implement first.
+
+## 11.6 Backward algorithm and smoothing
+
+The forward distribution uses observations through time $t$. Sometimes we want to estimate the state at time $t$ using the full sample $y_{1:T}$. This is smoothing.
+
+Define the backward variable
+
+$$
+\beta_t(i)=P(y_{t+1:T}\mid S_t=i,\lambda).
+$$
+
+### Initialization
+
+$$
+\beta_T(i)=1,
+\qquad i=1,\ldots,K.
+$$
+
+### Recursion
+
+For $t=T-1,T-2,\ldots,1$,
+
+$$
+\beta_t(i)=\sum_{j=1}^K a_{ij} b_j(y_{t+1})\beta_{t+1}(j).
+$$
+
+The smoothed state probability is
+
+$$
+\gamma_t(j)
+=P(S_t=j\mid y_{1:T},\lambda)
+=\frac{\alpha_t(j)\beta_t(j)}{\sum_{\ell=1}^K \alpha_t(\ell)\beta_t(\ell)}.
+$$
+
+Filtering answers: “What state do we believe now using data so far?”  
+Smoothing answers: “What state do we believe then after seeing the whole sequence?”
+
+## 11.7 Two-slice probabilities
+
+For learning transition probabilities, we need the posterior probability of consecutive state pairs:
+
+$$
+\xi_t(i,j)=P(S_t=i,S_{t+1}=j\mid y_{1:T},\lambda).
+$$
+
+Using the forward and backward variables,
+
+$$
+\xi_t(i,j)
+=\frac{\alpha_t(i)a_{ij}b_j(y_{t+1})\beta_{t+1}(j)}
+{\sum_{r=1}^K\sum_{s=1}^K
+\alpha_t(r)a_{rs}b_s(y_{t+1})\beta_{t+1}(s)}.
+$$
+
+The numerator is the probability of:
+
+1. explaining the past and ending in state $i$ at time $t$;
+2. transitioning from $i$ to $j$;
+3. emitting $y_{t+1}$ from state $j$;
+4. explaining the future after time $t+1$.
+
+## 11.8 Viterbi decoding
+
+The Viterbi algorithm finds the most likely state path under the model. Define
+
+$$
+\delta_t(j)=\max_{s_{1:t-1}} P(s_{1:t-1},S_t=j,y_{1:t}\mid \lambda).
+$$
+
+This is the probability of the most likely partial path ending in state $j$ at time $t$.
+
+### Initialization
+
+$$
+\delta_1(j)=\pi_j b_j(y_1).
+$$
+
+### Recursion
+
+For $t=2,\ldots,T$,
+
+$$
+\delta_t(j)=b_j(y_t)\max_{i=1,\ldots,K}\delta_{t-1}(i)a_{ij}.
+$$
+
+We also store the maximizing previous state:
+
+$$
+\psi_t(j)=\arg\max_{i=1,\ldots,K}\delta_{t-1}(i)a_{ij}.
+$$
+
+### Backtracking
+
+The final state is
+
+$$
+\widehat{s}_T=\arg\max_j \delta_T(j).
+$$
+
+Then recursively,
+
+$$
+\widehat{s}_t=\psi_{t+1}(\widehat{s}_{t+1}),
+\qquad t=T-1,\ldots,1.
+$$
+
+In numerical work, we implement Viterbi in log scale:
+
+$$
+\log \delta_t(j)=\log b_j(y_t)+\max_i\left\{\log \delta_{t-1}(i)+\log a_{ij}\right\}.
+$$
+
+::: {.callout-warning}
+## Viterbi path vs smoothed state probabilities
+The Viterbi path is the single most likely complete path. The smoothed state probabilities give marginal probabilities at each time. They are not the same object. A path formed by taking $\arg\max_j \gamma_t(j)$ at every time may not be the globally most likely path.
+:::
+
+## 11.9 Baum--Welch learning as EM
+
+Suppose the parameters are unknown. If the hidden states were observed, estimating the transition probabilities would be easy:
+
+$$
+\widehat{a}_{ij}
+=\frac{\#\{t:S_t=i,S_{t+1}=j\}}
+{\#\{t:S_t=i\}}.
+$$
+
+But the states are hidden. The expectation--maximization idea is to replace unobserved counts by expected counts under the current model.
+
+### E-step
+
+Run forward--backward under the current parameter values and compute
+
+$$
+\gamma_t(j)=P(S_t=j\mid y_{1:T},\lambda^{old}),
+$$
+
+and
+
+$$
+\xi_t(i,j)=P(S_t=i,S_{t+1}=j\mid y_{1:T},\lambda^{old}).
+$$
+
+### M-step for transition probabilities
+
+Update
+
+$$
+\pi_j^{new}=\gamma_1(j),
+$$
+
+and
+
+$$
+a_{ij}^{new}
+=\frac{\sum_{t=1}^{T-1}\xi_t(i,j)}
+{\sum_{t=1}^{T-1}\gamma_t(i)}.
+$$
+
+### M-step for Gaussian emissions
+
+For a Gaussian HMM with
+
+$$
+Y_t\mid S_t=j\sim N(\mu_j,\sigma_j^2),
+$$
+
+the weighted maximum likelihood updates are
+
+$$
+\mu_j^{new}
+=\frac{\sum_{t=1}^T \gamma_t(j)y_t}
+{\sum_{t=1}^T \gamma_t(j)},
+$$
+
+and
+
+$$
+(\sigma_j^2)^{new}
+=\frac{\sum_{t=1}^T \gamma_t(j)(y_t-\mu_j^{new})^2}
+{\sum_{t=1}^T \gamma_t(j)}.
+$$
+
+The EM algorithm increases the likelihood at each iteration, but it may converge to a local maximum. Initialization matters.
+
+## 11.10 Gaussian HMM for time series
+
+A Gaussian HMM is often the first regime-switching model to try for real-valued data:
+
+$$
+S_t\mid S_{t-1}\sim \text{Categorical}(\mathbf{A}_{S_{t-1},:}),
+$$
+
+$$
+Y_t\mid S_t=j\sim N(\mu_j,\sigma_j^2).
+$$
+
+This model captures changing mean and variance. A two-state Gaussian HMM might have:
+
+$$
+\mu_1\approx 0,\quad \sigma_1 \text{ small},
+$$
+
+and
+
+$$
+\mu_2\approx 0,\quad \sigma_2 \text{ large}.
+$$
+
+Then the hidden states represent low-volatility and high-volatility regimes.
+
+### What this model assumes
+
+Conditional on the hidden state $S_t$, observations are independent over time:
+
+$$
+Y_t \perp Y_s \mid S_t,S_s
+\quad \text{for }t\neq s.
+$$
+
+Dependence in $Y_t$ comes from persistence in the hidden Markov chain. If the data have strong linear autocorrelation after conditioning on state, we may need a regime-switching autoregressive model.
+
+## 11.11 Regime-switching autoregressive models
+
+A more time-series-specific extension is a Markov-switching autoregression:
+
+$$
+Y_t=c_{S_t}+\phi_{S_t}Y_{t-1}+\varepsilon_t,
+\qquad
+\varepsilon_t\mid S_t=j\sim N(0,\sigma_j^2).
+$$
+
+Each regime has its own AR coefficient, intercept, and variance. For example:
+
+- state 1: stable mean-reverting behavior;
+- state 2: weak mean reversion and high volatility;
+- state 3: negative mean or crisis dynamics.
+
+The emission density now depends on $Y_{t-1}$:
+
+$$
+b_j(y_t\mid y_{t-1})
+=\frac{1}{\sqrt{2\pi\sigma_j^2}}
+\exp\left[-\frac{(y_t-c_j-\phi_j y_{t-1})^2}{2\sigma_j^2}\right].
+$$
+
+The forward algorithm still applies if we replace $b_j(y_t)$ by $b_j(y_t\mid y_{t-1})$.
+
+::: {.callout-tip}
+## Connection to ARIMA and Kalman filtering
+ARIMA uses one linear dynamic law for the entire sample. A Markov-switching AR model uses several possible dynamic laws and lets a hidden Markov chain choose which law is active. Kalman filtering uses continuous latent states; HMMs use discrete latent states.
+:::
+
+## 11.12 Forecasting with HMMs
+
+Suppose we have filtering probabilities at time $T$:
+
+$$
+\mathbf{p}_{T\mid T}
+=\left(P(S_T=1\mid y_{1:T}),\ldots,P(S_T=K\mid y_{1:T})\right).
+$$
+
+The $h$-step-ahead state distribution is
+
+$$
+\mathbf{p}_{T+h\mid T}=\mathbf{p}_{T\mid T}\mathbf{A}^h.
+$$
+
+For a Gaussian HMM, the predictive distribution is a mixture:
+
+$$
+p(y_{T+h}\mid y_{1:T})
+=\sum_{j=1}^K p_{T+h\mid T}(j)\,N(y_{T+h};\mu_j,\sigma_j^2).
+$$
+
+The forecast mean is
+
+$$
+E(Y_{T+h}\mid y_{1:T})
+=\sum_{j=1}^K p_{T+h\mid T}(j)\mu_j.
+$$
+
+The forecast variance follows the law of total variance:
+
+$$
+\operatorname{Var}(Y_{T+h}\mid y_{1:T})
+=\sum_{j=1}^K p_{T+h\mid T}(j)\sigma_j^2
++\sum_{j=1}^K p_{T+h\mid T}(j)
+\left(\mu_j-\bar{\mu}_{T+h}\right)^2,
+$$
+
+where
+
+$$
+\bar{\mu}_{T+h}=\sum_{j=1}^K p_{T+h\mid T}(j)\mu_j.
+$$
+
+The first term is within-regime uncertainty. The second term is between-regime uncertainty.
+
+## 11.13 Interactive HTML: hidden regime simulator
+
+The following interactive visualization simulates a two-state Gaussian HMM. Change the transition probabilities, means, and standard deviations. Notice how persistent hidden states create clustered behavior in the observations.
+
+::: {.callout-note}
+## How to use the simulator
+Try three experiments:
+
+1. Set $p_{11}=p_{22}=0.50$. Regimes switch frequently.
+2. Set $p_{11}=p_{22}=0.95$. Regimes become persistent.
+3. Make $\sigma_2$ much larger than $\sigma_1$. The high-volatility regime becomes visually obvious.
+:::
+
+```{=html}
+<div class="interactive-card">
+  <h3>Two-State Gaussian HMM Simulator</h3>
+  <div class="controls-grid">
+    <label>p11: <span id="hmm-p11-value">0.94</span>
+      <input id="hmm-p11" type="range" min="0.50" max="0.99" step="0.01" value="0.94">
+    </label>
+    <label>p22: <span id="hmm-p22-value">0.90</span>
+      <input id="hmm-p22" type="range" min="0.50" max="0.99" step="0.01" value="0.90">
+    </label>
+    <label>Mean state 1: <span id="hmm-mu1-value">0.00</span>
+      <input id="hmm-mu1" type="range" min="-4.0" max="4.0" step="0.10" value="0.00">
+    </label>
+    <label>Mean state 2: <span id="hmm-mu2-value">2.00</span>
+      <input id="hmm-mu2" type="range" min="-4.0" max="4.0" step="0.10" value="2.00">
+    </label>
+    <label>SD state 1: <span id="hmm-sd1-value">0.50</span>
+      <input id="hmm-sd1" type="range" min="0.10" max="3.00" step="0.10" value="0.50">
+    </label>
+    <label>SD state 2: <span id="hmm-sd2-value">1.50</span>
+      <input id="hmm-sd2" type="range" min="0.10" max="3.00" step="0.10" value="1.50">
+    </label>
+    <label>Sequence length: <span id="hmm-n-value">180</span>
+      <input id="hmm-n" type="range" min="60" max="360" step="20" value="180">
+    </label>
+  </div>
+  <button id="hmm-resimulate">Resimulate</button>
+  <div id="hmm-summary" class="small-note"></div>
+  <div id="hmm-plot" style="width:100%;height:500px;"></div>
+</div>
+
+<script>
+(function() {
+  function randn() {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  }
+
+  function get(id) { return document.getElementById(id); }
+
+  function updateHMM() {
+    const p11 = parseFloat(get('hmm-p11').value);
+    const p22 = parseFloat(get('hmm-p22').value);
+    const mu1 = parseFloat(get('hmm-mu1').value);
+    const mu2 = parseFloat(get('hmm-mu2').value);
+    const sd1 = parseFloat(get('hmm-sd1').value);
+    const sd2 = parseFloat(get('hmm-sd2').value);
+    const n = parseInt(get('hmm-n').value);
+
+    get('hmm-p11-value').innerText = p11.toFixed(2);
+    get('hmm-p22-value').innerText = p22.toFixed(2);
+    get('hmm-mu1-value').innerText = mu1.toFixed(2);
+    get('hmm-mu2-value').innerText = mu2.toFixed(2);
+    get('hmm-sd1-value').innerText = sd1.toFixed(2);
+    get('hmm-sd2-value').innerText = sd2.toFixed(2);
+    get('hmm-n-value').innerText = n.toString();
+
+    let states = new Array(n);
+    let obs = new Array(n);
+    states[0] = Math.random() < 0.5 ? 0 : 1;
+    for (let t = 0; t < n; t++) {
+      if (t > 0) {
+        if (states[t-1] === 0) {
+          states[t] = Math.random() < p11 ? 0 : 1;
+        } else {
+          states[t] = Math.random() < p22 ? 1 : 0;
+        }
+      }
+      obs[t] = states[t] === 0 ? mu1 + sd1 * randn() : mu2 + sd2 * randn();
+    }
+
+    const time = Array.from({length: n}, (_, i) => i + 1);
+    const stateForPlot = states.map(s => s + 1);
+    const frac2 = states.reduce((a, s) => a + s, 0) / n;
+    const expectedDur1 = 1 / (1 - p11);
+    const expectedDur2 = 1 / (1 - p22);
+
+    get('hmm-summary').innerHTML =
+      'Estimated fraction in state 2 for this simulation: <b>' + frac2.toFixed(2) +
+      '</b>. Expected state durations: state 1 ≈ <b>' + expectedDur1.toFixed(1) +
+      '</b>, state 2 ≈ <b>' + expectedDur2.toFixed(1) + '</b> time steps.';
+
+    const traceObs = {
+      x: time,
+      y: obs,
+      mode: 'lines+markers',
+      name: 'Observation Y_t',
+      marker: {size: 4},
+      yaxis: 'y1'
+    };
+
+    const traceState = {
+      x: time,
+      y: stateForPlot,
+      mode: 'lines',
+      line: {shape: 'hv', width: 2},
+      name: 'Hidden state S_t',
+      yaxis: 'y2'
+    };
+
+    const layout = {
+      margin: {l: 55, r: 55, t: 35, b: 45},
+      xaxis: {title: 'time'},
+      yaxis: {title: 'observed value'},
+      yaxis2: {title: 'hidden state', overlaying: 'y', side: 'right', range: [0.7, 2.3], tickvals: [1,2]},
+      legend: {orientation: 'h'},
+      title: 'Hidden states generate regime-dependent observations'
+    };
+
+    if (typeof Plotly !== 'undefined') {
+      Plotly.newPlot('hmm-plot', [traceObs, traceState], layout, {responsive: true});
+    } else {
+      get('hmm-plot').innerHTML = 'Plotly is not loaded. Check assets/header.html.';
+    }
+  }
+
+  ['hmm-p11','hmm-p22','hmm-mu1','hmm-mu2','hmm-sd1','hmm-sd2','hmm-n'].forEach(function(id) {
+    get(id).addEventListener('input', updateHMM);
+  });
+  get('hmm-resimulate').addEventListener('click', updateHMM);
+  updateHMM();
+})();
+</script>
+```
+
+## 11.14 Python example: simulate a Gaussian HMM
+
+The next code block simulates a two-state Gaussian HMM without using a specialized HMM package. This is useful pedagogically because the model assumptions are completely visible.
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7339)
+
+T = 300
+pi = np.array([0.6, 0.4])
+A = np.array([
+    [0.95, 0.05],
+    [0.08, 0.92]
+])
+mu = np.array([0.0, 2.5])
+sigma = np.array([0.45, 1.25])
+
+states = np.zeros(T, dtype=int)
+y = np.zeros(T)
+
+states[0] = rng.choice(2, p=pi)
+y[0] = rng.normal(mu[states[0]], sigma[states[0]])
+
+for t in range(1, T):
+    states[t] = rng.choice(2, p=A[states[t - 1]])
+    y[t] = rng.normal(mu[states[t]], sigma[states[t]])
+
+plt.figure(figsize=(10, 4))
+plt.plot(y, linewidth=1.2, label="observation")
+plt.step(np.arange(T), states + 1, where="post", linewidth=1.0, label="hidden state")
+plt.title("Simulated two-state Gaussian HMM")
+plt.xlabel("time")
+plt.legend()
+plt.show()
+```
+
+A useful first diagnostic is to compare the sample behavior within the true states.
+
+```{python}
+for j in range(2):
+    values = y[states == j]
+    print(f"state {j + 1}: count={len(values):3d}, sample mean={values.mean(): .3f}, sample sd={values.std(ddof=1): .3f}")
+```
+
+## 11.15 Python example: scaled forward filtering
+
+We now implement the forward algorithm. The function below returns the filtered state probabilities and the log-likelihood.
+
+```{python}
+def normal_pdf(x, mean, sd):
+    """Gaussian density evaluated at x."""
+    z = (x - mean) / sd
+    return np.exp(-0.5 * z * z) / (np.sqrt(2 * np.pi) * sd)
+
+
+def forward_scaled(y, pi, A, mu, sigma):
+    """Scaled forward algorithm for a Gaussian HMM."""
+    y = np.asarray(y)
+    K = len(pi)
+    T = len(y)
+
+    alpha = np.zeros((T, K))
+    scales = np.zeros(T)
+
+    emission = np.array([normal_pdf(y[0], mu[j], sigma[j]) for j in range(K)])
+    unnormalized = pi * emission
+    scales[0] = unnormalized.sum()
+    alpha[0] = unnormalized / scales[0]
+
+    for t in range(1, T):
+        prediction = alpha[t - 1] @ A
+        emission = np.array([normal_pdf(y[t], mu[j], sigma[j]) for j in range(K)])
+        unnormalized = prediction * emission
+        scales[t] = unnormalized.sum()
+        alpha[t] = unnormalized / scales[t]
+
+    loglik = np.log(scales).sum()
+    return alpha, loglik
+
+alpha, loglik = forward_scaled(y, pi, A, mu, sigma)
+print(f"Log-likelihood under the true parameters: {loglik:.2f}")
+print("Last filtered state probability:", alpha[-1])
+```
+
+Plotting the filtered probability of state 2 shows how the model tracks the hidden regime.
+
+```{python}
+plt.figure(figsize=(10, 4))
+plt.plot(alpha[:, 1], label="P(S_t = 2 | y_1:t)")
+plt.step(np.arange(T), states, where="post", alpha=0.45, label="true state 2 indicator")
+plt.ylim(-0.05, 1.05)
+plt.title("Filtered probability of state 2")
+plt.xlabel("time")
+plt.legend()
+plt.show()
+```
+
+## 11.16 Python example: Viterbi decoding
+
+The following function implements Viterbi decoding in log scale.
+
+```{python}
+def viterbi_gaussian(y, pi, A, mu, sigma):
+    """Most likely state path for a Gaussian HMM."""
+    y = np.asarray(y)
+    K = len(pi)
+    T = len(y)
+
+    log_pi = np.log(pi)
+    log_A = np.log(A)
+
+    log_delta = np.zeros((T, K))
+    psi = np.zeros((T, K), dtype=int)
+
+    log_emission = np.array([
+        np.log(normal_pdf(y[0], mu[j], sigma[j])) for j in range(K)
+    ])
+    log_delta[0] = log_pi + log_emission
+
+    for t in range(1, T):
+        for j in range(K):
+            candidates = log_delta[t - 1] + log_A[:, j]
+            psi[t, j] = np.argmax(candidates)
+            log_delta[t, j] = candidates[psi[t, j]] + np.log(normal_pdf(y[t], mu[j], sigma[j]))
+
+    path = np.zeros(T, dtype=int)
+    path[-1] = np.argmax(log_delta[-1])
+    for t in range(T - 2, -1, -1):
+        path[t] = psi[t + 1, path[t + 1]]
+
+    return path, log_delta
+
+path, log_delta = viterbi_gaussian(y, pi, A, mu, sigma)
+accuracy = np.mean(path == states)
+print(f"Viterbi state decoding accuracy against simulated truth: {accuracy:.3f}")
+```
+
+```{python}
+plt.figure(figsize=(10, 4))
+plt.step(np.arange(T), states + 1, where="post", label="true hidden state")
+plt.step(np.arange(T), path + 1, where="post", linestyle="--", label="Viterbi decoded state")
+plt.yticks([1, 2])
+plt.title("True hidden path versus Viterbi decoded path")
+plt.xlabel("time")
+plt.legend()
+plt.show()
+```
+
+## 11.17 Python example: Baum--Welch for a Gaussian HMM
+
+Here is a compact educational implementation of EM for a Gaussian HMM. The goal is clarity, not production-level numerical robustness.
+
+```{python}
+def forward_backward_scaled(y, pi, A, mu, sigma):
+    """Forward-backward algorithm for a Gaussian HMM."""
+    y = np.asarray(y)
+    K = len(pi)
+    T = len(y)
+
+    alpha, loglik = forward_scaled(y, pi, A, mu, sigma)
+
+    beta = np.ones((T, K))
+    scales = np.zeros(T)
+
+    # Recompute scales from the forward pass.
+    emission0 = np.array([normal_pdf(y[0], mu[j], sigma[j]) for j in range(K)])
+    scales[0] = (pi * emission0).sum()
+    for t in range(1, T):
+        pred = alpha[t - 1] @ A
+        emission = np.array([normal_pdf(y[t], mu[j], sigma[j]) for j in range(K)])
+        scales[t] = (pred * emission).sum()
+
+    for t in range(T - 2, -1, -1):
+        emission_next = np.array([normal_pdf(y[t + 1], mu[j], sigma[j]) for j in range(K)])
+        beta[t] = A @ (emission_next * beta[t + 1])
+        beta[t] = beta[t] / scales[t + 1]
+
+    gamma = alpha * beta
+    gamma = gamma / gamma.sum(axis=1, keepdims=True)
+
+    xi = np.zeros((T - 1, K, K))
+    for t in range(T - 1):
+        emission_next = np.array([normal_pdf(y[t + 1], mu[j], sigma[j]) for j in range(K)])
+        numerator = alpha[t, :, None] * A * emission_next[None, :] * beta[t + 1, None, :]
+        xi[t] = numerator / numerator.sum()
+
+    return gamma, xi, loglik
+
+
+def baum_welch_gaussian(y, K=2, n_iter=30, seed=1):
+    """Simple EM algorithm for a Gaussian HMM."""
+    rng = np.random.default_rng(seed)
+    y = np.asarray(y)
+    T = len(y)
+
+    pi_est = np.ones(K) / K
+    A_est = np.full((K, K), 1 / K)
+    A_est = 0.85 * np.eye(K) + 0.15 * A_est
+    mu_est = np.quantile(y, np.linspace(0.25, 0.75, K))
+    sigma_est = np.full(K, np.std(y))
+
+    history = []
+    for _ in range(n_iter):
+        gamma, xi, loglik = forward_backward_scaled(y, pi_est, A_est, mu_est, sigma_est)
+        history.append(loglik)
+
+        pi_est = gamma[0]
+        A_est = xi.sum(axis=0) / gamma[:-1].sum(axis=0, keepdims=True).T
+
+        weights = gamma.sum(axis=0)
+        mu_est = (gamma * y[:, None]).sum(axis=0) / weights
+        sigma_est = np.sqrt((gamma * (y[:, None] - mu_est[None, :])**2).sum(axis=0) / weights)
+        sigma_est = np.maximum(sigma_est, 1e-4)
+
+    return pi_est, A_est, mu_est, sigma_est, np.array(history)
+
+pi_hat, A_hat, mu_hat, sigma_hat, history = baum_welch_gaussian(y, K=2, n_iter=40, seed=5)
+print("Estimated pi:", np.round(pi_hat, 3))
+print("Estimated A:\n", np.round(A_hat, 3))
+print("Estimated means:", np.round(mu_hat, 3))
+print("Estimated standard deviations:", np.round(sigma_hat, 3))
+```
+
+```{python}
+plt.figure(figsize=(8, 4))
+plt.plot(history, marker="o")
+plt.title("Baum--Welch log-likelihood trace")
+plt.xlabel("EM iteration")
+plt.ylabel("log-likelihood")
+plt.show()
+```
+
+The likelihood should generally increase. Small numerical decreases can occur if the implementation is unstable, but a clean EM implementation should be monotone up to floating-point error.
+
+## 11.18 Model selection and diagnostics
+
+Choosing the number of hidden states $K$ is a modeling decision. More states increase flexibility but can make interpretation unstable.
+
+Common strategies include:
+
+1. **Domain interpretation:** choose states that correspond to meaningful regimes.
+2. **Information criteria:** compare AIC or BIC across values of $K$.
+3. **Out-of-sample performance:** compare forecast or classification performance.
+4. **State persistence:** check whether transition probabilities are interpretable.
+5. **Posterior uncertainty:** inspect whether state probabilities are decisive or ambiguous.
+6. **Residual checks:** after conditioning on decoded or smoothed states, examine residual behavior.
+
+For a fitted Gaussian HMM, state-specific standardized residuals are
+
+$$
+r_t^{(j)}=\frac{y_t-\widehat{\mu}_j}{\widehat{\sigma}_j}.
+$$
+
+A soft residual can use smoothed probabilities:
+
+$$
+\widehat{\mu}_t=\sum_{j=1}^K \gamma_t(j)\widehat{\mu}_j,
+$$
+
+$$
+\widehat{\sigma}_t^2
+=\sum_{j=1}^K \gamma_t(j)\left[\widehat{\sigma}_j^2+(\widehat{\mu}_j-\widehat{\mu}_t)^2\right],
+$$
+
+and
+
+$$
+r_t=\frac{y_t-\widehat{\mu}_t}{\widehat{\sigma}_t}.
+$$
+
+Then we can inspect time plots, ACF plots, and distributional diagnostics of $r_t$.
+
+::: {.callout-warning}
+## Label switching
+The labels of hidden states are arbitrary. If state 1 and state 2 are swapped, the likelihood is unchanged. Interpret states by their estimated means, variances, persistence, or application meaning, not by their numeric labels.
+:::
+
+## 11.19 HMMs and modern AI sequence models
+
+HMMs are classical probabilistic sequence models. They remain important because they expose ideas that also appear in modern AI systems.
+
+| HMM idea | Modern sequence-learning analogue |
+|---|---|
+| Hidden state $S_t$ | latent representation or memory state |
+| Transition matrix $\mathbf{A}$ | learned state update rule |
+| Emission distribution $b_j(y)$ | decoder or output distribution |
+| Forward filtering | sequential inference |
+| Viterbi decoding | most likely structured prediction |
+| Baum--Welch | latent-variable training |
+| Regime probabilities | interpretable uncertainty over modes |
+
+RNNs, LSTMs, GRUs, and transformers replace discrete hand-specified state dynamics with flexible learned functions. However, HMMs remain useful when interpretability, small data, uncertainty, or regime structure matters.
+
+## 11.20 AI-assisted modeling component
+
+AI tools can help with HMMs, but they often make subtle mistakes with scaling, indexing, and interpretation. Use AI as a critic and collaborator, not as the source of truth.
+
+::: {.callout-tip}
+## Prompt: code audit
+I implemented the scaled forward algorithm for a Gaussian HMM. Please check the dimensions, normalization, likelihood calculation, and possible underflow problems. Do not rewrite the code first. Identify mathematical or indexing mistakes and explain how to test each one.
+:::
+
+::: {.callout-tip}
+## Prompt: model critique
+I fitted a two-state Gaussian HMM to a financial return series. State 1 has low variance and state 2 has high variance. The transition probabilities are 0.97 and 0.91 on the diagonal. What diagnostics should I check before claiming these are calm and crisis regimes? Include tests for residual autocorrelation, outliers, label switching, and stability across initializations.
+:::
+
+::: {.callout-tip}
+## Prompt: interpretation guardrail
+Here is a plot of smoothed state probabilities from an HMM. Help me write a cautious interpretation. Avoid saying the hidden state is directly observed. Use language such as “the model assigns high posterior probability to...” and distinguish model-based regimes from true causal regimes.
+:::
+
+### Human verification checklist
+
+Whenever an AI tool helps with HMM code or interpretation, manually check:
+
+1. rows of $\mathbf{A}$ sum to one;
+2. all probabilities are nonnegative;
+3. forward probabilities are normalized at each time;
+4. log-likelihood is computed from scaling constants or log-sum-exp;
+5. Viterbi output uses backpointers correctly;
+6. EM likelihood increases across iterations;
+7. fitted states are stable across random initializations;
+8. interpretation does not confuse latent states with observed ground truth.
+
+## 11.21 Common mistakes
+
+::: {.callout-warning}
+## Mistake 1: treating hidden states as observed labels
+The hidden states are model-based latent variables. Unless the data include true labels, decoded states are estimates, not facts.
+:::
+
+::: {.callout-warning}
+## Mistake 2: ignoring numerical scaling
+Unscaled forward probabilities usually underflow for long sequences. Use scaled probabilities or log-sum-exp.
+:::
+
+::: {.callout-warning}
+## Mistake 3: comparing state labels across fits
+State 1 in one fit may correspond to state 2 in another. Compare states by their parameters, not their labels.
+:::
+
+::: {.callout-warning}
+## Mistake 4: using too many states
+A model with many states may fit the training sequence better but produce unstable, uninterpretable, or non-reproducible regimes.
+:::
+
+::: {.callout-warning}
+## Mistake 5: forgetting time-series dependence inside regimes
+A Gaussian HMM may not remove autocorrelation. If residuals remain autocorrelated within states, consider a Markov-switching AR model.
+:::
+
+## 11.22 Exercises
+
+### Conceptual exercises
+
+1. Explain the difference between a Markov chain and a hidden Markov model.
+2. In a two-state HMM with $a_{11}=0.98$ and $a_{22}=0.80$, compute the expected duration of each state.
+3. Explain why direct likelihood computation requires summing over $K^T$ paths.
+4. Explain the difference between filtering probability, smoothing probability, and Viterbi decoding.
+5. Give an example where the Viterbi path and the pointwise most likely states may differ.
+
+### Mathematical exercises
+
+1. Derive the forward recursion from the joint probability formula.
+2. Derive the backward recursion.
+3. Show that $\sum_j \gamma_t(j)=1$.
+4. Derive the Baum--Welch update for $a_{ij}$ using expected transition counts.
+5. Derive the weighted Gaussian updates for $\mu_j$ and $\sigma_j^2$.
+6. For a Gaussian HMM, derive the one-step forecast mean and variance using the law of total expectation and law of total variance.
+
+### Computational exercises
+
+1. Simulate a three-state Gaussian HMM and plot the hidden states and observations.
+2. Implement the scaled forward algorithm and verify that filtered probabilities sum to one.
+3. Implement Viterbi decoding and compare the decoded path to the true simulated path.
+4. Fit a two-state Gaussian HMM using the Baum--Welch code and test several random initializations.
+5. Modify the emission distribution to use state-dependent Poisson distributions for count data.
+6. Implement a Markov-switching AR(1) filter by replacing $b_j(y_t)$ with $b_j(y_t\mid y_{t-1})$.
+
+## 11.23 Mini project: regime detection in a real sequence
+
+Choose one real sequence dataset. Possible choices include:
+
+- daily financial returns;
+- hourly electricity demand changes;
+- machine vibration or sensor data;
+- weather anomalies;
+- web traffic or user activity counts;
+- biological signal measurements.
+
+Your report should include:
+
+1. exploratory plots and summary statistics;
+2. justification for the number of states $K$;
+3. fitted transition matrix and emission parameters;
+4. filtered and smoothed state probability plots;
+5. Viterbi decoded path;
+6. residual diagnostics;
+7. out-of-sample forecasting or anomaly-detection evaluation;
+8. an AI-assisted critique section describing how you used AI and how you verified its suggestions.
+
+## 11.24 Chapter checklist
+
+By the end of this chapter, you should be able to:
+
+- [ ] define an HMM using initial, transition, and emission probabilities;
+- [ ] write the joint probability of hidden states and observations;
+- [ ] compute likelihood with the forward algorithm;
+- [ ] explain why scaling is needed;
+- [ ] compute smoothed state probabilities using forward--backward recursions;
+- [ ] decode a hidden path using Viterbi;
+- [ ] explain Baum--Welch as EM;
+- [ ] fit and interpret a Gaussian HMM;
+- [ ] explain how regime-switching AR models extend Gaussian HMMs;
+- [ ] forecast from a fitted HMM using state probability propagation;
+- [ ] evaluate diagnostics and avoid overinterpreting hidden states;
+- [ ] use AI tools carefully for debugging, critique, and communication.
+
+## 11.25 Looking ahead
+
+State-space models and HMMs provide two classical hidden-state frameworks:
+
+$$
+\text{continuous hidden state} \quad \leftrightarrow \quad \text{Kalman filter},
+$$
+
+$$
+\text{discrete hidden state} \quad \leftrightarrow \quad \text{HMM}.
+$$
+
+The next part of the book moves from hidden-state time-domain models to frequency-domain methods. Instead of asking which hidden regime generated the observation, we ask which oscillatory components explain the variation in the sequence.
