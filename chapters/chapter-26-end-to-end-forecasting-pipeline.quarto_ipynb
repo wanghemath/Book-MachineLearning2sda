@@ -446,7 +446,7 @@
         "\n",
         "The following example builds a small but complete forecasting pipeline. The goal is not to find the most sophisticated model. The goal is to make each decision explicit and reproducible."
       ],
-      "id": "e917984f"
+      "id": "ade44e1e"
     },
     {
       "cell_type": "code",
@@ -494,7 +494,7 @@
         "\n",
         "The feature table must use past target values only."
       ],
-      "id": "713cdc39"
+      "id": "295e8ec8"
     },
     {
       "cell_type": "code",
@@ -548,7 +548,7 @@
       "source": [
         "A useful habit is to test the feature timing directly."
       ],
-      "id": "e558f449"
+      "id": "d6f1cfe4"
     },
     {
       "cell_type": "code",
@@ -577,7 +577,7 @@
         "\n",
         "We first create a chronological split and evaluate simple baselines."
       ],
-      "id": "5b5b6517"
+      "id": "f2deef66"
     },
     {
       "cell_type": "code",
@@ -625,7 +625,7 @@
         "\n",
         "Scaling must be fitted on training data only. `scikit-learn` pipelines help enforce this rule."
       ],
-      "id": "1b6b37e8"
+      "id": "e9ede4ac"
     },
     {
       "cell_type": "code",
@@ -701,7 +701,7 @@
         "\n",
         "A single holdout split can be misleading. We next run rolling one-step-ahead validation. Each split trains on all earlier rows and predicts the next row."
       ],
-      "id": "d2f63566"
+      "id": "8d41771a"
     },
     {
       "cell_type": "code",
@@ -785,7 +785,7 @@
         "\n",
         "We can construct a simple validation-residual interval. This is not the only approach, but it is transparent."
       ],
-      "id": "1385c6c4"
+      "id": "b5dbe228"
     },
     {
       "cell_type": "code",
@@ -854,7 +854,7 @@
         "\n",
         "A final forecast should be saved as a table with enough metadata to be interpreted later."
       ],
-      "id": "1cd8bca8"
+      "id": "381faf58"
     },
     {
       "cell_type": "code",
@@ -943,7 +943,7 @@
         "- Did I create a forecast report object?\n",
         "- Did I document assumptions, limitations, and monitoring rules?"
       ],
-      "id": "8b1b4c53"
+      "id": "b95ae432"
     }
   ],
   "metadata": {

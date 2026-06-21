@@ -811,7 +811,7 @@
         "\n",
         "The following example constructs an AR(2)-type recurrence from complex roots and plots the deterministic path."
       ],
-      "id": "eda6bf39"
+      "id": "7bfa5231"
     },
     {
       "cell_type": "code",
@@ -878,7 +878,7 @@
         "\\psi_j=\\phi_1\\psi_{j-1}+\\phi_2\\psi_{j-2}.\n",
         "$$"
       ],
-      "id": "96dba9f2"
+      "id": "b921c3bf"
     },
     {
       "cell_type": "code",
@@ -935,7 +935,7 @@
         "\n",
         "Its eigenvalues are the forward characteristic roots."
       ],
-      "id": "38e2aff3"
+      "id": "7f51e7aa"
     },
     {
       "cell_type": "code",
@@ -980,7 +980,7 @@
         "\n",
         "A first-order model already shows the three most important regimes."
       ],
-      "id": "c77a97c9"
+      "id": "9ae3f70e"
     },
     {
       "cell_type": "code",
@@ -1237,7 +1237,7 @@
         "\\phi(z)=0 \\quad\\Longrightarrow\\quad |z|>1.\n",
         "$$"
       ],
-      "id": "5db1b44f"
+      "id": "177eec5a"
     }
   ],
   "metadata": {

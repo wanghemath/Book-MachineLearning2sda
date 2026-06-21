@@ -782,7 +782,7 @@
         "\n",
         "The following code implements the local-level Kalman filter without using a time-series package."
       ],
-      "id": "ccf22481"
+      "id": "8219452b"
     },
     {
       "cell_type": "code",
@@ -869,7 +869,7 @@
         "\n",
         "The next implementation handles a general linear Gaussian state-space model."
       ],
-      "id": "23217457"
+      "id": "d7bb20a9"
     },
     {
       "cell_type": "code",
@@ -966,7 +966,7 @@
         "\n",
         "Now we apply the vector filter to the local-linear trend model."
       ],
-      "id": "524d70e4"
+      "id": "5e7f7644"
     },
     {
       "cell_type": "code",
@@ -1041,7 +1041,7 @@
         "\n",
         "The same filtering function can handle missing values represented by `np.nan`."
       ],
-      "id": "17988369"
+      "id": "4475ef24"
     },
     {
       "cell_type": "code",
@@ -1094,7 +1094,7 @@
         "\n",
         "We can estimate model parameters by maximizing the Kalman filter log likelihood. The function below evaluates the log likelihood for fixed parameters."
       ],
-      "id": "94ca0c63"
+      "id": "f6ec9803"
     },
     {
       "cell_type": "code",
@@ -1148,7 +1148,7 @@
         "\n",
         "The following code produces multi-step forecasts from the filtered distribution at the end of the sample."
       ],
-      "id": "0de05e87"
+      "id": "02102ca8"
     },
     {
       "cell_type": "code",
@@ -1456,7 +1456,7 @@
         "\n",
         "A state-space model separates a time series into hidden dynamic structure and noisy observations. The Kalman filter provides an exact recursive solution for linear Gaussian models. It updates a predicted state using the new observation's innovation, weighted by the Kalman gain. This gives a mathematically transparent framework for filtering, forecasting, smoothing, likelihood evaluation, missing-data handling, dynamic regression, and modern sequence-learning connections."
       ],
-      "id": "1725c788"
+      "id": "5030900d"
     }
   ],
   "metadata": {

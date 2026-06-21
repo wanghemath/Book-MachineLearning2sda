@@ -641,7 +641,7 @@
         "\n",
         "The following example simulates an AR(2) process and estimates its coefficients by Yule--Walker."
       ],
-      "id": "96f1d246"
+      "id": "2c675211"
     },
     {
       "cell_type": "code",
@@ -707,7 +707,7 @@
         "\n",
         "The next example uses `statsmodels` to fit several ARMA models to the same stationary data and compare them by AIC and BIC."
       ],
-      "id": "0cf2d344"
+      "id": "296c27e3"
     },
     {
       "cell_type": "code",
@@ -754,7 +754,7 @@
       "source": [
         "After choosing a candidate model, inspect residuals."
       ],
-      "id": "8a0b23c7"
+      "id": "043c96cd"
     },
     {
       "cell_type": "code",
@@ -947,7 +947,7 @@
         "\n",
         "A model can remove autocorrelation from the conditional mean but still fail to model conditional variance. This is common in financial returns."
       ],
-      "id": "59e97293"
+      "id": "44734aba"
     },
     {
       "cell_type": "code",
@@ -1141,7 +1141,7 @@
         "- [ ] avoid leakage in time-series validation;\n",
         "- [ ] use AI as a model critic while verifying all claims mathematically and computationally."
       ],
-      "id": "5232c81a"
+      "id": "2f13ac88"
     }
   ],
   "metadata": {

@@ -132,7 +132,7 @@
         "\n",
         "The phase is recovered up to the sign convention used for the sine term."
       ],
-      "id": "c992f12d"
+      "id": "19765f8d"
     },
     {
       "cell_type": "code",
@@ -214,7 +214,7 @@
         "A high-frequency continuous signal can look like a lower-frequency discrete sequence when sampled too slowly. Spectral analysis always depends on the sampling rate.\n",
         ":::"
       ],
-      "id": "3f64e687"
+      "id": "8bf7695d"
     },
     {
       "cell_type": "code",
@@ -510,7 +510,7 @@
         "\n",
         "White noise has a flat spectrum. Every frequency contributes equally. This explains the term **white** noise: it is analogous to white light, which contains all visible frequencies."
       ],
-      "id": "4de311aa"
+      "id": "a35fc2e8"
     },
     {
       "cell_type": "code",
@@ -629,7 +629,7 @@
         "})();\n",
         "</script>"
       ],
-      "id": "857039e6"
+      "id": "d947fa23"
     },
     {
       "cell_type": "code",
@@ -692,7 +692,7 @@
         "\n",
         "If $\\theta>0$, the spectrum is larger at low frequencies. If $\\theta<0$, it is larger near the Nyquist frequency."
       ],
-      "id": "8edde270"
+      "id": "9abbbd5b"
     },
     {
       "cell_type": "code",
@@ -772,7 +772,7 @@
         "The AR polynomial can amplify frequencies near its roots, while the MA polynomial can suppress or amplify frequencies depending on its zeros.\n",
         ":::"
       ],
-      "id": "97887f11"
+      "id": "5dfb0307"
     },
     {
       "cell_type": "code",
@@ -839,7 +839,7 @@
         "\n",
         "A broad region of elevated spectral density suggests variability spread over a range of frequencies rather than one clean periodic component."
       ],
-      "id": "ff95f439"
+      "id": "908fa8ab"
     },
     {
       "cell_type": "code",
@@ -919,7 +919,7 @@
         "\n",
         "This explains why moving averages smooth a series: they reduce high-frequency power. We will return to filters, FFT computation, and wavelets in Chapters 13 and 14."
       ],
-      "id": "4f12655c"
+      "id": "eabafb3e"
     },
     {
       "cell_type": "code",
@@ -978,7 +978,7 @@
         "\n",
         "The following workflow is a template. It simulates a stationary series with two periodic components and AR noise, then compares the time-domain and frequency-domain views."
       ],
-      "id": "8a23ef4b"
+      "id": "55518aee"
     },
     {
       "cell_type": "code",
@@ -1134,7 +1134,7 @@
         "- Percival and Walden, *Spectral Analysis for Physical Applications*, for a deeper treatment of spectra and estimation.\n",
         "- Oppenheim and Schafer, *Discrete-Time Signal Processing*, for the signal-processing viewpoint."
       ],
-      "id": "7ea3880d"
+      "id": "a7e8ac3b"
     }
   ],
   "metadata": {

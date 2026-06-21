@@ -801,7 +801,7 @@
         "\n",
         "The following Python code simulates white noise, a random walk, an MA(1), and an AR(1). The important point is not only to plot them, but to compare their dependence structure."
       ],
-      "id": "23a0ead5"
+      "id": "f356efd2"
     },
     {
       "cell_type": "code",
@@ -861,7 +861,7 @@
         "\n",
         "It is useful to implement the sample ACF manually before using a package function."
       ],
-      "id": "f0c21593"
+      "id": "31ea1466"
     },
     {
       "cell_type": "code",
@@ -945,7 +945,7 @@
         "\\rho_{AR(1)}(h)=\\phi^h,\\qquad h\\ge0.\n",
         "$$"
       ],
-      "id": "8ea1c2bc"
+      "id": "a1563cbf"
     },
     {
       "cell_type": "code",
@@ -998,7 +998,7 @@
         "\n",
         "The code below builds a compact diagnostic panel for one series."
       ],
-      "id": "343f9b83"
+      "id": "2784bfe6"
     },
     {
       "cell_type": "code",
@@ -1049,7 +1049,7 @@
       "source": [
         "Now apply the same panel to the differenced random walk."
       ],
-      "id": "f70bf26f"
+      "id": "54e58afa"
     },
     {
       "cell_type": "code",
@@ -1217,7 +1217,7 @@
         "- interpret ACF plots without overclaiming;\n",
         "- use AI to generate diagnostic hypotheses and then verify them mathematically."
       ],
-      "id": "75031121"
+      "id": "fae1e057"
     }
   ],
   "metadata": {

@@ -448,7 +448,7 @@
         "\n",
         "We now build a synthetic data set with trend, changepoints, weekly seasonality, yearly seasonality, holiday effects, and noise."
       ],
-      "id": "909fa708"
+      "id": "305c5e4f"
     },
     {
       "cell_type": "code",
@@ -531,7 +531,7 @@
         "\\right).\n",
         "$$"
       ],
-      "id": "074a8afd"
+      "id": "08477367"
     },
     {
       "cell_type": "code",
@@ -596,7 +596,7 @@
         "\n",
         "We usually do not penalize the intercept; below we set the intercept penalty to zero."
       ],
-      "id": "8d5266f4"
+      "id": "89e4ac57"
     },
     {
       "cell_type": "code",
@@ -706,7 +706,7 @@
         "\n",
         "To forecast future dates, we create the same features for future time indices and multiply by the fitted coefficient vector."
       ],
-      "id": "cd80548f"
+      "id": "4cb9fab0"
     },
     {
       "cell_type": "code",
@@ -773,7 +773,7 @@
         "\n",
         "Then scores can be summarized by horizon."
       ],
-      "id": "dbaf9e8b"
+      "id": "b9c445bd"
     },
     {
       "cell_type": "code",
@@ -943,7 +943,7 @@
         "5. refit the selected model on all available training data;\n",
         "6. evaluate once on a final untouched test set, if available."
       ],
-      "id": "497e7b75"
+      "id": "d3d14c7a"
     },
     {
       "cell_type": "code",
@@ -1244,7 +1244,7 @@
         "- [ ] identify residual autocorrelation and trend extrapolation risks;\n",
         "- [ ] use AI tools to assist forecasting while verifying assumptions."
       ],
-      "id": "9b8949cf"
+      "id": "c836899c"
     }
   ],
   "metadata": {

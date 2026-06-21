@@ -1,0 +1,67 @@
+<!-- Plotly is loaded once globally for all chapter-level interactive modules. -->
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<!--
+Global Plotly configuration for all interactive modules.
+This keeps Plotly.js loaded only once, while ensuring every Plotly graph has
+student-facing toolbar functions: download, zoom, pan, select, lasso,
+zoom in/out, autoscale, and reset axes.
+-->
+<script>
+window.TSInteractives = window.TSInteractives || {};
+
+window.TSInteractives.plotlyConfig = {
+  responsive: true,
+  displayModeBar: true,
+  displaylogo: false,
+  scrollZoom: true,
+  toImageButtonOptions: {
+    format: "png",
+    filename: "time-series-interactive",
+    height: 600,
+    width: 900,
+    scale: 2
+  }
+};
+
+(function () {
+  if (!window.Plotly || window.Plotly.__tsModebarPatched) return;
+
+  const defaultConfig = window.TSInteractives.plotlyConfig;
+  const originalNewPlot = window.Plotly.newPlot.bind(window.Plotly);
+  const originalReact = window.Plotly.react.bind(window.Plotly);
+
+  function withDefaults(config) {
+    // Put defaultConfig last so chapter-level calls cannot accidentally turn
+    // the modebar off with displayModeBar:false.
+    return Object.assign({}, config || {}, defaultConfig);
+  }
+
+  window.Plotly.newPlot = function (graphDiv, data, layout, config) {
+    return originalNewPlot(graphDiv, data, layout, withDefaults(config));
+  };
+
+  window.Plotly.react = function (graphDiv, data, layout, config) {
+    return originalReact(graphDiv, data, layout, withDefaults(config));
+  };
+
+  window.Plotly.__tsModebarPatched = true;
+})();
+</script>
+
+<!--
+Load the shared interactive helper file with a path that works from both
+root-level pages (index.html) and chapter pages (chapters/*.html).
+A plain src="assets/ts-interactives.js" fails inside chapters because the
+browser looks for chapters/assets/ts-interactives.js.
+-->
+<script>
+(function () {
+  const inChapters = window.location.pathname.includes("/chapters/");
+  const prefix = inChapters ? "../" : "";
+  const script = document.createElement("script");
+  script.src = prefix + "assets/ts-interactives.js";
+  script.defer = true;
+  document.head.appendChild(script);
+})();
+</script>

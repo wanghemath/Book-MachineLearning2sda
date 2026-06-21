@@ -646,7 +646,7 @@
         "\n",
         "We first create a synthetic series with trend, seasonality, and correlated residual noise. The goal is not only to plot it, but to recover the structure through EDA."
       ],
-      "id": "c083965b"
+      "id": "b44b3c27"
     },
     {
       "cell_type": "code",
@@ -721,7 +721,7 @@
         "\n",
         "Rolling summaries provide a more stable view of time-varying level and scale."
       ],
-      "id": "e0f17783"
+      "id": "41f3e61d"
     },
     {
       "cell_type": "code",
@@ -774,7 +774,7 @@
         "\n",
         "The code below computes the OLS estimator directly from the normal equation."
       ],
-      "id": "ba12d4f8"
+      "id": "6f7e4d07"
     },
     {
       "cell_type": "code",
@@ -842,7 +842,7 @@
         "\n",
         "We include two harmonics because the simulated data contains a second harmonic."
       ],
-      "id": "32e34a66"
+      "id": "a3be474d"
     },
     {
       "cell_type": "code",
@@ -907,7 +907,7 @@
         "\n",
         "The sample ACF helps us see whether dependence remains after transformation or detrending."
       ],
-      "id": "6d23a941"
+      "id": "df9195af"
     },
     {
       "cell_type": "code",
@@ -962,7 +962,7 @@
         "\n",
         "Now compare first differencing and seasonal differencing."
       ],
-      "id": "dcf2ec85"
+      "id": "dc01a6d9"
     },
     {
       "cell_type": "code",
@@ -1038,7 +1038,7 @@
         "\n",
         "Smoothing can reveal slow trend but should not be confused with making a series stationary."
       ],
-      "id": "e9083b00"
+      "id": "da626e93"
     },
     {
       "cell_type": "code",
@@ -1077,7 +1077,7 @@
         "\n",
         "Lag plots reveal dependence geometrically. For an AR(1)-like residual, the lag-one plot often shows a linear pattern."
       ],
-      "id": "ad891a56"
+      "id": "ce42fca7"
     },
     {
       "cell_type": "code",
@@ -1110,7 +1110,7 @@
         "\n",
         "The following function creates a compact EDA report for a univariate sequence. It is intentionally simple. Later chapters will replace pieces of this with more formal tests and models."
       ],
-      "id": "74e18b99"
+      "id": "22e14f7e"
     },
     {
       "cell_type": "code",
@@ -1290,7 +1290,7 @@
         "\n",
         "Classical exploratory analysis, detrending, differencing, smoothing, and autocorrelation diagnostics are developed in @shumway2017time and @brockwell2016introduction. Forecasting workflows and practical decomposition ideas are expanded in @hyndman2021forecasting. The Fourier-feature approach also connects to automated additive forecasting models such as @taylor2018forecasting."
       ],
-      "id": "beb00065"
+      "id": "0792c71f"
     }
   ],
   "metadata": {

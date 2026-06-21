@@ -426,7 +426,7 @@
         "\n",
         "The first implementation step is not the neural network. It is the supervised-learning data set."
       ],
-      "id": "07f1ef6b"
+      "id": "52111b66"
     },
     {
       "cell_type": "code",
@@ -484,7 +484,7 @@
         "\n",
         "We split windows by their forecast origin. Scaling uses only the training windows."
       ],
-      "id": "b13b0690"
+      "id": "e55fb5cd"
     },
     {
       "cell_type": "code",
@@ -526,7 +526,7 @@
         "\n",
         "The following model reads a length-$L$ sequence and predicts the next $H$ values from the last hidden state."
       ],
-      "id": "5d8955dc"
+      "id": "2b2e8e7a"
     },
     {
       "cell_type": "code",
@@ -632,7 +632,7 @@
         "\n",
         "The same forecasting head can be used with `nn.RNN`, `nn.LSTM`, or `nn.GRU`."
       ],
-      "id": "c22d43a3"
+      "id": "955d0aa1"
     },
     {
       "cell_type": "code",
@@ -688,7 +688,7 @@
         "\n",
         "This small calculation shows why long memory is hard when $|a|$ is far below $1$ and why training is unstable when $|a|$ is above $1$."
       ],
-      "id": "cf043f65"
+      "id": "27f80ecf"
     },
     {
       "cell_type": "code",
@@ -734,7 +734,7 @@
         "\n",
         "for each horizon $h=1,\\ldots,H$. Also inspect residuals over time. A model may look good on average while failing during regime changes, high-volatility intervals, or seasonal transitions."
       ],
-      "id": "295928fd"
+      "id": "477b023d"
     },
     {
       "cell_type": "code",
@@ -844,7 +844,7 @@
         "- How do you avoid leakage when creating overlapping windows?\n",
         "- Which baseline must your recurrent model beat?"
       ],
-      "id": "8889c69b"
+      "id": "6f7a71c0"
     }
   ],
   "metadata": {

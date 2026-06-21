@@ -295,7 +295,7 @@
         "\n",
         "The next example shows why random splits can be misleading. We create lag features for a trending seasonal series. Then we compare a random split with a chronological split using the same linear model. The two designs answer different questions. The random split allows training observations to be distributed throughout the whole time range, while the chronological split evaluates prediction on a future block. The random-split error may look artificially strong, but the main problem is more fundamental: it is not the operational forecasting task."
       ],
-      "id": "571607e1"
+      "id": "a118754c"
     },
     {
       "cell_type": "code",
@@ -371,7 +371,7 @@
         "\n",
         "A modeling checklist can be written as a function. This makes the audit reproducible and encourages students to translate vague concerns into explicit checks."
       ],
-      "id": "25f7ec70"
+      "id": "856c19df"
     },
     {
       "cell_type": "code",
@@ -440,7 +440,7 @@
         "\n",
         "Suppose an AI assistant suggests a lag-1 autoregression. We should check whether the residuals still contain autocorrelation. The next code fits a simple AR(1)-style regression to data that actually has seasonality. The residual ACF reveals remaining structure."
       ],
-      "id": "2eeaa090"
+      "id": "69c6a516"
     },
     {
       "cell_type": "code",
@@ -633,7 +633,7 @@
         "- Goodfellow, Bengio, and Courville, *Deep Learning*, for neural-network modeling principles.\n",
         "- Recent documentation of the software packages used in your project, because package APIs and defaults change over time."
       ],
-      "id": "a1ad468f"
+      "id": "9a44ed5a"
     }
   ],
   "metadata": {

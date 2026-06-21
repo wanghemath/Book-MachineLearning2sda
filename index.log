@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.15.0 (TeX Live 2022)  (format=lualatex 2023.1.8)  19 JUN 2026 20:15
+This is LuaHBTeX, Version 1.15.0 (TeX Live 2022)  (format=lualatex 2023.1.8)  20 JUN 2026 20:57
  restricted system commands enabled.
 **index.tex
 (./index.tex
@@ -1440,1985 +1440,2040 @@ Class scrreprt Warning: \float@addtolists detected!
 
 [3
 
-]
+] (/usr/local/texlive/2022/texmf-dist/tex/latex/microtype/mt-TU-empty.cfg
+File: mt-TU-empty.cfg 2021/06/22 v1.1 microtype config. file: fonts with nonsta
+ndard glyph set (RS)
+) [4] [5] [6] [7] [8
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+] [9]
 chapter 2.
-[4
+[10
 
-] [5]
+] [11] [12] [13]
+Overfull \hbox (8.46567pt too wide) in paragraph at lines 1019--1023
+[]\TU/lmr/m/n/10.95 The in-ter-ac-tive mod-ules use Plotly. Plotly.js is loaded once glob-ally through \TU/lmtt/m/n/10.95 assets/header.html\TU/lmr/m/n/10.95 ;
+ []
+
+[14] [15] [16] [17] [18]
 part I.
 Package scrkbase Info: You've told me to use the font selection of the element
 (scrkbase)             `partprefix' that is an alias of element `partnumber'
-(scrkbase)              on input line 392.
-[6
+(scrkbase)              on input line 1233.
+[19
 
 ]
 chapter 3.
-[7
+[20
 
-] [8] (/usr/local/texlive/2022/texmf-dist/tex/latex/microtype/mt-TU-empty.cfg
-File: mt-TU-empty.cfg 2021/06/22 v1.1 microtype config. file: fonts with nonsta
-ndard glyph set (RS)
-) [9] [10] [11] [12] [13]
+] [21] [22] [23] [24] [25] [26]
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <10.95> not available
-(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 818.
-[14]
+(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 1659.
+[27]
 <chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-four-p
-rocesses-output-1.pdf, id=115, 714.9008pt x 425.5787pt>
+rocesses-output-1.pdf, id=282, 714.9008pt x 425.5787pt>
 File: chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-f
 our-processes-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-fo
 ur-processes-output-1.pdf>
 Package luatex.def Info: chapters/chapter-01-why-time-series-and-sequences_file
-s/figure-pdf/ch01-four-processes-output-1.pdf  used on input line 866.
+s/figure-pdf/ch01-four-processes-output-1.pdf  used on input line 1707.
 (luatex.def)             Requested size: 714.89906pt x 425.57767pt.
 
-Overfull \hbox (10.95824pt too wide) in paragraph at lines 866--867
+Overfull \hbox (10.95824pt too wide) in paragraph at lines 1707--1708
 [][] 
  []
 
-[15] [16<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch
+[28] [29<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch
 01-four-processes-output-1.pdf>]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 3.0 on input line 920.
+(longtable)                in table 3.0 on input line 1761.
 
 <chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-random
--walk-variance-plot-output-1.pdf, id=172, 558.43631pt x 282.68486pt>
+-walk-variance-plot-output-1.pdf, id=339, 558.43631pt x 282.68486pt>
 File: chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-r
 andom-walk-variance-plot-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-ra
 ndom-walk-variance-plot-output-1.pdf>
 Package luatex.def Info: chapters/chapter-01-why-time-series-and-sequences_file
-s/figure-pdf/ch01-random-walk-variance-plot-output-1.pdf  used on input line 93
-6.
+s/figure-pdf/ch01-random-walk-variance-plot-output-1.pdf  used on input line 17
+77.
 (luatex.def)             Requested size: 558.43495pt x 282.68416pt.
 
-Overfull \hbox (10.96518pt too wide) in paragraph at lines 936--937
+Overfull \hbox (10.96518pt too wide) in paragraph at lines 1777--1778
 [][] 
  []
 
-[17<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-ra
-ndom-walk-variance-plot-output-1.pdf>] [18]
+[30<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-ra
+ndom-walk-variance-plot-output-1.pdf>] [31]
 <chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-window
--visualization-output-1.pdf, id=224, 601.67912pt x 282.68486pt>
+-visualization-output-1.pdf, id=391, 601.67912pt x 282.68486pt>
 File: chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-w
 indow-visualization-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-wi
 ndow-visualization-output-1.pdf>
 Package luatex.def Info: chapters/chapter-01-why-time-series-and-sequences_file
-s/figure-pdf/ch01-window-visualization-output-1.pdf  used on input line 1003.
+s/figure-pdf/ch01-window-visualization-output-1.pdf  used on input line 1844.
 (luatex.def)             Requested size: 601.67764pt x 282.68416pt.
 
-Overfull \hbox (10.95874pt too wide) in paragraph at lines 1003--1004
+Overfull \hbox (10.95874pt too wide) in paragraph at lines 1844--1845
 [][] 
  []
 
-[19<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-wi
+[32<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-wi
 ndow-visualization-output-1.pdf>]
 <chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-baseli
-ne-forecast-output-2.pdf, id=270, 610.08553pt x 282.68486pt>
+ne-forecast-output-2.pdf, id=437, 610.08553pt x 282.68486pt>
 File: chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-b
 aseline-forecast-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch01-ba
 seline-forecast-output-2.pdf>
 Package luatex.def Info: chapters/chapter-01-why-time-series-and-sequences_file
-s/figure-pdf/ch01-baseline-forecast-output-2.pdf  used on input line 1074.
+s/figure-pdf/ch01-baseline-forecast-output-2.pdf  used on input line 1915.
 (luatex.def)             Requested size: 610.08405pt x 282.68416pt.
 
-Overfull \hbox (10.96368pt too wide) in paragraph at lines 1074--1075
+Overfull \hbox (10.96368pt too wide) in paragraph at lines 1915--1916
 [][] 
  []
 
-[20] [21<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch
-01-baseline-forecast-output-2.pdf>] [22] [23] [24]
+[33] [34<./chapters/chapter-01-why-time-series-and-sequences_files/figure-pdf/ch
+01-baseline-forecast-output-2.pdf>] [35] [36] [37]
 chapter 4.
-[25
+[38
 
-] [26] [27] [28] [29] [30] [31] [32] [33] [34] [35] [36]
+] [39] [40] [41] [42] [43] [44] [45] [46] [47] [48] [49]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 4.0 on input line 1958.
+(longtable)                in table 4.0 on input line 2799.
 
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-time-plot-
-output-1.pdf, id=445, 615.61325pt x 282.68486pt>
+output-1.pdf, id=612, 615.61325pt x 282.68486pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-time-
 plot-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-time-p
 lot-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-time-plot-output-1.pdf  used on input line 1972.
+gure-pdf/ch02-time-plot-output-1.pdf  used on input line 2813.
 (luatex.def)             Requested size: 615.61174pt x 282.68416pt.
 
-Overfull \hbox (10.9537pt too wide) in paragraph at lines 1972--1973
+Overfull \hbox (10.9537pt too wide) in paragraph at lines 2813--2814
 [][] 
  []
 
-[37<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-time-p
+[50<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-time-p
 lot-output-1.pdf>]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-rolling-su
-mmary-output-1.pdf, id=482, 714.73586pt x 425.5787pt>
+mmary-output-1.pdf, id=649, 714.73586pt x 425.5787pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-rolli
 ng-summary-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-rollin
 g-summary-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-rolling-summary-output-1.pdf  used on input line 2007.
+gure-pdf/ch02-rolling-summary-output-1.pdf  used on input line 2848.
 (luatex.def)             Requested size: 714.7341pt x 425.57767pt.
 
-Overfull \hbox (10.9533pt too wide) in paragraph at lines 2007--2008
+Overfull \hbox (10.9533pt too wide) in paragraph at lines 2848--2849
 [][] 
  []
 
-[38<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-rollin
-g-summary-output-1.pdf>] [39]
+[51<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-rollin
+g-summary-output-1.pdf>] [52]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-detrend-pl
-ot-output-1.pdf, id=528, 714.72972pt x 425.5787pt>
+ot-output-1.pdf, id=696, 714.72972pt x 425.5787pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-detre
 nd-plot-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-detren
 d-plot-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-detrend-plot-output-1.pdf  used on input line 2068.
+gure-pdf/ch02-detrend-plot-output-1.pdf  used on input line 2909.
 (luatex.def)             Requested size: 714.72798pt x 425.57767pt.
 
-Overfull \hbox (10.94946pt too wide) in paragraph at lines 2068--2069
+Overfull \hbox (10.94946pt too wide) in paragraph at lines 2909--2910
 [][] 
  []
 
-[40<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-detren
+[53<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-detren
 d-plot-output-1.pdf>]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-fourier-de
-seasonalize-plot-output-1.pdf, id=573, 714.72972pt x 425.5787pt>
+seasonalize-plot-output-1.pdf, id=740, 714.72972pt x 425.5787pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-fouri
 er-deseasonalize-plot-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-fourie
 r-deseasonalize-plot-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-fourier-deseasonalize-plot-output-1.pdf  used on input line 2137.
+gure-pdf/ch02-fourier-deseasonalize-plot-output-1.pdf  used on input line 2978.
 
 (luatex.def)             Requested size: 714.72798pt x 425.57767pt.
 
-Overfull \hbox (10.94946pt too wide) in paragraph at lines 2137--2138
+Overfull \hbox (10.94946pt too wide) in paragraph at lines 2978--2979
 [][] 
  []
 
-[41] [42<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-f
+[54] [55<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-f
 ourier-deseasonalize-plot-output-1.pdf>]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-functi
-on-output-1.pdf, id=627, 570.04218pt x 271.55528pt>
+on-output-1.pdf, id=793, 570.04218pt x 271.55528pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-f
 unction-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-fu
 nction-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-acf-function-output-1.pdf  used on input line 2184.
+gure-pdf/ch02-acf-function-output-1.pdf  used on input line 3025.
 (luatex.def)             Requested size: 570.04077pt x 271.5546pt.
 
-Overfull \hbox (10.9521pt too wide) in paragraph at lines 2184--2185
+Overfull \hbox (10.9521pt too wide) in paragraph at lines 3025--3026
 [][] 
  []
 
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-functi
-on-output-2.pdf, id=628, 570.04218pt x 271.55528pt>
+on-output-2.pdf, id=794, 570.04218pt x 271.55528pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-f
 unction-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-fu
 nction-output-2.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-acf-function-output-2.pdf  used on input line 2186.
+gure-pdf/ch02-acf-function-output-2.pdf  used on input line 3027.
 (luatex.def)             Requested size: 570.04077pt x 271.5546pt.
 
-Overfull \hbox (10.9521pt too wide) in paragraph at lines 2186--2187
+Overfull \hbox (10.9521pt too wide) in paragraph at lines 3027--3028
 [][] 
  []
 
-[43<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-fu
-nction-output-1.pdf>] [44<./chapters/chapter-02-exploratory-data-analysis_files/
+[56<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-acf-fu
+nction-output-1.pdf>] [57<./chapters/chapter-02-exploratory-data-analysis_files/
 figure-pdf/ch02-acf-function-output-2.pdf>]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differenci
-ng-plot-output-1.pdf, id=710, 715.11832pt x 570.52837pt>
+ng-plot-output-1.pdf, id=876, 715.11832pt x 570.52837pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-diffe
 rencing-plot-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
 encing-plot-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-differencing-plot-output-1.pdf  used on input line 2238.
+gure-pdf/ch02-differencing-plot-output-1.pdf  used on input line 3079.
 (luatex.def)             Requested size: 715.11658pt x 570.52696pt.
 
-Overfull \hbox (10.96323pt too wide) in paragraph at lines 2238--2239
+Overfull \hbox (10.96323pt too wide) in paragraph at lines 3079--3080
 [][] 
  []
 
-[45<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
+[58<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
 encing-plot-output-1.pdf>]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differenci
-ng-acfs-output-1.pdf, id=753, 570.04218pt x 271.55528pt>
+ng-acfs-output-1.pdf, id=920, 570.04218pt x 271.55528pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-diffe
 rencing-acfs-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
 encing-acfs-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-differencing-acfs-output-1.pdf  used on input line 2249.
+gure-pdf/ch02-differencing-acfs-output-1.pdf  used on input line 3090.
 (luatex.def)             Requested size: 570.04077pt x 271.5546pt.
 
-Overfull \hbox (10.9521pt too wide) in paragraph at lines 2249--2250
+Overfull \hbox (10.9521pt too wide) in paragraph at lines 3090--3091
 [][] 
  []
 
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differenci
-ng-acfs-output-2.pdf, id=754, 570.04218pt x 271.55528pt>
+ng-acfs-output-2.pdf, id=921, 570.04218pt x 271.55528pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-diffe
 rencing-acfs-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
 encing-acfs-output-2.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-differencing-acfs-output-2.pdf  used on input line 2251.
+gure-pdf/ch02-differencing-acfs-output-2.pdf  used on input line 3092.
 (luatex.def)             Requested size: 570.04077pt x 271.5546pt.
 
-Overfull \hbox (10.9521pt too wide) in paragraph at lines 2251--2252
+Overfull \hbox (10.9521pt too wide) in paragraph at lines 3092--3093
 [][] 
  []
 
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differenci
-ng-acfs-output-3.pdf, id=755, 570.04218pt x 271.55528pt>
+ng-acfs-output-3.pdf, id=922, 570.04218pt x 271.55528pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-diffe
 rencing-acfs-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
 encing-acfs-output-3.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-differencing-acfs-output-3.pdf  used on input line 2253.
+gure-pdf/ch02-differencing-acfs-output-3.pdf  used on input line 3094.
 (luatex.def)             Requested size: 570.04077pt x 271.5546pt.
 
-Overfull \hbox (10.9521pt too wide) in paragraph at lines 2253--2254
+Overfull \hbox (10.9521pt too wide) in paragraph at lines 3094--3095
 [][] 
  []
 
-[46<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
+[59<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
 encing-acfs-output-1.pdf><./chapters/chapter-02-exploratory-data-analysis_files/
 figure-pdf/ch02-differencing-acfs-output-2.pdf>]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-smoothing-
-output-1.pdf, id=833, 615.61325pt x 282.68486pt>
+output-1.pdf, id=1000, 615.61325pt x 282.68486pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-smoot
 hing-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-smooth
 ing-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-smoothing-output-1.pdf  used on input line 2285.
+gure-pdf/ch02-smoothing-output-1.pdf  used on input line 3126.
 (luatex.def)             Requested size: 615.61174pt x 282.68416pt.
 
-Overfull \hbox (10.9537pt too wide) in paragraph at lines 2285--2286
+Overfull \hbox (10.9537pt too wide) in paragraph at lines 3126--3127
 [][] 
  []
 
-[47<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
+[60<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-differ
 encing-acfs-output-3.pdf>]
 <chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-lag-plots-
-output-1.pdf, id=876, 570.52774pt x 570.11871pt>
+output-1.pdf, id=1043, 570.52774pt x 570.11871pt>
 File: chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-lag-p
 lots-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-lag-pl
 ots-output-1.pdf>
 Package luatex.def Info: chapters/chapter-02-exploratory-data-analysis_files/fi
-gure-pdf/ch02-lag-plots-output-1.pdf  used on input line 2306.
+gure-pdf/ch02-lag-plots-output-1.pdf  used on input line 3147.
 (luatex.def)             Requested size: 570.52634pt x 570.11731pt.
 
-Overfull \hbox (10.96703pt too wide) in paragraph at lines 2306--2307
+Overfull \hbox (10.96703pt too wide) in paragraph at lines 3147--3148
 [][] 
  []
 
-[48<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-smooth
-ing-output-1.pdf>] [49<./chapters/chapter-02-exploratory-data-analysis_files/fig
+[61<./chapters/chapter-02-exploratory-data-analysis_files/figure-pdf/ch02-smooth
+ing-output-1.pdf>] [62<./chapters/chapter-02-exploratory-data-analysis_files/fig
 ure-pdf/ch02-lag-plots-output-1.pdf>]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 4.0 on input line 2356.
+(longtable)                in table 4.0 on input line 3197.
 
-[50] [51] [52] [53] [54] [55]
+[63] [64] [65] [66] [67] [68]
 part II.
 Package scrkbase Info: You've told me to use the font selection of the element
 (scrkbase)             `partprefix' that is an alias of element `partnumber'
-(scrkbase)              on input line 2659.
-[56
+(scrkbase)              on input line 3500.
+[69
 
 ]
 chapter 5.
-[57
+[70
 
-] [58] [59] [60] [61] [62] [63] [64] [65] [66] [67]
+] [71] [72] [73] [74] [75] [76] [77] [78] [79] [80]
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/m/n' will be
-(Font)              scaled to size 12.0pt on input line 3308.
+(Font)              scaled to size 12.0pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/m/n' will be
-(Font)              scaled to size 8.0pt on input line 3308.
+(Font)              scaled to size 8.0pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/m/n' will be
-(Font)              scaled to size 6.0pt on input line 3308.
+(Font)              scaled to size 6.0pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/m/n' will be
-(Font)              scaled to size 12.0011pt on input line 3308.
+(Font)              scaled to size 12.0011pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/m/n' will be
-(Font)              scaled to size 8.00073pt on input line 3308.
+(Font)              scaled to size 8.00073pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/m/n' will be
-(Font)              scaled to size 6.00055pt on input line 3308.
+(Font)              scaled to size 6.00055pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/m/n' will be
-(Font)              scaled to size 11.99872pt on input line 3308.
+(Font)              scaled to size 11.99872pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/m/n' will be
-(Font)              scaled to size 7.99915pt on input line 3308.
+(Font)              scaled to size 7.99915pt on input line 4149.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/m/n' will be
-(Font)              scaled to size 5.99936pt on input line 3308.
-[68] [69] [70] [71] [72] [73] [74] [75] [76] [77] [78] [79] [80] [81]
+(Font)              scaled to size 5.99936pt on input line 4149.
+[81] [82] [83] [84] [85] [86] [87] [88] [89] [90] [91] [92] [93] [94]
 chapter 6.
-[82
+[95
 
-] [83] [84] [85] [86] [87] [88] [89] [90] [91] [92] [93] [94] [95] [96] [97] [9
-8] [99] [100]
-Overfull \hbox (76.3761pt too wide) in paragraph at lines 5008--5008
+] [96] [97] [98] [99] [100] [101] [102] [103] [104] [105] [106] [107] [108] [10
+9] [110] [111] [112] [113]
+Overfull \hbox (76.3761pt too wide) in paragraph at lines 5849--5849
 []  \TU/lmtt/m/n/10.95 <input id="ch04_root_radius" type="range" min="0.55" max=
 "1.80" step="0.01" value="1.30">[] 
  []
 
 
-Overfull \hbox (70.62735pt too wide) in paragraph at lines 5012--5012
+Overfull \hbox (70.62735pt too wide) in paragraph at lines 5853--5853
 []  \TU/lmtt/m/n/10.95 <input id="ch04_root_angle" type="range" min="0.05" max="
 0.95" step="0.01" value="0.25">[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5016--5016
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 5857--5857
 []  \TU/lmtt/m/n/10.95 <input id="ch04_horizon" type="range" min="10" max="80" 
 step="1" value="40">[] 
  []
 
-[101] [102]
+[114] [115]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 6.0 on input line 5121.
+(longtable)                in table 6.0 on input line 5962.
 
 <chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-plot-
-simulated-processes-output-1.pdf, id=1390, 643.2444pt x 425.5787pt>
+simulated-processes-output-1.pdf, id=1557, 643.2444pt x 425.5787pt>
 File: chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-
 plot-simulated-processes-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-p
 lot-simulated-processes-output-1.pdf>
 Package luatex.def Info: chapters/chapter-04-linear-processes-ar-ma-arma_files/
-figure-pdf/py-ch04-plot-simulated-processes-output-1.pdf  used on input line 51
-39.
+figure-pdf/py-ch04-plot-simulated-processes-output-1.pdf  used on input line 59
+80.
 (luatex.def)             Requested size: 643.24283pt x 425.57767pt.
 
-Overfull \hbox (10.96379pt too wide) in paragraph at lines 5139--5140
+Overfull \hbox (10.96379pt too wide) in paragraph at lines 5980--5981
 [][] 
  []
 
-[103] [104<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
+[116] [117<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
 -ch04-plot-simulated-processes-output-1.pdf>]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 6.0 on input line 5195.
+(longtable)                in table 6.0 on input line 6036.
 
 <chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-acf-p
-lot-output-1.pdf, id=1430, 649.5925pt x 425.5787pt>
+lot-output-1.pdf, id=1596, 649.5925pt x 425.5787pt>
 File: chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-
 acf-plot-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-a
 cf-plot-output-1.pdf>
 Package luatex.def Info: chapters/chapter-04-linear-processes-ar-ma-arma_files/
-figure-pdf/py-ch04-acf-plot-output-1.pdf  used on input line 5212.
+figure-pdf/py-ch04-acf-plot-output-1.pdf  used on input line 6053.
 (luatex.def)             Requested size: 649.59091pt x 425.57767pt.
 
-Overfull \hbox (10.96211pt too wide) in paragraph at lines 5212--5213
+Overfull \hbox (10.96211pt too wide) in paragraph at lines 6053--6054
 [][] 
  []
 
-[105] [106<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
--ch04-acf-plot-output-1.pdf>] [107] [108]
+[118] [119<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
+-ch04-acf-plot-output-1.pdf>] [120] [121]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 6.0 on input line 5375.
+(longtable)                in table 6.0 on input line 6216.
 
 <chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-psi-p
-lot-output-1.pdf, id=1488, 555.53485pt x 282.68486pt>
+lot-output-1.pdf, id=1655, 555.53485pt x 282.68486pt>
 File: chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-
 psi-plot-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-p
 si-plot-output-1.pdf>
 Package luatex.def Info: chapters/chapter-04-linear-processes-ar-ma-arma_files/
-figure-pdf/py-ch04-psi-plot-output-1.pdf  used on input line 5393.
+figure-pdf/py-ch04-psi-plot-output-1.pdf  used on input line 6234.
 (luatex.def)             Requested size: 555.53348pt x 282.68416pt.
 
-Overfull \hbox (10.94954pt too wide) in paragraph at lines 5393--5394
+Overfull \hbox (10.94954pt too wide) in paragraph at lines 6234--6235
 [][] 
  []
 
-[109] [110<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
+[122] [123<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
 -ch04-psi-plot-output-1.pdf>]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 6.0 on input line 5454.
+(longtable)                in table 6.0 on input line 6295.
 
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <14.4> not available
-(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 5461.
+(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 6302.
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5480--5480
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6321--6321
 []\TU/lmtt/m/n/10.95 ===========================================================
 ===================[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5481--5481
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6322--6322
 []\TU/lmtt/m/n/10.95 Dep. Variable:                      y   No. Observations: 
                  400[] 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 5482--5482
+Underfull \hbox (badness 10000) in paragraph at lines 6323--6323
 []\TU/lmtt/m/n/10.95 Model:                 ARIMA(1, 0, 1)   Log Likelihood    
             -
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5483--5483
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6324--6324
 []\TU/lmtt/m/n/10.95 Date:                Fri, 19 Jun 2026   AIC               
             1136.949[] 
  []
 
-[111]
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5484--5484
+[124]
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6325--6325
 []\TU/lmtt/m/n/10.95 Time:                        19:56:57   BIC               
             1148.923[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5485--5485
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6326--6326
 []\TU/lmtt/m/n/10.95 Sample:                             0   HQIC              
             1141.691[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5488--5488
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6329--6329
 []\TU/lmtt/m/n/10.95 ===========================================================
 ===================[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5489--5489
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6330--6330
 []                 \TU/lmtt/m/n/10.95 coef    std err          z      P>|z|    
   [0.025      0.975][] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5490--5490
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6331--6331
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5491--5491
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6332--6332
 []\TU/lmtt/m/n/10.95 ar.L1          0.6657      0.046     14.601      0.000    
    0.576       0.755[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5492--5492
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6333--6333
 []\TU/lmtt/m/n/10.95 ma.L1          0.4744      0.055      8.668      0.000    
    0.367       0.582[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 5493--5493
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 6334--6334
 []\TU/lmtt/m/n/10.95 sigma2         0.9861      0.067     14.707      0.000    
    0.855       1.118[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 5494--5494
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 6335--6335
 []\TU/lmtt/m/n/10.95 ===========================================================
 ========================[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 5495--5495
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 6336--6336
 []\TU/lmtt/m/n/10.95 Ljung-Box (L1) (Q):                   0.04   Jarque-Bera (J
 B):                 0.70[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 5496--5496
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 6337--6337
 []\TU/lmtt/m/n/10.95 Prob(Q):                              0.83   Prob(JB):    
                      0.70[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 5497--5497
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 6338--6338
 []\TU/lmtt/m/n/10.95 Heteroskedasticity (H):               1.17   Skew:        
                      0.06[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 5498--5498
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 6339--6339
 []\TU/lmtt/m/n/10.95 Prob(H) (two-sided):                  0.38   Kurtosis:    
                      3.17[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 5499--5499
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 6340--6340
 []\TU/lmtt/m/n/10.95 ===========================================================
 ========================[] 
  []
 
 
-Overfull \hbox (7.39111pt too wide) in paragraph at lines 5502--5502
+Overfull \hbox (7.39111pt too wide) in paragraph at lines 6343--6343
 []\TU/lmtt/m/n/10.95 [1] Covariance matrix calculated using the outer product of
  gradients (complex-
  []
 
 <chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-resid
-ual-diagnostics-output-1.pdf, id=1556, 643.17915pt x 353.3087pt>
+ual-diagnostics-output-1.pdf, id=1723, 643.17915pt x 353.3087pt>
 File: chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-
 residual-diagnostics-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py-ch04-r
 esidual-diagnostics-output-1.pdf>
 Package luatex.def Info: chapters/chapter-04-linear-processes-ar-ma-arma_files/
-figure-pdf/py-ch04-residual-diagnostics-output-1.pdf  used on input line 5525.
+figure-pdf/py-ch04-residual-diagnostics-output-1.pdf  used on input line 6366.
 (luatex.def)             Requested size: 643.17758pt x 353.30783pt.
 
-Overfull \hbox (10.95773pt too wide) in paragraph at lines 5525--5526
+Overfull \hbox (10.95773pt too wide) in paragraph at lines 6366--6367
 [][] 
  []
 
-[112] [113<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
+[125] [126<./chapters/chapter-04-linear-processes-ar-ma-arma_files/figure-pdf/py
 -ch04-residual-diagnostics-output-1.pdf>]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 6.0 on input line 5583.
+(longtable)                in table 6.0 on input line 6424.
 
-[114] [115] [116] [117] [118] [119] [120] [121]
+[127] [128] [129] [130] [131] [132] [133] [134]
 chapter 7.
-[122
+[135
 
-] [123
+] [136
 Missing character: There is no  (U+E200) in font [lmroman10-regular]:+tlig;!
 Missing character: There is no  (U+E202) in font [lmroman10-regular]:+tlig;!
 Missing character: There is no  (U+E201) in font [lmroman10-regular]:+tlig;!
-] [124]
+] [137]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 7.0 on input line 6228.
+(longtable)                in table 7.0 on input line 7069.
 
-[125] [126
+[138] [139
 Missing character: There is no  (U+E200) in font [lmroman10-regular]:+tlig;!
 Missing character: There is no  (U+E202) in font [lmroman10-regular]:+tlig;!
 Missing character: There is no  (U+E201) in font [lmroman10-regular]:+tlig;!
-] [127] [128] [129] [130] [131] [132] [133
+] [140] [141] [142] [143] [144] [145] [146
 Missing character: There is no  (U+E200) in font [lmroman10-regular]:+tlig;!
 Missing character: There is no  (U+E202) in font [lmroman10-regular]:+tlig;!
 Missing character: There is no  (U+E201) in font [lmroman10-regular]:+tlig;!
-] [134] [135]
-Overfull \hbox (47.63235pt too wide) in paragraph at lines 6825--6825
+] [147] [148]
+Overfull \hbox (47.63235pt too wide) in paragraph at lines 7666--7666
 []  \TU/lmtt/m/n/10.95 <input id="ch05_radius" type="range" min="0.40" max="1.25
 " step="0.01" value="0.82">[] 
  []
 
 
-Overfull \hbox (41.8836pt too wide) in paragraph at lines 6829--6829
+Overfull \hbox (41.8836pt too wide) in paragraph at lines 7670--7670
 []  \TU/lmtt/m/n/10.95 <input id="ch05_angle" type="range" min="0.04" max="0.96"
  step="0.01" value="0.20">[] 
  []
 
 
-Overfull \hbox (7.39111pt too wide) in paragraph at lines 6833--6833
+Overfull \hbox (7.39111pt too wide) in paragraph at lines 7674--7674
 []  \TU/lmtt/m/n/10.95 <input id="ch05_x0" type="range" min="-3.0" max="3.0" ste
 p="0.1" value="1.0">[] 
  []
 
 
-Overfull \hbox (7.39111pt too wide) in paragraph at lines 6837--6837
+Overfull \hbox (7.39111pt too wide) in paragraph at lines 7678--7678
 []  \TU/lmtt/m/n/10.95 <input id="ch05_x1" type="range" min="-3.0" max="3.0" ste
 p="0.1" value="0.6">[] 
  []
 
 
-Overfull \hbox (7.39111pt too wide) in paragraph at lines 6841--6841
+Overfull \hbox (7.39111pt too wide) in paragraph at lines 7682--7682
 []  \TU/lmtt/m/n/10.95 <input id="ch05_horizon" type="range" min="20" max="160" step="1" value="80">[] 
  []
 
-[136]
+[149]
 <chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pdf/py-
-ch05-damped-recurrence-output-2.pdf, id=1824, 507.6497pt x 282.68486pt>
+ch05-damped-recurrence-output-2.pdf, id=1991, 507.6497pt x 282.68486pt>
 File: chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pd
 f/py-ch05-damped-recurrence-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pdf
 /py-ch05-damped-recurrence-output-2.pdf>
 Package luatex.def Info: chapters/chapter-05-difference-equations-dynamic-behav
 ior_files/figure-pdf/py-ch05-damped-recurrence-output-2.pdf  used on input line
- 6904.
+ 7745.
 (luatex.def)             Requested size: 507.64845pt x 282.68416pt.
 
-Overfull \hbox (10.96954pt too wide) in paragraph at lines 6904--6905
+Overfull \hbox (10.96954pt too wide) in paragraph at lines 7745--7746
 [][] 
  []
 
-[137] [138<./chapters/chapter-05-difference-equations-dynamic-behavior_files/fig
+[150] [151<./chapters/chapter-05-difference-equations-dynamic-behavior_files/fig
 ure-pdf/py-ch05-damped-recurrence-output-2.pdf>]
 <chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pdf/py-
-ch05-impulse-response-output-1.pdf, id=1874, 514.31523pt x 282.68486pt>
+ch05-impulse-response-output-1.pdf, id=2042, 514.31523pt x 282.68486pt>
 File: chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pd
 f/py-ch05-impulse-response-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pdf
 /py-ch05-impulse-response-output-1.pdf>
 Package luatex.def Info: chapters/chapter-05-difference-equations-dynamic-behav
 ior_files/figure-pdf/py-ch05-impulse-response-output-1.pdf  used on input line 
-6954.
+7795.
 (luatex.def)             Requested size: 514.31396pt x 282.68416pt.
 
-Overfull \hbox (10.94998pt too wide) in paragraph at lines 6954--6955
+Overfull \hbox (10.94998pt too wide) in paragraph at lines 7795--7796
 [][] 
  []
 
-[139<./chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pd
-f/py-ch05-impulse-response-output-1.pdf>] [140]
+[152<./chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pd
+f/py-ch05-impulse-response-output-1.pdf>] [153]
 <chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pdf/py-
-ch05-ar1-regimes-output-1.pdf, id=1929, 554.07628pt x 338.33276pt>
+ch05-ar1-regimes-output-1.pdf, id=2097, 554.07628pt x 338.33276pt>
 File: chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pd
 f/py-ch05-ar1-regimes-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-05-difference-equations-dynamic-behavior_files/figure-pdf
 /py-ch05-ar1-regimes-output-1.pdf>
 Package luatex.def Info: chapters/chapter-05-difference-equations-dynamic-behav
-ior_files/figure-pdf/py-ch05-ar1-regimes-output-1.pdf  used on input line 7043.
+ior_files/figure-pdf/py-ch05-ar1-regimes-output-1.pdf  used on input line 7884.
 
 (luatex.def)             Requested size: 554.07492pt x 338.33192pt.
 
-Overfull \hbox (10.95175pt too wide) in paragraph at lines 7043--7044
+Overfull \hbox (10.95175pt too wide) in paragraph at lines 7884--7885
 [][] 
  []
 
-[141] [142<./chapters/chapter-05-difference-equations-dynamic-behavior_files/fig
-ure-pdf/py-ch05-ar1-regimes-output-1.pdf>] [143] [144] [145] [146] [147]
+[154] [155<./chapters/chapter-05-difference-equations-dynamic-behavior_files/fig
+ure-pdf/py-ch05-ar1-regimes-output-1.pdf>] [156] [157] [158] [159] [160]
 chapter 8.
-[148
+[161
 
-] [149]
-Overfull \hbox (2.17326pt too wide) detected at line 7526
+] [162]
+Overfull \hbox (2.17326pt too wide) detected at line 8367
 \TU/latinmodern-math.otf(1)/m/n/10.95 𝐸[(𝑌 − 𝑔)[]] = 𝐸 [] + 𝐸 
 [] + 2𝐸 [] .
  []
 
-[150] [151] [152] [153] [154] [155] [156] [157]
+[163] [164] [165] [166] [167] [168] [169] [170]
 <chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/ch6-py
-thon-ar1-forecast-output-1.pdf, id=2116, 554.07628pt x 327.20317pt>
+thon-ar1-forecast-output-1.pdf, id=2282, 554.07628pt x 327.20317pt>
 File: chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
 h6-python-ar1-forecast-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/ch
 6-python-ar1-forecast-output-1.pdf>
 Package luatex.def Info: chapters/chapter-06-forecasting-best-linear-prediction
-_files/figure-pdf/ch6-python-ar1-forecast-output-1.pdf  used on input line 7965
+_files/figure-pdf/ch6-python-ar1-forecast-output-1.pdf  used on input line 8806
 .
 (luatex.def)             Requested size: 554.07492pt x 327.20236pt.
 
-Overfull \hbox (10.95175pt too wide) in paragraph at lines 7965--7966
+Overfull \hbox (10.95175pt too wide) in paragraph at lines 8806--8807
 [][] 
  []
 
-[158<./chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
-h6-python-ar1-forecast-output-1.pdf>] [159]
+[171<./chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
+h6-python-ar1-forecast-output-1.pdf>] [172]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 8.0 on input line 8034.
+(longtable)                in table 8.0 on input line 8875.
 
-[160] [161] [162]
+[173] [174] [175]
 <chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/ch6-py
-thon-ar2-recursive-output-1.pdf, id=2192, 554.07628pt x 327.20317pt>
+thon-ar2-recursive-output-1.pdf, id=2359, 554.07628pt x 327.20317pt>
 File: chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
 h6-python-ar2-recursive-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/ch
 6-python-ar2-recursive-output-1.pdf>
 Package luatex.def Info: chapters/chapter-06-forecasting-best-linear-prediction
-_files/figure-pdf/ch6-python-ar2-recursive-output-1.pdf  used on input line 820
-7.
+_files/figure-pdf/ch6-python-ar2-recursive-output-1.pdf  used on input line 904
+8.
 (luatex.def)             Requested size: 554.07492pt x 327.20236pt.
 
-Overfull \hbox (10.95175pt too wide) in paragraph at lines 8207--8208
+Overfull \hbox (10.95175pt too wide) in paragraph at lines 9048--9049
 [][] 
  []
 
-[163<./chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
-h6-python-ar2-recursive-output-1.pdf>] [164] [165]
+[176<./chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
+h6-python-ar2-recursive-output-1.pdf>] [177] [178]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 8.0 on input line 8366.
+(longtable)                in table 8.0 on input line 9207.
 
-[166] [167] [168]
+[179] [180] [181]
 <chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/ch6-py
-thon-rolling-forecast-output-1.pdf, id=2276, 554.07628pt x 327.20317pt>
+thon-rolling-forecast-output-1.pdf, id=2444, 554.07628pt x 327.20317pt>
 File: chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
 h6-python-rolling-forecast-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/ch
 6-python-rolling-forecast-output-1.pdf>
 Package luatex.def Info: chapters/chapter-06-forecasting-best-linear-prediction
 _files/figure-pdf/ch6-python-rolling-forecast-output-1.pdf  used on input line 
-8488.
+9329.
 (luatex.def)             Requested size: 554.07492pt x 327.20236pt.
 
-Overfull \hbox (10.95175pt too wide) in paragraph at lines 8488--8489
+Overfull \hbox (10.95175pt too wide) in paragraph at lines 9329--9330
 [][] 
  []
 
-[169<./chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
-h6-python-rolling-forecast-output-1.pdf>] [170] [171] [172] [173] [174] [175]
+[182<./chapters/chapter-06-forecasting-best-linear-prediction_files/figure-pdf/c
+h6-python-rolling-forecast-output-1.pdf>] [183] [184] [185] [186] [187] [188]
 chapter 9.
-[176
+[189
 
-] [177] [178] [179] [180]
+] [190] [191] [192] [193]
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/b/n' will be
-(Font)              scaled to size 10.95pt on input line 9190.
+(Font)              scaled to size 10.95pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/b/n' will be
-(Font)              scaled to size 7.665pt on input line 9190.
+(Font)              scaled to size 7.665pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/b/n' will be
-(Font)              scaled to size 5.475pt on input line 9190.
+(Font)              scaled to size 5.475pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/b/n' will be
-(Font)              scaled to size 10.95099pt on input line 9190.
+(Font)              scaled to size 10.95099pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/b/n' will be
-(Font)              scaled to size 7.66568pt on input line 9190.
+(Font)              scaled to size 7.66568pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/b/n' will be
-(Font)              scaled to size 5.4755pt on input line 9190.
+(Font)              scaled to size 5.4755pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/b/n' will be
-(Font)              scaled to size 10.94882pt on input line 9190.
+(Font)              scaled to size 10.94882pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/b/n' will be
-(Font)              scaled to size 7.66417pt on input line 9190.
+(Font)              scaled to size 7.66417pt on input line 10031.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/b/n' will be
-(Font)              scaled to size 5.47441pt on input line 9190.
-[181] [182] [183] [184] [185] [186] [187] [188]
+(Font)              scaled to size 5.47441pt on input line 10031.
+[194] [195] [196] [197] [198] [199] [200] [201]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 9.0 on input line 9610.
+(longtable)                in table 9.0 on input line 10451.
 
-[189]
+[202]
 <chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf/py-
-ch07-residual-diagnostics-output-2.pdf, id=2510, 498.06702pt x 227.03696pt>
+ch07-residual-diagnostics-output-2.pdf, id=2678, 498.06702pt x 227.03696pt>
 File: chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
 f/py-ch07-residual-diagnostics-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf
 /py-ch07-residual-diagnostics-output-2.pdf>
 Package luatex.def Info: chapters/chapter-07-estimation-identification-diagnost
 ics_files/figure-pdf/py-ch07-residual-diagnostics-output-2.pdf  used on input l
-ine 9658.
+ine 10499.
 (luatex.def)             Requested size: 498.0658pt x 227.03639pt.
 <chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf/py-
-ch07-residual-diagnostics-output-3.pdf, id=2511, 360.28665pt x 241.13776pt>
+ch07-residual-diagnostics-output-3.pdf, id=2679, 360.28665pt x 241.13776pt>
 File: chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
 f/py-ch07-residual-diagnostics-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf
 /py-ch07-residual-diagnostics-output-3.pdf>
 Package luatex.def Info: chapters/chapter-07-estimation-identification-diagnost
 ics_files/figure-pdf/py-ch07-residual-diagnostics-output-3.pdf  used on input l
-ine 9666.
+ine 10507.
 (luatex.def)             Requested size: 360.28577pt x 241.13716pt.
 <chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf/py-
-ch07-residual-diagnostics-output-4.pdf, id=2512, 330.03928pt x 338.33276pt>
+ch07-residual-diagnostics-output-4.pdf, id=2680, 330.03928pt x 338.33276pt>
 File: chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
 f/py-ch07-residual-diagnostics-output-4.pdf Graphic file (type pdf)
 <use chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf
 /py-ch07-residual-diagnostics-output-4.pdf>
 Package luatex.def Info: chapters/chapter-07-estimation-identification-diagnost
 ics_files/figure-pdf/py-ch07-residual-diagnostics-output-4.pdf  used on input l
-ine 9668.
+ine 10509.
 (luatex.def)             Requested size: 330.03847pt x 338.33192pt.
-[190<./chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
-f/py-ch07-residual-diagnostics-output-2.pdf>] [191<./chapters/chapter-07-estimat
+[203<./chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
+f/py-ch07-residual-diagnostics-output-2.pdf>] [204<./chapters/chapter-07-estimat
 ion-identification-diagnostics_files/figure-pdf/py-ch07-residual-diagnostics-out
-put-3.pdf>] [192<./chapters/chapter-07-estimation-identification-diagnostics_fil
+put-3.pdf>] [205<./chapters/chapter-07-estimation-identification-diagnostics_fil
 es/figure-pdf/py-ch07-residual-diagnostics-output-4.pdf>]
 <chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf/py-
-ch07-changing-variance-output-1.pdf, id=2629, 498.06702pt x 227.03696pt>
+ch07-changing-variance-output-1.pdf, id=2795, 498.06702pt x 227.03696pt>
 File: chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
 f/py-ch07-changing-variance-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf
 /py-ch07-changing-variance-output-1.pdf>
 Package luatex.def Info: chapters/chapter-07-estimation-identification-diagnost
 ics_files/figure-pdf/py-ch07-changing-variance-output-1.pdf  used on input line
- 9722.
+ 10563.
 (luatex.def)             Requested size: 498.0658pt x 227.03639pt.
-[193]
+[206]
 <chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf/py-
-ch07-changing-variance-output-2.pdf, id=2636, 360.28665pt x 241.13776pt>
+ch07-changing-variance-output-2.pdf, id=2802, 360.28665pt x 241.13776pt>
 File: chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
 f/py-ch07-changing-variance-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf
 /py-ch07-changing-variance-output-2.pdf>
 Package luatex.def Info: chapters/chapter-07-estimation-identification-diagnost
 ics_files/figure-pdf/py-ch07-changing-variance-output-2.pdf  used on input line
- 9731.
+ 10572.
 (luatex.def)             Requested size: 360.28577pt x 241.13716pt.
 <chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf/py-
-ch07-changing-variance-output-3.pdf, id=2637, 360.28665pt x 241.13776pt>
+ch07-changing-variance-output-3.pdf, id=2803, 360.28665pt x 241.13776pt>
 File: chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
 f/py-ch07-changing-variance-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-07-estimation-identification-diagnostics_files/figure-pdf
 /py-ch07-changing-variance-output-3.pdf>
 Package luatex.def Info: chapters/chapter-07-estimation-identification-diagnost
 ics_files/figure-pdf/py-ch07-changing-variance-output-3.pdf  used on input line
- 9733.
+ 10574.
 (luatex.def)             Requested size: 360.28577pt x 241.13716pt.
-[194<./chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
+[207<./chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
 f/py-ch07-changing-variance-output-1.pdf><./chapters/chapter-07-estimation-ident
 ification-diagnostics_files/figure-pdf/py-ch07-changing-variance-output-2.pdf>]
-[195<./chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
-f/py-ch07-changing-variance-output-3.pdf>] [196] [197] [198] [199]
+[208<./chapters/chapter-07-estimation-identification-diagnostics_files/figure-pd
+f/py-ch07-changing-variance-output-3.pdf>] [209] [210] [211] [212]
 part III.
 Package scrkbase Info: You've told me to use the font selection of the element
 (scrkbase)             `partprefix' that is an alias of element `partnumber'
-(scrkbase)              on input line 9975.
-[200
+(scrkbase)              on input line 10816.
+[213
 
 ]
 chapter 10.
-[201
+[214
 
-] [202]
+] [215]
 
 Package amsmath Warning: Foreign command \atopwithdelims;
 (amsmath)                \frac or \genfrac should be used instead
-(amsmath)                 on input line 10106.
+(amsmath)                 on input line 10947.
 
-[203] [204] [205] [206] [207] [208] [209] [210]
+[216] [217] [218] [219] [220] [221] [222] [223]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 10.0 on input line 10615.
+(longtable)                in table 10.0 on input line 11456.
 
-[211] [212] [213] [214]
+[224] [225] [226] [227]
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-deterministic-
-vs-stochastic-trend-output-1.pdf, id=2919, 540.35313pt x 254.8609pt>
+vs-stochastic-trend-output-1.pdf, id=3086, 540.35313pt x 254.8609pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-determini
 stic-vs-stochastic-trend-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-determinis
 tic-vs-stochastic-trend-output-1.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-deterministic-vs-stochastic-trend-output-1.pdf  used on input line 10
-830.
+f/py-ch08-deterministic-vs-stochastic-trend-output-1.pdf  used on input line 11
+671.
 (luatex.def)             Requested size: 540.3518pt x 254.86028pt.
-[215]
+[228]
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-deterministic-
-vs-stochastic-trend-output-2.pdf, id=2924, 540.35313pt x 254.8609pt>
+vs-stochastic-trend-output-2.pdf, id=3091, 540.35313pt x 254.8609pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-determini
 stic-vs-stochastic-trend-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-determinis
 tic-vs-stochastic-trend-output-2.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-deterministic-vs-stochastic-trend-output-2.pdf  used on input line 10
-839.
+f/py-ch08-deterministic-vs-stochastic-trend-output-2.pdf  used on input line 11
+680.
 (luatex.def)             Requested size: 540.3518pt x 254.86028pt.
 
-Overfull \hbox (10.95146pt too wide) in paragraph at lines 10839--10840
+Overfull \hbox (10.95146pt too wide) in paragraph at lines 11680--11681
 [][] 
  []
 
-[216<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-determini
+[229<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-determini
 stic-vs-stochastic-trend-output-1.pdf><./chapters/chapter-08-arima-differencing_
 files/figure-pdf/py-ch08-deterministic-vs-stochastic-trend-output-2.pdf>]
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-before-aft
-er-differencing-output-1.pdf, id=3003, 360.28665pt x 241.13776pt>
+er-differencing-output-1.pdf, id=3169, 360.28665pt x 241.13776pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-befor
 e-after-differencing-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-before
 -after-differencing-output-1.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-acf-before-after-differencing-output-1.pdf  used on input line 10873.
+f/py-ch08-acf-before-after-differencing-output-1.pdf  used on input line 11714.
 
 (luatex.def)             Requested size: 360.28577pt x 241.13716pt.
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-before-aft
-er-differencing-output-2.pdf, id=3004, 360.28665pt x 241.13776pt>
+er-differencing-output-2.pdf, id=3170, 360.28665pt x 241.13776pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-befor
 e-after-differencing-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-before
 -after-differencing-output-2.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-acf-before-after-differencing-output-2.pdf  used on input line 10881.
+f/py-ch08-acf-before-after-differencing-output-2.pdf  used on input line 11722.
 
 (luatex.def)             Requested size: 360.28577pt x 241.13716pt.
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-before-aft
-er-differencing-output-3.pdf, id=3005, 360.28665pt x 241.13776pt>
+er-differencing-output-3.pdf, id=3171, 360.28665pt x 241.13776pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-befor
 e-after-differencing-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-before
 -after-differencing-output-3.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-acf-before-after-differencing-output-3.pdf  used on input line 10883.
+f/py-ch08-acf-before-after-differencing-output-3.pdf  used on input line 11724.
 
 (luatex.def)             Requested size: 360.28577pt x 241.13716pt.
-[217<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-befor
-e-after-differencing-output-1.pdf>] [218<./chapters/chapter-08-arima-differencin
+[230<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-befor
+e-after-differencing-output-1.pdf>] [231<./chapters/chapter-08-arima-differencin
 g_files/figure-pdf/py-ch08-acf-before-after-differencing-output-2.pdf><./chapter
 s/chapter-08-arima-differencing_files/figure-pdf/py-ch08-acf-before-after-differ
-encing-output-3.pdf>] [219]
+encing-output-3.pdf>] [232]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 10.0 on input line 10961.
+(longtable)                in table 10.0 on input line 11802.
 
-[220]
+[233]
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-residual
-s-output-2.pdf, id=3135, 540.35313pt x 227.03696pt>
+s-output-2.pdf, id=3303, 540.35313pt x 227.03696pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-res
 iduals-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-resi
 duals-output-2.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-arima-residuals-output-2.pdf  used on input line 11007.
+f/py-ch08-arima-residuals-output-2.pdf  used on input line 11848.
 (luatex.def)             Requested size: 540.3518pt x 227.03639pt.
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-residual
-s-output-3.pdf, id=3136, 360.28665pt x 241.13776pt>
+s-output-3.pdf, id=3304, 360.28665pt x 241.13776pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-res
 iduals-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-resi
 duals-output-3.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-arima-residuals-output-3.pdf  used on input line 11015.
+f/py-ch08-arima-residuals-output-3.pdf  used on input line 11856.
 (luatex.def)             Requested size: 360.28577pt x 241.13716pt.
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-residual
-s-output-4.pdf, id=3137, 330.03928pt x 338.33276pt>
+s-output-4.pdf, id=3305, 330.03928pt x 338.33276pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-res
 iduals-output-4.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-resi
 duals-output-4.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-arima-residuals-output-4.pdf  used on input line 11017.
+f/py-ch08-arima-residuals-output-4.pdf  used on input line 11858.
 (luatex.def)             Requested size: 330.03847pt x 338.33192pt.
-[221<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-res
-iduals-output-2.pdf>] [222<./chapters/chapter-08-arima-differencing_files/figure
--pdf/py-ch08-arima-residuals-output-3.pdf>] [223<./chapters/chapter-08-arima-dif
+[234<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-res
+iduals-output-2.pdf>] [235<./chapters/chapter-08-arima-differencing_files/figure
+-pdf/py-ch08-arima-residuals-output-3.pdf>] [236<./chapters/chapter-08-arima-dif
 ferencing_files/figure-pdf/py-ch08-arima-residuals-output-4.pdf>]
 <chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-forecast
--output-1.pdf, id=3254, 538.32994pt x 282.68486pt>
+-output-1.pdf, id=3421, 538.32994pt x 282.68486pt>
 File: chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-for
 ecast-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-fore
 cast-output-1.pdf>
 Package luatex.def Info: chapters/chapter-08-arima-differencing_files/figure-pd
-f/py-ch08-arima-forecast-output-1.pdf  used on input line 11055.
+f/py-ch08-arima-forecast-output-1.pdf  used on input line 11896.
 (luatex.def)             Requested size: 538.32863pt x 282.68416pt.
-[224<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-for
-ecast-output-1.pdf>] [225] [226]
-Underfull \hbox (badness 1694) in paragraph at lines 11215--11219
+[237<./chapters/chapter-08-arima-differencing_files/figure-pdf/py-ch08-arima-for
+ecast-output-1.pdf>] [238] [239]
+Underfull \hbox (badness 1694) in paragraph at lines 12056--12060
 []\TU/lmr/m/n/10.95 Sim-u-late an ARIMA($\TU/latinmodern-math.otf(1)/b/n/10.95 
 1, 1, 0$\TU/lmr/m/n/10.95 ) model. Fit ARIMA($\TU/latinmodern-math.otf(1)/b/n/1
 0.95 0, 1, 0$\TU/lmr/m/n/10.95 ), ARIMA($\TU/latinmodern-math.otf(1)/b/n/10.95 
 1, 1, 0$\TU/lmr/m/n/10.95 ), and
  []
 
-[227] [228]
+[240] [241]
 chapter 11.
-[229
+[242
 
-] [230] [231] [232] [233]
+] [243] [244] [245] [246]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 11.0 on input line 11636.
+(longtable)                in table 11.0 on input line 12477.
 
-[234] [235] [236] [237] [238] [239] [240] [241]
+[247] [248] [249] [250] [251] [252] [253] [254]
 <chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-2-output
--1.pdf, id=3473, 608.06235pt x 282.68486pt>
+-1.pdf, id=3640, 608.06235pt x 282.68486pt>
 File: chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-2-o
 utput-1.pdf Graphic file (type pdf)
 <use chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-2-ou
 tput-1.pdf>
 Package luatex.def Info: chapters/chapter-09-sarima-multiple-seasonality_files/
-figure-pdf/cell-2-output-1.pdf  used on input line 12118.
+figure-pdf/cell-2-output-1.pdf  used on input line 12959.
 (luatex.def)             Requested size: 608.06085pt x 282.68416pt.
 
-Overfull \hbox (10.9666pt too wide) in paragraph at lines 12118--12119
+Overfull \hbox (10.9666pt too wide) in paragraph at lines 12959--12960
 [][] 
  []
 
-[242]
+[255]
 <chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-output
--1.pdf, id=3478, 723.067pt x 570.52837pt>
+-1.pdf, id=3645, 723.067pt x 570.52837pt>
 File: chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-o
 utput-1.pdf Graphic file (type pdf)
 <use chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-ou
 tput-1.pdf>
 Package luatex.def Info: chapters/chapter-09-sarima-multiple-seasonality_files/
-figure-pdf/cell-3-output-1.pdf  used on input line 12150.
+figure-pdf/cell-3-output-1.pdf  used on input line 12991.
 (luatex.def)             Requested size: 723.06523pt x 570.52696pt.
 
-Overfull \hbox (10.94223pt too wide) in paragraph at lines 12150--12151
+Overfull \hbox (10.94223pt too wide) in paragraph at lines 12991--12992
 [][] 
  []
 
 <chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-output
--2.pdf, id=3479, 858.93677pt x 281.44836pt>
+-2.pdf, id=3646, 858.93677pt x 281.44836pt>
 File: chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-o
 utput-2.pdf Graphic file (type pdf)
 <use chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-ou
 tput-2.pdf>
 Package luatex.def Info: chapters/chapter-09-sarima-multiple-seasonality_files/
-figure-pdf/cell-3-output-2.pdf  used on input line 12152.
+figure-pdf/cell-3-output-2.pdf  used on input line 12993.
 (luatex.def)             Requested size: 858.93468pt x 281.44768pt.
-[243<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-2-o
+[256<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-2-o
 utput-1.pdf>]
-Overfull \hbox (10.95761pt too wide) in paragraph at lines 12152--12153
+Overfull \hbox (10.95761pt too wide) in paragraph at lines 12993--12994
 [][] 
  []
 
-[244<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-o
+[257<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-3-o
 utput-1.pdf><./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/
 cell-3-output-2.pdf>]
-Overfull \hbox (70.62735pt too wide) in paragraph at lines 12189--12189
+Overfull \hbox (70.62735pt too wide) in paragraph at lines 13030--13030
 []\TU/lmtt/m/n/10.95 ===========================================================
 ===============================[] 
  []
 
 
-Overfull \hbox (70.62735pt too wide) in paragraph at lines 12190--12190
+Overfull \hbox (70.62735pt too wide) in paragraph at lines 13031--13031
 []\TU/lmtt/m/n/10.95 Dep. Variable:                                  x   No. Obs
 ervations:                  156[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 12191--12191
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 13032--13032
 []\TU/lmtt/m/n/10.95 Model:             SARIMAX(1, 0, 0)x(1, 1, 0, 12)   Log Lik
 elihood                -
  []
 
 
-Overfull \hbox (70.62735pt too wide) in paragraph at lines 12192--12192
+Overfull \hbox (70.62735pt too wide) in paragraph at lines 13033--13033
 []\TU/lmtt/m/n/10.95 Date:                            Fri, 19 Jun 2026   AIC   
                          411.701[] 
  []
 
 
-Overfull \hbox (70.62735pt too wide) in paragraph at lines 12193--12193
+Overfull \hbox (70.62735pt too wide) in paragraph at lines 13034--13034
 []\TU/lmtt/m/n/10.95 Time:                                    19:59:36   BIC   
                          423.202[] 
  []
 
 
-Overfull \hbox (70.62735pt too wide) in paragraph at lines 12194--12194
+Overfull \hbox (70.62735pt too wide) in paragraph at lines 13035--13035
 []\TU/lmtt/m/n/10.95 Sample:                                01-01-2010   HQIC  
                          416.374[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 12197--12197
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 13038--13038
 []\TU/lmtt/m/n/10.95 ===========================================================
 ===================[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 12198--12198
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 13039--13039
 []                 \TU/lmtt/m/n/10.95 coef    std err          z      P>|z|    
   [0.025      0.975][] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 12199--12199
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 13040--13040
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 12200--12200
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 13041--13041
 []\TU/lmtt/m/n/10.95 intercept      0.3536      0.125      2.818      0.005    
    0.108       0.600[] 
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 12201--12201
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 13042--13042
 []\TU/lmtt/m/n/10.95 ar.L1          0.3647      0.085      4.298      0.000    
    0.198       0.531[] 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 12202--12202
+Underfull \hbox (badness 10000) in paragraph at lines 13043--13043
 []\TU/lmtt/m/n/10.95 ar.S.L12      -0.2783      0.089     -3.121      0.002    
   -0.453      -
  []
 
 
-Overfull \hbox (1.64236pt too wide) in paragraph at lines 12203--12203
+Overfull \hbox (1.64236pt too wide) in paragraph at lines 13044--13044
 []\TU/lmtt/m/n/10.95 sigma2         1.2761      0.178      7.151      0.000    
    0.926       1.626[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 12204--12204
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 13045--13045
 []\TU/lmtt/m/n/10.95 ===========================================================
 ========================[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 12205--12205
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 13046--13046
 []\TU/lmtt/m/n/10.95 Ljung-Box (L1) (Q):                   0.40   Jarque-Bera (J
 B):                 1.04[] 
  []
 
-[245]
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 12206--12206
+[258]
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 13047--13047
 []\TU/lmtt/m/n/10.95 Prob(Q):                              0.53   Prob(JB):    
                      0.59[] 
  []
 
 
-Overfull \hbox (7.39111pt too wide) in paragraph at lines 12207--12207
+Overfull \hbox (7.39111pt too wide) in paragraph at lines 13048--13048
 []\TU/lmtt/m/n/10.95 Heteroskedasticity (H):               1.05   Skew:        
                     -
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 12208--12208
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 13049--13049
 []\TU/lmtt/m/n/10.95 Prob(H) (two-sided):                  0.88   Kurtosis:    
                      2.59[] 
  []
 
 
-Overfull \hbox (30.38611pt too wide) in paragraph at lines 12209--12209
+Overfull \hbox (30.38611pt too wide) in paragraph at lines 13050--13050
 []\TU/lmtt/m/n/10.95 ===========================================================
 ========================[] 
  []
 
 
-Overfull \hbox (7.39111pt too wide) in paragraph at lines 12212--12212
+Overfull \hbox (7.39111pt too wide) in paragraph at lines 13053--13053
 []\TU/lmtt/m/n/10.95 [1] Covariance matrix calculated using the outer product of
  gradients (complex-
  []
 
 <chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-5-output
--1.pdf, id=3613, 858.93175pt x 570.11871pt>
+-1.pdf, id=3779, 858.93175pt x 570.11871pt>
 File: chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-5-o
 utput-1.pdf Graphic file (type pdf)
 <use chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-5-ou
 tput-1.pdf>
 Package luatex.def Info: chapters/chapter-09-sarima-multiple-seasonality_files/
-figure-pdf/cell-5-output-1.pdf  used on input line 12250.
+figure-pdf/cell-5-output-1.pdf  used on input line 13091.
 (luatex.def)             Requested size: 858.92964pt x 570.11731pt.
 
-Overfull \hbox (10.95499pt too wide) in paragraph at lines 12250--12251
+Overfull \hbox (10.95499pt too wide) in paragraph at lines 13091--13092
 [][] 
  []
 
-[246]
+[259]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 11.0 on input line 12263.
+(longtable)                in table 11.0 on input line 13104.
 
-[247<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-5-o
+[260<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-5-o
 utput-1.pdf>]
 <chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-6-output
--2.pdf, id=3673, 594.3392pt x 268.96172pt>
+-2.pdf, id=3839, 594.3392pt x 268.96172pt>
 File: chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-6-o
 utput-2.pdf Graphic file (type pdf)
 <use chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-6-ou
 tput-2.pdf>
 Package luatex.def Info: chapters/chapter-09-sarima-multiple-seasonality_files/
-figure-pdf/cell-6-output-2.pdf  used on input line 12319.
+figure-pdf/cell-6-output-2.pdf  used on input line 13160.
 (luatex.def)             Requested size: 594.33774pt x 268.96104pt.
 
-Overfull \hbox (10.96803pt too wide) in paragraph at lines 12319--12320
+Overfull \hbox (10.96803pt too wide) in paragraph at lines 13160--13161
 [][] 
  []
 
-[248]
+[261]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 11.0 on input line 12363.
+(longtable)                in table 11.0 on input line 13204.
 
-[249<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-6-o
-utput-2.pdf>] [250] [251] [252]
+[262<./chapters/chapter-09-sarima-multiple-seasonality_files/figure-pdf/cell-6-o
+utput-2.pdf>] [263] [264] [265]
 chapter 12.
-[253
+[266
 
-] [254] [255] [256] [257] [258] [259] [260] [261] [262] [263] [264] [265]
-Underfull \vbox (badness 10000) detected at line 13458
+] [267] [268] [269] [270] [271] [272] [273] [274] [275] [276] [277] [278]
+Underfull \vbox (badness 10000) detected at line 14299
  []
 
 
-Underfull \vbox (badness 10000) detected at line 13458
+Underfull \vbox (badness 10000) detected at line 14299
  []
 
-[266]
+[279]
 <chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-loca
-l-level-from-scratch-output-1.pdf, id=3879, 602.7456pt x 282.68486pt>
+l-level-from-scratch-output-1.pdf, id=4046, 602.7456pt x 282.68486pt>
 File: chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -local-level-from-scratch-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-
 local-level-from-scratch-output-1.pdf>
 Package luatex.def Info: chapters/chapter-10-state-space-kalman-filtering_files
 /figure-pdf/py-ch10-local-level-from-scratch-output-1.pdf  used on input line 1
-3462.
+4303.
 (luatex.def)             Requested size: 602.74413pt x 282.68416pt.
-[267<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
--local-level-from-scratch-output-1.pdf>] [268] [269]
-Underfull \vbox (badness 10000) detected at line 13625
+[280<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
+-local-level-from-scratch-output-1.pdf>] [281] [282]
+Underfull \vbox (badness 10000) detected at line 14466
  []
 
 
-Underfull \vbox (badness 10000) detected at line 13625
+Underfull \vbox (badness 10000) detected at line 14466
  []
 
-[270]
+[283]
 <chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-loca
-l-linear-trend-output-1.pdf, id=3943, 609.12883pt x 282.68486pt>
+l-linear-trend-output-1.pdf, id=4110, 609.12883pt x 282.68486pt>
 File: chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -local-linear-trend-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-
 local-linear-trend-output-1.pdf>
 Package luatex.def Info: chapters/chapter-10-state-space-kalman-filtering_files
-/figure-pdf/py-ch10-local-linear-trend-output-1.pdf  used on input line 13629.
+/figure-pdf/py-ch10-local-linear-trend-output-1.pdf  used on input line 14470.
 (luatex.def)             Requested size: 609.12733pt x 282.68416pt.
 <chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-loca
-l-linear-trend-output-2.pdf, id=3944, 605.94505pt x 227.03696pt>
+l-linear-trend-output-2.pdf, id=4111, 605.94505pt x 227.03696pt>
 File: chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -local-linear-trend-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-
 local-linear-trend-output-2.pdf>
 Package luatex.def Info: chapters/chapter-10-state-space-kalman-filtering_files
-/figure-pdf/py-ch10-local-linear-trend-output-2.pdf  used on input line 13637.
+/figure-pdf/py-ch10-local-linear-trend-output-2.pdf  used on input line 14478.
 (luatex.def)             Requested size: 605.94357pt x 227.03639pt.
 
-Overfull \hbox (10.94574pt too wide) in paragraph at lines 13637--13638
+Overfull \hbox (10.94574pt too wide) in paragraph at lines 14478--14479
 [][] 
  []
 
-[271<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
+[284<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -local-linear-trend-output-1.pdf><./chapters/chapter-10-state-space-kalman-filte
 ring_files/figure-pdf/py-ch10-local-linear-trend-output-2.pdf>]
 <chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-miss
-ing-values-output-1.pdf, id=4025, 609.12883pt x 282.68486pt>
+ing-values-output-1.pdf, id=4191, 609.12883pt x 282.68486pt>
 File: chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -missing-values-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-
 missing-values-output-1.pdf>
 Package luatex.def Info: chapters/chapter-10-state-space-kalman-filtering_files
-/figure-pdf/py-ch10-missing-values-output-1.pdf  used on input line 13682.
+/figure-pdf/py-ch10-missing-values-output-1.pdf  used on input line 14523.
 (luatex.def)             Requested size: 609.12733pt x 282.68416pt.
-[272] [273<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/p
+[285] [286<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/p
 y-ch10-missing-values-output-1.pdf>]
 <chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-logl
-ikelihood-output-2.pdf, id=4082, 510.83347pt x 282.68486pt>
+ikelihood-output-2.pdf, id=4248, 510.83347pt x 282.68486pt>
 File: chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -loglikelihood-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-
 loglikelihood-output-2.pdf>
 Package luatex.def Info: chapters/chapter-10-state-space-kalman-filtering_files
-/figure-pdf/py-ch10-loglikelihood-output-2.pdf  used on input line 13736.
+/figure-pdf/py-ch10-loglikelihood-output-2.pdf  used on input line 14577.
 (luatex.def)             Requested size: 510.83221pt x 282.68416pt.
 
-Overfull \hbox (10.96547pt too wide) in paragraph at lines 13736--13737
+Overfull \hbox (10.96547pt too wide) in paragraph at lines 14577--14578
 [][] 
  []
 
-[274<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
+[287<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -loglikelihood-output-2.pdf>]
 <chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-stat
-e-space-forecast-output-1.pdf, id=4128, 609.12883pt x 282.68486pt>
+e-space-forecast-output-1.pdf, id=4295, 609.12883pt x 282.68486pt>
 File: chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10
 -state-space-forecast-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/py-ch10-
 state-space-forecast-output-1.pdf>
 Package luatex.def Info: chapters/chapter-10-state-space-kalman-filtering_files
-/figure-pdf/py-ch10-state-space-forecast-output-1.pdf  used on input line 13788
+/figure-pdf/py-ch10-state-space-forecast-output-1.pdf  used on input line 14629
 .
 (luatex.def)             Requested size: 609.12733pt x 282.68416pt.
-[275] [276<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/p
-y-ch10-state-space-forecast-output-1.pdf>] [277] [278] [279] [280] [281] [282] 
-[283]
+[288] [289<./chapters/chapter-10-state-space-kalman-filtering_files/figure-pdf/p
+y-ch10-state-space-forecast-output-1.pdf>] [290] [291] [292] [293] [294] [295] 
+[296]
 chapter 13.
-[284
+[297
 
-] [285] [286] [287] [288] [289] [290] [291] [292] [293] [294] [295] [296] [297]
+] [298] [299] [300] [301] [302] [303] [304] [305] [306] [307] [308] [309] [310]
 <chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-2-out
-put-1.pdf, id=4360, 596.36238pt x 282.68486pt>
+put-1.pdf, id=4526, 596.36238pt x 282.68486pt>
 File: chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
 2-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-2
 -output-1.pdf>
 Package luatex.def Info: chapters/chapter-11-hidden-markov-regime-switching_fil
-es/figure-pdf/cell-2-output-1.pdf  used on input line 14954.
+es/figure-pdf/cell-2-output-1.pdf  used on input line 15795.
 (luatex.def)             Requested size: 596.36093pt x 282.68416pt.
 
-Overfull \hbox (10.96016pt too wide) in paragraph at lines 14954--14955
+Overfull \hbox (10.96016pt too wide) in paragraph at lines 15795--15796
 [][] 
  []
 
-[298<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
-2-output-1.pdf>] [299]
+[311<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
+2-output-1.pdf>] [312]
 <chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-5-out
-put-1.pdf, id=4409, 597.53865pt x 282.68486pt>
+put-1.pdf, id=4576, 597.53865pt x 282.68486pt>
 File: chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
 5-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-5
 -output-1.pdf>
 Package luatex.def Info: chapters/chapter-11-hidden-markov-regime-switching_fil
-es/figure-pdf/cell-5-output-1.pdf  used on input line 15037.
+es/figure-pdf/cell-5-output-1.pdf  used on input line 15878.
 (luatex.def)             Requested size: 597.5372pt x 282.68416pt.
 
-Overfull \hbox (10.94785pt too wide) in paragraph at lines 15037--15038
+Overfull \hbox (10.94785pt too wide) in paragraph at lines 15878--15879
 [][] 
  []
 
-[300<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
+[313<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
 5-output-1.pdf>]
 <chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-7-out
-put-1.pdf, id=4460, 587.95598pt x 282.68486pt>
+put-1.pdf, id=4628, 587.95598pt x 282.68486pt>
 File: chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
 7-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-7
 -output-1.pdf>
 Package luatex.def Info: chapters/chapter-11-hidden-markov-regime-switching_fil
-es/figure-pdf/cell-7-output-1.pdf  used on input line 15099.
+es/figure-pdf/cell-7-output-1.pdf  used on input line 15940.
 (luatex.def)             Requested size: 587.95453pt x 282.68416pt.
 
-Overfull \hbox (10.96039pt too wide) in paragraph at lines 15099--15100
+Overfull \hbox (10.96039pt too wide) in paragraph at lines 15940--15941
 [][] 
  []
 
-[301] [302<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf
+[314] [315<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf
 /cell-7-output-1.pdf>]
-Underfull \vbox (badness 10000) detected at line 15178
+Underfull \vbox (badness 10000) detected at line 16019
  []
 
 
-Underfull \vbox (badness 10000) detected at line 15178
+Underfull \vbox (badness 10000) detected at line 16019
  []
 
-[303]
+[316]
 <chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-9-out
-put-1.pdf, id=4508, 510.83347pt x 282.68486pt>
+put-1.pdf, id=4675, 510.83347pt x 282.68486pt>
 File: chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
 9-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-9
 -output-1.pdf>
 Package luatex.def Info: chapters/chapter-11-hidden-markov-regime-switching_fil
-es/figure-pdf/cell-9-output-1.pdf  used on input line 15200.
+es/figure-pdf/cell-9-output-1.pdf  used on input line 16041.
 (luatex.def)             Requested size: 510.83221pt x 282.68416pt.
 
-Overfull \hbox (10.96547pt too wide) in paragraph at lines 15200--15201
+Overfull \hbox (10.96547pt too wide) in paragraph at lines 16041--16042
 [][] 
  []
 
-[304<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
-9-output-1.pdf>] [305]
+[317<./chapters/chapter-11-hidden-markov-regime-switching_files/figure-pdf/cell-
+9-output-1.pdf>] [318]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 13.0 on input line 15293.
+(longtable)                in table 13.0 on input line 16134.
 
-[306] [307] [308] [309] [310]
+[319] [320] [321] [322] [323]
 part IV.
 Package scrkbase Info: You've told me to use the font selection of the element
 (scrkbase)             `partprefix' that is an alias of element `partnumber'
-(scrkbase)              on input line 15569.
-[311
+(scrkbase)              on input line 16410.
+[324
 
 ]
 chapter 14.
-[312
+[325
 
 ]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 14.0 on input line 15660.
+(longtable)                in table 14.0 on input line 16501.
 
-[313] [314]
+[326] [327]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-s
-inusoid-regression-output-2.pdf, id=4663, 601.67912pt x 282.68486pt>
+inusoid-regression-output-2.pdf, id=4830, 601.67912pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-sinusoid-regression-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-sinusoid-regression-output-2.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
-_files/figure-pdf/ch12-sinusoid-regression-output-2.pdf  used on input line 158
-00.
+_files/figure-pdf/ch12-sinusoid-regression-output-2.pdf  used on input line 166
+41.
 (luatex.def)             Requested size: 601.67764pt x 282.68416pt.
-[315] [316<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
+[328] [329<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
 -pdf/ch12-sinusoid-regression-output-2.pdf>]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-a
-liasing-example-output-1.pdf, id=4713, 626.05142pt x 282.68486pt>
+liasing-example-output-1.pdf, id=4879, 626.05142pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-aliasing-example-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-aliasing-example-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
-_files/figure-pdf/ch12-aliasing-example-output-1.pdf  used on input line 15872.
+_files/figure-pdf/ch12-aliasing-example-output-1.pdf  used on input line 16713.
 
 (luatex.def)             Requested size: 626.0499pt x 282.68416pt.
-[317<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
-h12-aliasing-example-output-1.pdf>] [318] [319] [320] [321]
+[330<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
+h12-aliasing-example-output-1.pdf>] [331] [332] [333] [334]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-w
-hite-noise-spectrum-output-1.pdf, id=4798, 617.64502pt x 282.68486pt>
+hite-noise-spectrum-output-1.pdf, id=4965, 617.64502pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-white-noise-spectrum-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-white-noise-spectrum-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
 _files/figure-pdf/ch12-white-noise-spectrum-output-1.pdf  used on input line 16
-121.
+962.
 (luatex.def)             Requested size: 617.6435pt x 282.68416pt.
-[322<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
+[335<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-white-noise-spectrum-output-1.pdf>]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-a
-r1-spectra-output-1.pdf, id=4845, 614.44556pt x 282.68486pt>
+r1-spectra-output-1.pdf, id=5012, 614.44556pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-ar1-spectra-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-ar1-spectra-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
-_files/figure-pdf/ch12-ar1-spectra-output-1.pdf  used on input line 16198.
+_files/figure-pdf/ch12-ar1-spectra-output-1.pdf  used on input line 17039.
 (luatex.def)             Requested size: 614.44405pt x 282.68416pt.
-[323] [324<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
+[336] [337<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
 -pdf/ch12-ar1-spectra-output-1.pdf>]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-m
-a1-spectra-output-1.pdf, id=4905, 611.2618pt x 282.68486pt>
+a1-spectra-output-1.pdf, id=5072, 611.2618pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-ma1-spectra-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-ma1-spectra-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
-_files/figure-pdf/ch12-ma1-spectra-output-1.pdf  used on input line 16258.
+_files/figure-pdf/ch12-ma1-spectra-output-1.pdf  used on input line 17099.
 (luatex.def)             Requested size: 611.2603pt x 282.68416pt.
-[325<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
-h12-ma1-spectra-output-1.pdf>] [326]
+[338<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
+h12-ma1-spectra-output-1.pdf>] [339]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-a
-rma-spectrum-function-output-1.pdf, id=4961, 608.06235pt x 282.68486pt>
+rma-spectrum-function-output-1.pdf, id=5127, 608.06235pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-arma-spectrum-function-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-arma-spectrum-function-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
 _files/figure-pdf/ch12-arma-spectrum-function-output-1.pdf  used on input line 
-16359.
+17200.
 (luatex.def)             Requested size: 608.06085pt x 282.68416pt.
-[327<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
+[340<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-arma-spectrum-function-output-1.pdf>]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-l
-ow-high-frequency-simulation-output-1.pdf, id=5008, 617.63644pt x 282.68486pt>
+ow-high-frequency-simulation-output-1.pdf, id=5174, 617.63644pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-low-high-frequency-simulation-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-low-high-frequency-simulation-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
 _files/figure-pdf/ch12-low-high-frequency-simulation-output-1.pdf  used on inpu
-t line 16420.
+t line 17261.
 (luatex.def)             Requested size: 617.63493pt x 282.68416pt.
-[328] [329<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
+[341] [342<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
 -pdf/ch12-low-high-frequency-simulation-output-1.pdf>]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-m
-oving-average-filter-spectrum-output-1.pdf, id=5078, 614.6024pt x 282.68486pt>
+oving-average-filter-spectrum-output-1.pdf, id=5246, 614.6024pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-moving-average-filter-spectrum-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-moving-average-filter-spectrum-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
 _files/figure-pdf/ch12-moving-average-filter-spectrum-output-1.pdf  used on inp
-ut line 16517.
+ut line 17358.
 (luatex.def)             Requested size: 614.6009pt x 282.68416pt.
-[330] [331<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
--pdf/ch12-moving-average-filter-spectrum-output-1.pdf>] [332]
+[343] [344<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure
+-pdf/ch12-moving-average-filter-spectrum-output-1.pdf>] [345]
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-f
-ull-workflow-output-1.pdf, id=5157, 610.08553pt x 282.68486pt>
+ull-workflow-output-1.pdf, id=5324, 610.08553pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-full-workflow-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-full-workflow-output-1.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
-_files/figure-pdf/ch12-full-workflow-output-1.pdf  used on input line 16630.
+_files/figure-pdf/ch12-full-workflow-output-1.pdf  used on input line 17471.
 (luatex.def)             Requested size: 610.08405pt x 282.68416pt.
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-f
-ull-workflow-output-2.pdf, id=5158, 619.6682pt x 282.68486pt>
+ull-workflow-output-2.pdf, id=5325, 619.6682pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-full-workflow-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-full-workflow-output-2.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
-_files/figure-pdf/ch12-full-workflow-output-2.pdf  used on input line 16638.
+_files/figure-pdf/ch12-full-workflow-output-2.pdf  used on input line 17479.
 (luatex.def)             Requested size: 619.66669pt x 282.68416pt.
 
-Overfull \hbox (10.95586pt too wide) in paragraph at lines 16638--16639
+Overfull \hbox (10.95586pt too wide) in paragraph at lines 17479--17480
 [][] 
  []
 
 <chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch12-f
-ull-workflow-output-3.pdf, id=5159, 622.42851pt x 282.68486pt>
+ull-workflow-output-3.pdf, id=5326, 622.42851pt x 282.68486pt>
 File: chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-full-workflow-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/ch
 12-full-workflow-output-3.pdf>
 Package luatex.def Info: chapters/chapter-12-spectral-analysis-frequency-domain
-_files/figure-pdf/ch12-full-workflow-output-3.pdf  used on input line 16640.
+_files/figure-pdf/ch12-full-workflow-output-3.pdf  used on input line 17481.
 (luatex.def)             Requested size: 622.427pt x 282.68416pt.
-[333<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
+[346<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-full-workflow-output-1.pdf>]
-Overfull \hbox (10.96101pt too wide) in paragraph at lines 16640--16641
+Overfull \hbox (10.96101pt too wide) in paragraph at lines 17481--17482
 [][] 
  []
 
-[334<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
+[347<./chapters/chapter-12-spectral-analysis-frequency-domain_files/figure-pdf/c
 h12-full-workflow-output-2.pdf><./chapters/chapter-12-spectral-analysis-frequenc
-y-domain_files/figure-pdf/ch12-full-workflow-output-3.pdf>] [335] [336] [337]
+y-domain_files/figure-pdf/ch12-full-workflow-output-3.pdf>] [348] [349] [350]
 chapter 15.
-[338
+[351
 
-] [339] [340] [341] [342]
+] [352] [353] [354] [355]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-direct-dft-vs-ff
-t-output-2.pdf, id=5352, 552.05309pt x 282.68486pt>
+t-output-2.pdf, id=5519, 552.05309pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-direct-dft-
 vs-fft-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-direct-dft-v
 s-fft-output-2.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-direct-dft-vs-fft-output-2.pdf  used on input line 17117.
+df/ch13-direct-dft-vs-fft-output-2.pdf  used on input line 17958.
 (luatex.def)             Requested size: 552.05173pt x 282.68416pt.
-[343] [344<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-direc
-t-dft-vs-fft-output-2.pdf>] [345]
+[356] [357<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-direc
+t-dft-vs-fft-output-2.pdf>] [358]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-hidd
-en-cycle-output-2.pdf, id=5413, 617.63644pt x 282.68486pt>
+en-cycle-output-2.pdf, id=5579, 617.63644pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
 -hidden-cycle-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-
 hidden-cycle-output-2.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-periodogram-hidden-cycle-output-2.pdf  used on input line 17237.
+df/ch13-periodogram-hidden-cycle-output-2.pdf  used on input line 18078.
 (luatex.def)             Requested size: 617.63493pt x 282.68416pt.
-[346]
+[359]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-hidd
-en-cycle-output-3.pdf, id=5418, 614.44556pt x 282.68486pt>
+en-cycle-output-3.pdf, id=5584, 614.44556pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
 -hidden-cycle-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-
 hidden-cycle-output-3.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-periodogram-hidden-cycle-output-3.pdf  used on input line 17246.
+df/ch13-periodogram-hidden-cycle-output-3.pdf  used on input line 18087.
 (luatex.def)             Requested size: 614.44405pt x 282.68416pt.
 
-Overfull \hbox (10.9501pt too wide) in paragraph at lines 17246--17247
+Overfull \hbox (10.9501pt too wide) in paragraph at lines 18087--18088
 [][] 
  []
 
-[347<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
+[360<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
 -hidden-cycle-output-2.pdf><./chapters/chapter-13-dft-fft-periodogram_files/figu
-re-pdf/ch13-periodogram-hidden-cycle-output-3.pdf>] [348]
+re-pdf/ch13-periodogram-hidden-cycle-output-3.pdf>] [361]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-smoothed-periodo
-gram-output-1.pdf, id=5504, 614.44556pt x 282.68486pt>
+gram-output-1.pdf, id=5671, 614.44556pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-smoothed-pe
 riodogram-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-smoothed-per
 iodogram-output-1.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-smoothed-periodogram-output-1.pdf  used on input line 17361.
+df/ch13-smoothed-periodogram-output-1.pdf  used on input line 18202.
 (luatex.def)             Requested size: 614.44405pt x 282.68416pt.
-[349] [350<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-smoot
-hed-periodogram-output-1.pdf>] [351] [352]
+[362] [363<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-smoot
+hed-periodogram-output-1.pdf>] [364] [365]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-leakage-windowin
-g-output-1.pdf, id=5568, 622.43636pt x 282.68486pt>
+g-output-1.pdf, id=5735, 622.43636pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-leakage-win
 dowing-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-leakage-wind
 owing-output-1.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-leakage-windowing-output-1.pdf  used on input line 17523.
+df/ch13-leakage-windowing-output-1.pdf  used on input line 18364.
 (luatex.def)             Requested size: 622.43484pt x 282.68416pt.
-[353<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-leakage-win
-dowing-output-1.pdf>] [354]
+[366<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-leakage-win
+dowing-output-1.pdf>] [367]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-to-r
-egression-output-2.pdf, id=5639, 610.08553pt x 282.68486pt>
+egression-output-2.pdf, id=5805, 610.08553pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
 -to-regression-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-
 to-regression-output-2.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-periodogram-to-regression-output-2.pdf  used on input line 17659.
+df/ch13-periodogram-to-regression-output-2.pdf  used on input line 18500.
 (luatex.def)             Requested size: 610.08405pt x 282.68416pt.
-[355]
+[368]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-to-r
-egression-output-3.pdf, id=5644, 614.44556pt x 282.68486pt>
+egression-output-3.pdf, id=5810, 614.44556pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
 -to-regression-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-
 to-regression-output-3.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-periodogram-to-regression-output-3.pdf  used on input line 17668.
+df/ch13-periodogram-to-regression-output-3.pdf  used on input line 18509.
 (luatex.def)             Requested size: 614.44405pt x 282.68416pt.
 
-Overfull \hbox (10.9501pt too wide) in paragraph at lines 17668--17669
+Overfull \hbox (10.9501pt too wide) in paragraph at lines 18509--18510
 [][] 
  []
 
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-to-r
-egression-output-4.pdf, id=5645, 610.08553pt x 227.03696pt>
+egression-output-4.pdf, id=5811, 610.08553pt x 227.03696pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
 -to-regression-output-4.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram-
 to-regression-output-4.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-periodogram-to-regression-output-4.pdf  used on input line 17670.
+df/ch13-periodogram-to-regression-output-4.pdf  used on input line 18511.
 (luatex.def)             Requested size: 610.08405pt x 227.03639pt.
 
-Overfull \hbox (10.96368pt too wide) in paragraph at lines 17670--17671
+Overfull \hbox (10.96368pt too wide) in paragraph at lines 18511--18512
 [][] 
  []
 
-[356<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
+[369<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-periodogram
 -to-regression-output-2.pdf><./chapters/chapter-13-dft-fft-periodogram_files/fig
-ure-pdf/ch13-periodogram-to-regression-output-3.pdf>] [357<./chapters/chapter-13
+ure-pdf/ch13-periodogram-to-regression-output-3.pdf>] [370<./chapters/chapter-13
 -dft-fft-periodogram_files/figure-pdf/ch13-periodogram-to-regression-output-4.pd
 f>]
 <chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-white-noise-peri
-odogram-output-1.pdf, id=5764, 601.67912pt x 282.68486pt>
+odogram-output-1.pdf, id=5931, 601.67912pt x 282.68486pt>
 File: chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-white-noise
 -periodogram-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-white-noise-
 periodogram-output-1.pdf>
 Package luatex.def Info: chapters/chapter-13-dft-fft-periodogram_files/figure-p
-df/ch13-white-noise-periodogram-output-1.pdf  used on input line 17710.
+df/ch13-white-noise-periodogram-output-1.pdf  used on input line 18551.
 (luatex.def)             Requested size: 601.67764pt x 282.68416pt.
-[358<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-white-noise
--periodogram-output-1.pdf>] [359] [360] [361] [362] [363]
+[371<./chapters/chapter-13-dft-fft-periodogram_files/figure-pdf/ch13-white-noise
+-periodogram-output-1.pdf>] [372] [373] [374] [375] [376]
 chapter 16.
-[364
+[377
 
-] [365] [366] [367] [368] [369] [370] [371] [372]
+] [378] [379] [380] [381] [382] [383] [384] [385]
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-example
--output-1.pdf, id=5969, 617.63644pt x 282.68486pt>
+-output-1.pdf, id=6135, 617.63644pt x 282.68486pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-ex
 ample-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-exa
 mple-output-1.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-filtering-example-output-1.pdf  used on input line 18551.
+f/ch14-filtering-example-output-1.pdf  used on input line 19392.
 (luatex.def)             Requested size: 617.63493pt x 282.68416pt.
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-example
--output-2.pdf, id=5970, 617.73491pt x 227.03696pt>
+-output-2.pdf, id=6136, 617.73491pt x 227.03696pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-ex
 ample-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-exa
 mple-output-2.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-filtering-example-output-2.pdf  used on input line 18560.
+f/ch14-filtering-example-output-2.pdf  used on input line 19401.
 (luatex.def)             Requested size: 617.73338pt x 227.03639pt.
 
-Overfull \hbox (10.95702pt too wide) in paragraph at lines 18560--18561
+Overfull \hbox (10.95702pt too wide) in paragraph at lines 19401--19402
 [][] 
  []
 
-[373<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-ex
+[386<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-ex
 ample-output-1.pdf>]
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-frequency-respons
-e-python-output-1.pdf, id=6012, 555.5819pt x 282.68486pt>
+e-python-output-1.pdf, id=6178, 555.5819pt x 282.68486pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-frequency-re
 sponse-python-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-frequency-res
 ponse-python-output-1.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-frequency-response-python-output-1.pdf  used on input line 18591.
+f/ch14-frequency-response-python-output-1.pdf  used on input line 19432.
 (luatex.def)             Requested size: 555.58054pt x 282.68416pt.
-[374
+[387
 Missing character: There is no ω (U+03C9) in font [lmmono10-regular]:!
 Missing character: There is no ω (U+03C9) in font [lmmono10-regular]:!
 <./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-filtering-exampl
-e-output-2.pdf>] [375<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/
-ch14-frequency-response-python-output-1.pdf>] [376] [377] [378]
+e-output-2.pdf>] [388<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/
+ch14-frequency-response-python-output-1.pdf>] [389] [390] [391]
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-transform-fr
-om-scratch-output-2.pdf, id=6121, 619.6682pt x 282.68486pt>
+om-scratch-output-2.pdf, id=6289, 619.6682pt x 282.68486pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-transfo
 rm-from-scratch-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-transfor
 m-from-scratch-output-2.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-haar-transform-from-scratch-output-2.pdf  used on input line 18841.
+f/ch14-haar-transform-from-scratch-output-2.pdf  used on input line 19682.
 (luatex.def)             Requested size: 619.66669pt x 282.68416pt.
-[379]
+[392]
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-detail-coeff
-icients-output-1.pdf, id=6126, 608.06235pt x 282.68486pt>
+icients-output-1.pdf, id=6294, 608.06235pt x 282.68486pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-detail-
 coefficients-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-detail-c
 oefficients-output-1.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-haar-detail-coefficients-output-1.pdf  used on input line 18868.
+f/ch14-haar-detail-coefficients-output-1.pdf  used on input line 19709.
 (luatex.def)             Requested size: 608.06085pt x 282.68416pt.
-[380<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-transfo
-rm-from-scratch-output-2.pdf>] [381<./chapters/chapter-14-filtering-wavelets_fil
+[393<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-haar-transfo
+rm-from-scratch-output-2.pdf>] [394<./chapters/chapter-14-filtering-wavelets_fil
 es/figure-pdf/ch14-haar-detail-coefficients-output-1.pdf>]
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-denoising
--output-1.pdf, id=6217, 619.6682pt x 282.68486pt>
+-output-1.pdf, id=6384, 619.6682pt x 282.68486pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-deno
 ising-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-denoi
 sing-output-1.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-wavelet-denoising-output-1.pdf  used on input line 18962.
+f/ch14-wavelet-denoising-output-1.pdf  used on input line 19803.
 (luatex.def)             Requested size: 619.66669pt x 282.68416pt.
-[382] [383<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavele
-t-denoising-output-1.pdf>] [384]
+[395] [396<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavele
+t-denoising-output-1.pdf>] [397]
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-features-
-output-1.pdf, id=6275, 502.42706pt x 282.68486pt>
+output-1.pdf, id=6441, 502.42706pt x 282.68486pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-feat
 ures-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-featu
 res-output-1.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-wavelet-features-output-1.pdf  used on input line 19088.
+f/ch14-wavelet-features-output-1.pdf  used on input line 19929.
 (luatex.def)             Requested size: 502.42583pt x 282.68416pt.
-[385<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-feat
+[398<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-wavelet-feat
 ures-output-1.pdf>]
-Underfull \vbox (badness 10000) detected at line 19150
+Underfull \vbox (badness 10000) detected at line 19991
  []
 
 
-Underfull \vbox (badness 10000) detected at line 19150
+Underfull \vbox (badness 10000) detected at line 19991
  []
 
-[386]
+[399]
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-burst-c
-ase-study-output-1.pdf, id=6325, 610.08553pt x 227.03696pt>
+ase-study-output-1.pdf, id=6491, 610.08553pt x 227.03696pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bu
 rst-case-study-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bur
 st-case-study-output-1.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-transient-burst-case-study-output-1.pdf  used on input line 19154.
+f/ch14-transient-burst-case-study-output-1.pdf  used on input line 19995.
 (luatex.def)             Requested size: 610.08405pt x 227.03639pt.
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-burst-c
-ase-study-output-2.pdf, id=6326, 496.04384pt x 227.03696pt>
+ase-study-output-2.pdf, id=6492, 496.04384pt x 227.03696pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bu
 rst-case-study-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bur
 st-case-study-output-2.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-transient-burst-case-study-output-2.pdf  used on input line 19163.
+f/ch14-transient-burst-case-study-output-2.pdf  used on input line 20004.
 (luatex.def)             Requested size: 496.04262pt x 227.03639pt.
 
-Overfull \hbox (10.95831pt too wide) in paragraph at lines 19163--19164
+Overfull \hbox (10.95831pt too wide) in paragraph at lines 20004--20005
 [][] 
  []
 
 <chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-burst-c
-ase-study-output-3.pdf, id=6327, 611.2618pt x 227.03696pt>
+ase-study-output-3.pdf, id=6493, 611.2618pt x 227.03696pt>
 File: chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bu
 rst-case-study-output-3.pdf Graphic file (type pdf)
 <use chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bur
 st-case-study-output-3.pdf>
 Package luatex.def Info: chapters/chapter-14-filtering-wavelets_files/figure-pd
-f/ch14-transient-burst-case-study-output-3.pdf  used on input line 19165.
+f/ch14-transient-burst-case-study-output-3.pdf  used on input line 20006.
 (luatex.def)             Requested size: 611.2603pt x 227.03639pt.
 
-Overfull \hbox (10.94833pt too wide) in paragraph at lines 19165--19166
+Overfull \hbox (10.94833pt too wide) in paragraph at lines 20006--20007
 [][] 
  []
 
-[387<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bu
+[400<./chapters/chapter-14-filtering-wavelets_files/figure-pdf/ch14-transient-bu
 rst-case-study-output-1.pdf><./chapters/chapter-14-filtering-wavelets_files/figu
-re-pdf/ch14-transient-burst-case-study-output-2.pdf>] [388<./chapters/chapter-14
+re-pdf/ch14-transient-burst-case-study-output-2.pdf>] [401<./chapters/chapter-14
 -filtering-wavelets_files/figure-pdf/ch14-transient-burst-case-study-output-3.pd
-f>] [389] [390] [391]
+f>] [402] [403] [404]
 part V.
 Package scrkbase Info: You've told me to use the font selection of the element
 (scrkbase)             `partprefix' that is an alias of element `partnumber'
-(scrkbase)              on input line 19401.
-[392
+(scrkbase)              on input line 20242.
+[405
 
 ]
 chapter 17.
-[393
+[406
 
-] [394] [395] [396] [397] [398] [399] [400] [401] [402] [403] [404] [405] [406]
+] [407] [408] [409] [410] [411] [412] [413] [414] [415] [416] [417] [418] [419]
 <chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15-simu
-late-series-output-1.pdf, id=6624, 502.42706pt x 227.03696pt>
+late-series-output-1.pdf, id=6790, 502.42706pt x 227.03696pt>
 File: chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15
 -simulate-series-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15-
 simulate-series-output-1.pdf>
 Package luatex.def Info: chapters/chapter-15-forecast-evaluation-backtesting_fi
-les/figure-pdf/ch15-simulate-series-output-1.pdf  used on input line 20206.
+les/figure-pdf/ch15-simulate-series-output-1.pdf  used on input line 21047.
 (luatex.def)             Requested size: 502.42583pt x 227.03639pt.
-[407] [408<./chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pd
+[420] [421<./chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pd
 f/ch15-simulate-series-output-1.pdf>]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 17.0 on input line 20291.
+(longtable)                in table 17.0 on input line 21132.
 
-[409]
+[422]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 17.0 on input line 20330.
+(longtable)                in table 17.0 on input line 21171.
 
 <chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15-hori
-zon-curves-output-1.pdf, id=6675, 496.04384pt x 282.68486pt>
+zon-curves-output-1.pdf, id=6842, 496.04384pt x 282.68486pt>
 File: chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15
 -horizon-curves-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15-
 horizon-curves-output-1.pdf>
 Package luatex.def Info: chapters/chapter-15-forecast-evaluation-backtesting_fi
-les/figure-pdf/ch15-horizon-curves-output-1.pdf  used on input line 20360.
+les/figure-pdf/ch15-horizon-curves-output-1.pdf  used on input line 21201.
 (luatex.def)             Requested size: 496.04262pt x 282.68416pt.
-[410] [411<./chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pd
+[423] [424<./chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pd
 f/ch15-horizon-curves-output-1.pdf>]
 <chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15-inte
-rval-coverage-output-2.pdf, id=6738, 502.42706pt x 282.68486pt>
+rval-coverage-output-2.pdf, id=6905, 502.42706pt x 282.68486pt>
 File: chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15
 -interval-coverage-output-2.pdf Graphic file (type pdf)
 <use chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15-
 interval-coverage-output-2.pdf>
 Package luatex.def Info: chapters/chapter-15-forecast-evaluation-backtesting_fi
-les/figure-pdf/ch15-interval-coverage-output-2.pdf  used on input line 20416.
+les/figure-pdf/ch15-interval-coverage-output-2.pdf  used on input line 21257.
 (luatex.def)             Requested size: 502.42583pt x 282.68416pt.
-[412<./chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15
--interval-coverage-output-2.pdf>] [413] [414] [415] [416]
+[425<./chapters/chapter-15-forecast-evaluation-backtesting_files/figure-pdf/ch15
+-interval-coverage-output-2.pdf>] [426] [427] [428] [429]
 chapter 18.
-[417
+[430
 
-] [418] [419] [420] [421] [422] [423]
-Overfull \hbox (59.12985pt too wide) in paragraph at lines 21130--21130
+] [431] [432] [433] [434] [435] [436]
+Overfull \hbox (59.12985pt too wide) in paragraph at lines 21971--21971
 []  \TU/lmtt/m/n/10.95 <input id="ch16-slope" type="range" min="-0.05" max="0.10
 " step="0.005" value="0.035">[] 
  []
 
 
-Overfull \hbox (24.63736pt too wide) in paragraph at lines 21133--21133
+Overfull \hbox (24.63736pt too wide) in paragraph at lines 21974--21974
 []  \TU/lmtt/m/n/10.95 <input id="ch16-change" type="range" min="-0.12" max="0.1
 2" step="0.01" value="-
  []
 
-[424]
-Overfull \hbox (7.39111pt too wide) in paragraph at lines 21142--21142
+[437]
+Overfull \hbox (7.39111pt too wide) in paragraph at lines 21983--21983
 []  \TU/lmtt/m/n/10.95 <input id="ch16-holiday" type="range" min="-15" max="20" step="1" value="10">[] 
  []
 
-[425]
+[438]
 <chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-simula
-te-additive-data-output-1.pdf, id=6929, 614.44556pt x 282.68486pt>
+te-additive-data-output-1.pdf, id=7095, 614.44556pt x 282.68486pt>
 File: chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-s
 imulate-additive-data-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-si
 mulate-additive-data-output-1.pdf>
 Package luatex.def Info: chapters/chapter-16-automated-forecasting-prophet_file
-s/figure-pdf/ch16-simulate-additive-data-output-1.pdf  used on input line 21208
+s/figure-pdf/ch16-simulate-additive-data-output-1.pdf  used on input line 22049
 .
 (luatex.def)             Requested size: 614.44405pt x 282.68416pt.
-[426] [427<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/
+[439] [440<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/
 ch16-simulate-additive-data-output-1.pdf>]
-Overfull \hbox (32.51436pt too wide) in alignment at lines 21264--21269
+Overfull \hbox (32.51436pt too wide) in alignment at lines 22105--22110
  [][][][][][][] 
  []
 
 
-Overfull \hbox (32.51436pt too wide) in alignment at lines 21269--21271
+Overfull \hbox (32.51436pt too wide) in alignment at lines 22110--22112
  [][][][][][][] 
  []
 
 
-Overfull \hbox (37.98938pt too wide) in alignment at lines 21271--21280
+Overfull \hbox (37.98938pt too wide) in alignment at lines 22112--22121
  [][][][][][][] 
  []
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 18.0 on input line 21280.
+(longtable)                in table 18.0 on input line 22121.
 
 <chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-plot-f
-ourier-basis-output-1.pdf, id=6980, 556.31903pt x 254.8609pt>
+ourier-basis-output-1.pdf, id=7146, 556.31903pt x 254.8609pt>
 File: chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-p
 lot-fourier-basis-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-pl
 ot-fourier-basis-output-1.pdf>
 Package luatex.def Info: chapters/chapter-16-automated-forecasting-prophet_file
-s/figure-pdf/ch16-plot-fourier-basis-output-1.pdf  used on input line 21297.
+s/figure-pdf/ch16-plot-fourier-basis-output-1.pdf  used on input line 22138.
 (luatex.def)             Requested size: 556.31766pt x 254.86028pt.
 
-Overfull \hbox (10.95201pt too wide) in paragraph at lines 21297--21298
+Overfull \hbox (10.95201pt too wide) in paragraph at lines 22138--22139
 [][] 
  []
 
-[428<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-p
-lot-fourier-basis-output-1.pdf>] [429]
-Overfull \hbox (1013.58388pt too wide) in alignment at lines 21376--21384
+[441<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-p
+lot-fourier-basis-output-1.pdf>] [442]
+Overfull \hbox (1013.58388pt too wide) in alignment at lines 22217--22225
  [][][][][][][][][][][][][][][][][][][][][][] 
  []
 
 
-Overfull \hbox (1013.58388pt too wide) in alignment at lines 21384--21386
+Overfull \hbox (1013.58388pt too wide) in alignment at lines 22225--22227
  [][][][][][][][][][][][][][][][][][][][][][] 
  []
 
 
-Overfull \hbox (1019.0589pt too wide) in alignment at lines 21386--21402
+Overfull \hbox (1019.0589pt too wide) in alignment at lines 22227--22243
  [][][][][][][][][][][][][][][][][][][][][][] 
  []
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 18.0 on input line 21402.
+(longtable)                in table 18.0 on input line 22243.
 
 
-Overfull \vbox (2.30592pt too high) detected at line 21431
+Overfull \vbox (2.30592pt too high) detected at line 22272
  []
 
-[430]
+[443]
 <chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-plot-f
-it-output-1.pdf, id=7042, 614.44556pt x 282.68486pt>
+it-output-1.pdf, id=7209, 614.44556pt x 282.68486pt>
 File: chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-p
 lot-fit-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-pl
 ot-fit-output-1.pdf>
 Package luatex.def Info: chapters/chapter-16-automated-forecasting-prophet_file
-s/figure-pdf/ch16-plot-fit-output-1.pdf  used on input line 21453.
+s/figure-pdf/ch16-plot-fit-output-1.pdf  used on input line 22294.
 (luatex.def)             Requested size: 614.44405pt x 282.68416pt.
-[431<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-p
+[444<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-p
 lot-fit-output-1.pdf>]
 <chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-future
--forecast-output-1.pdf, id=7091, 614.44556pt x 282.68486pt>
+-forecast-output-1.pdf, id=7258, 614.44556pt x 282.68486pt>
 File: chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-f
 uture-forecast-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-fu
 ture-forecast-output-1.pdf>
 Package luatex.def Info: chapters/chapter-16-automated-forecasting-prophet_file
-s/figure-pdf/ch16-future-forecast-output-1.pdf  used on input line 21503.
+s/figure-pdf/ch16-future-forecast-output-1.pdf  used on input line 22344.
 (luatex.def)             Requested size: 614.44405pt x 282.68416pt.
-[432] [433<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/
+[445] [446<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/
 ch16-future-forecast-output-1.pdf>]
-Underfull \vbox (badness 10000) detected at line 21625
+Underfull \vbox (badness 10000) detected at line 22466
  []
 
 
-Underfull \vbox (badness 10000) detected at line 21625
+Underfull \vbox (badness 10000) detected at line 22466
  []
 
-[434]
+[447]
 <chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-rollin
-g-origin-cv-output-1.pdf, id=7145, 499.24329pt x 254.8609pt>
+g-origin-cv-output-1.pdf, id=7312, 499.24329pt x 254.8609pt>
 File: chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-r
 olling-origin-cv-output-1.pdf Graphic file (type pdf)
 <use chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/ch16-ro
 lling-origin-cv-output-1.pdf>
 Package luatex.def Info: chapters/chapter-16-automated-forecasting-prophet_file
-s/figure-pdf/ch16-rolling-origin-cv-output-1.pdf  used on input line 21629.
+s/figure-pdf/ch16-rolling-origin-cv-output-1.pdf  used on input line 22470.
 (luatex.def)             Requested size: 499.24207pt x 254.86028pt.
-[435] [436<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/
-ch16-rolling-origin-cv-output-1.pdf>] [437] [438]
+[448] [449<./chapters/chapter-16-automated-forecasting-prophet_files/figure-pdf/
+ch16-rolling-origin-cv-output-1.pdf>] [450] [451]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table 18.0 on input line 21802.
+(longtable)                in table 18.0 on input line 22643.
 
-[439] [440] [441] [442] [443]
-Overfull \hbox (104.5117pt too wide) detected at line 22138
+[452] [453] [454] [455] [456]
+Overfull \hbox (104.5117pt too wide) detected at line 22979
 [] \TU/latinmodern-math.otf(1)/b/n/10.95 → [] → [] → [] → [] → [].
  []
 
-[444] [445] [446]
+[457] [458] [459]
 chapter 19.
-[447
+[460
 
-] [448] [449] [450]
+] [461] [462] [463]
 ! Missing $ inserted.
 <inserted text> 
 $
-l.22541 \text{day_of_week}
+l.23382 \text{day_of_week}
                         ,\quad \text{week_of_year},\quad \text{month},\quad ...
 
 Here is how much of LuaTeX's memory you used:
- 46268 strings out of 477785
+ 46372 strings out of 477785
  100000,1977958 words of node,token memory allocated
- 16931 words of node memory still in use:
+ 16979 words of node memory still in use:
    132 hlist, 9 vlist, 7 rule, 68 disc, 16 local_par, 5 dir, 6 math, 296 glue, 6
-6 kern, 44 penalty, 1 choice, 1 noad, 1 math_char, 8 margin_kern, 860 glyph, 128
-9 attribute, 68 glue_spec, 1289 attribute_list, 4 temp, 4 write, 139 pdf_literal
+6 kern, 44 penalty, 1 choice, 1 noad, 1 math_char, 8 margin_kern, 860 glyph, 130
+1 attribute, 68 glue_spec, 1301 attribute_list, 4 temp, 4 write, 139 pdf_literal
 , 2 pdf_dest, 18 pdf_colorstack nodes
-   avail lists: 1:2,2:1286,3:1606,4:1101,5:474,6:75,7:4380,8:74,9:534,10:18,11:3
-44,12:1
- 62904 multiletter control sequences out of 65536+600000
+   avail lists: 1:2,2:1286,3:1606,4:1101,5:506,6:153,7:4380,8:74,9:890,10:18,11:
+386,12:1
+ 62944 multiletter control sequences out of 65536+600000
  110 fonts using 34073903 bytes
  108i,9n,121p,10618b,1126s stack positions out of 10000i,1000n,20000p,200000b,200000s
 !  ==> Fatal error occurred, no output PDF file produced!

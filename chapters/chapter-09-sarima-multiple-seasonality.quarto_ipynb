@@ -714,7 +714,7 @@
         "\n",
         "The following example simulates a seasonal time series with a trend, deterministic yearly seasonality, and seasonal autoregressive dependence."
       ],
-      "id": "dd03f293"
+      "id": "ee9bd94e"
     },
     {
       "cell_type": "code",
@@ -757,7 +757,7 @@
         "ax.set_ylabel(\"value\")\n",
         "plt.show()"
       ],
-      "id": "69b80efc",
+      "id": "d58f60a2",
       "execution_count": null,
       "outputs": []
     },
@@ -767,7 +767,7 @@
       "source": [
         "## 9.18 Python example: seasonal differencing and ACF/PACF"
       ],
-      "id": "711502f0"
+      "id": "0fd8ef2f"
     },
     {
       "cell_type": "code",
@@ -796,7 +796,7 @@
         "plt.tight_layout()\n",
         "plt.show()"
       ],
-      "id": "f525eb45",
+      "id": "cc2f3a77",
       "execution_count": null,
       "outputs": []
     },
@@ -810,7 +810,7 @@
         "\n",
         "The `SARIMAX` class in `statsmodels` fits SARIMA and SARIMAX models. The argument `order=(p,d,q)` specifies the nonseasonal part, and `seasonal_order=(P,D,Q,s)` specifies the seasonal part."
       ],
-      "id": "8b1bf4d5"
+      "id": "b07c491b"
     },
     {
       "cell_type": "code",
@@ -833,7 +833,7 @@
         "fit = model.fit(disp=False)\n",
         "print(fit.summary())"
       ],
-      "id": "8e258cf2",
+      "id": "995a0380",
       "execution_count": null,
       "outputs": []
     },
@@ -845,7 +845,7 @@
         "\n",
         "## 9.20 Python example: residual diagnostics"
       ],
-      "id": "5f09c7e4"
+      "id": "4bbfda76"
     },
     {
       "cell_type": "code",
@@ -876,7 +876,7 @@
         "lb = acorr_ljungbox(resid, lags=[12, 24, 36], return_df=True)\n",
         "lb"
       ],
-      "id": "de8b7011",
+      "id": "87f4bed7",
       "execution_count": null,
       "outputs": []
     },
@@ -888,7 +888,7 @@
         "\n",
         "## 9.21 Python example: compare with seasonal naive forecasting"
       ],
-      "id": "f2e544c3"
+      "id": "c97c47d3"
     },
     {
       "cell_type": "code",
@@ -930,7 +930,7 @@
         "ax.legend()\n",
         "plt.show()"
       ],
-      "id": "1983069e",
+      "id": "2f02b2b8",
       "execution_count": null,
       "outputs": []
     },
@@ -946,7 +946,7 @@
         "\n",
         "The function below builds Fourier features for a given period $m$ and order $K$."
       ],
-      "id": "30d89263"
+      "id": "4881936a"
     },
     {
       "cell_type": "code",
@@ -964,7 +964,7 @@
         "X_fourier = fourier_features(series.index, period=12, K=2, prefix=\"year\")\n",
         "X_fourier.head()"
       ],
-      "id": "c5d7e700",
+      "id": "e91b3c5f",
       "execution_count": null,
       "outputs": []
     },
@@ -1068,7 +1068,7 @@
         "- compare against a seasonal naive baseline;\n",
         "- explain when Fourier features or modern ML models may be preferable to a single-period SARIMA model."
       ],
-      "id": "9e7632bb"
+      "id": "d5451f3f"
     }
   ],
   "metadata": {

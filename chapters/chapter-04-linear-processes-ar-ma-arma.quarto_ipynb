@@ -1034,7 +1034,7 @@
         "\n",
         "The following code simulates several classical processes. It uses only NumPy for the simulation so that the recursion is visible."
       ],
-      "id": "2c634de8"
+      "id": "57171555"
     },
     {
       "cell_type": "code",
@@ -1117,7 +1117,7 @@
       "source": [
         "Plot the simulated paths."
       ],
-      "id": "519c0e50"
+      "id": "7ec46d2f"
     },
     {
       "cell_type": "code",
@@ -1152,7 +1152,7 @@
         "\n",
         "The sample ACF helps reveal dependence patterns."
       ],
-      "id": "76bc73b7"
+      "id": "5872496a"
     },
     {
       "cell_type": "code",
@@ -1236,7 +1236,7 @@
         "\n",
         "In Python, `numpy.roots` expects coefficients in descending powers. The following helper functions compute roots of these polynomials."
       ],
-      "id": "e8173226"
+      "id": "2438287a"
     },
     {
       "cell_type": "code",
@@ -1300,7 +1300,7 @@
         "\\phi(B)\\psi(B)=\\theta(B).\n",
         "$$"
       ],
-      "id": "d463177a"
+      "id": "79f2747d"
     },
     {
       "cell_type": "code",
@@ -1392,7 +1392,7 @@
         "\n",
         "The following function approximates this by truncating the $\\psi$ sequence."
       ],
-      "id": "4b8b076a"
+      "id": "2b6aba91"
     },
     {
       "cell_type": "code",
@@ -1437,7 +1437,7 @@
         "\n",
         "In practice we estimate ARMA models from data. In `statsmodels`, ARMA models are often fit using the ARIMA class with `order=(p,0,q)`."
       ],
-      "id": "6514656f"
+      "id": "df834ca9"
     },
     {
       "cell_type": "code",
@@ -1465,7 +1465,7 @@
       "source": [
         "Residual diagnostics are essential."
       ],
-      "id": "d0aedf0f"
+      "id": "8328f6c5"
     },
     {
       "cell_type": "code",
@@ -1505,7 +1505,7 @@
         "\n",
         "Information criteria provide one way to compare ARMA orders. The following code fits several small ARMA models and reports AIC and BIC."
       ],
-      "id": "834ea08f"
+      "id": "8fc8ff69"
     },
     {
       "cell_type": "code",
@@ -1800,7 +1800,7 @@
         "- check residual ACF and root conditions;\n",
         "- use AI to check algebra and code while verifying simple special cases yourself."
       ],
-      "id": "d3e6c624"
+      "id": "6ee7b3cd"
     }
   ],
   "metadata": {

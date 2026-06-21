@@ -392,7 +392,7 @@
         "\n",
         "The following code implements a causal dilated convolution directly. This makes the indexing visible."
       ],
-      "id": "c1411ced"
+      "id": "f4687c6f"
     },
     {
       "cell_type": "code",
@@ -465,7 +465,7 @@
         "2. use `Conv1d` with `padding=0`;\n",
         "3. verify output length and causality."
       ],
-      "id": "13a2a875"
+      "id": "9c150a4f"
     },
     {
       "cell_type": "code",
@@ -522,7 +522,7 @@
         "\n",
         "A practical way to test causality is to perturb future values and check whether earlier outputs change. Suppose we compare two inputs that agree up to time $t$ and differ after time $t$. A causal model should produce identical outputs up to time $t$."
       ],
-      "id": "6a23e7b0"
+      "id": "d6484896"
     },
     {
       "cell_type": "code",
@@ -581,7 +581,7 @@
         "\n",
         "The next example builds a synthetic data set and converts it into CNN windows."
       ],
-      "id": "695373c6"
+      "id": "ecb37cd4"
     },
     {
       "cell_type": "code",
@@ -652,7 +652,7 @@
         "\n",
         "The following model uses causal dilated convolutional blocks followed by a linear output layer. The model maps a history window of length $L$ to a horizon of length $H$."
       ],
-      "id": "d42b69f7"
+      "id": "de340d0d"
     },
     {
       "cell_type": "code",
@@ -717,7 +717,7 @@
         "\n",
         "The next code block trains the TCN for a small number of epochs. In a larger project, students should tune model size, dropout, learning rate, and input length using the validation set."
       ],
-      "id": "38f48370"
+      "id": "75ccc00f"
     },
     {
       "cell_type": "code",
@@ -790,7 +790,7 @@
         "\\qquad h=1,\\ldots,H.\n",
         "$$"
       ],
-      "id": "aa5dde2a"
+      "id": "52fb1bbe"
     },
     {
       "cell_type": "code",
@@ -834,7 +834,7 @@
       "source": [
         "The goal is not merely to train a CNN. The goal is to show that the CNN adds predictive value relative to strong baselines."
       ],
-      "id": "3d5abea5"
+      "id": "ebfe3469"
     },
     {
       "cell_type": "code",
@@ -1025,7 +1025,7 @@
         "- Can you test whether future inputs affect earlier outputs?\n",
         "- Can you explain your CNN as a nonlinear time-domain filter?"
       ],
-      "id": "2551bd7c"
+      "id": "97eeee65"
     }
   ],
   "metadata": {

@@ -1,1166 +1,1154 @@
 {
- "cells": [
-  {
-   "cell_type": "markdown",
-   "id": "c2b4b25e",
-   "metadata": {},
-   "source": [
-    "# Python Reference for Time Series and Sequence Learning\n",
-    "\n",
-    "This appendix collects the Python patterns used throughout the book.  It is designed as a practical companion for the labs.  The goal is not to replace documentation for `numpy`, `pandas`, `statsmodels`, `scikit-learn`, `torch`, or `plotly`, but to give students a consistent workflow for simulation, visualization, modeling, validation, and debugging.\n",
-    "\n",
-    "The guiding principle is simple: in time series, code must respect time order.  Random shuffling, scaling with future data, or using future observations as features can make a model look much better than it really is.\n",
-    "\n",
-    "## A.1 Recommended Python environment\n",
-    "\n",
-    "The labs are written for Python 3.10 or later.  A standard environment should include the following packages."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "02a44500",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "# Core scientific stack\n",
-    "import numpy as np\n",
-    "import pandas as pd\n",
-    "import matplotlib.pyplot as plt\n",
-    "\n",
-    "# Time series tools\n",
-    "from statsmodels.graphics.tsaplots import plot_acf, plot_pacf\n",
-    "from statsmodels.tsa.stattools import acf, pacf, adfuller\n",
-    "from statsmodels.tsa.arima.model import ARIMA\n",
-    "from statsmodels.tsa.statespace.sarimax import SARIMAX\n",
-    "from statsmodels.stats.diagnostic import acorr_ljungbox\n",
-    "\n",
-    "# Machine learning tools\n",
-    "from sklearn.linear_model import LinearRegression, Ridge\n",
-    "from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor\n",
-    "from sklearn.metrics import mean_absolute_error, mean_squared_error\n",
-    "from sklearn.preprocessing import StandardScaler\n",
-    "\n",
-    "# Optional deep learning tools\n",
-    "import torch\n",
-    "import torch.nn as nn\n",
-    "from torch.utils.data import Dataset, DataLoader"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "9386f4c5",
-   "metadata": {},
-   "source": [
-    "For Google Colab, a minimal setup cell is:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 2,
-   "id": "8a22d01a",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "!pip install numpy pandas matplotlib statsmodels scikit-learn plotly torch --quiet"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "386710f2",
-   "metadata": {},
-   "source": [
-    "Some optional packages used in advanced labs may require installation only when needed:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 3,
-   "id": "099551a2",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "!pip install prophet pmdarima PyWavelets hmmlearn --quiet"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "aec53cd3",
-   "metadata": {},
-   "source": [
-    "## A.2 Reproducibility\n",
-    "\n",
-    "Use a fixed seed whenever simulation or randomized training is involved."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 4,
-   "id": "b3ae79fc",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "import numpy as np\n",
-    "import torch\n",
-    "\n",
-    "SEED = 7339\n",
-    "rng = np.random.default_rng(SEED)\n",
-    "\n",
-    "torch.manual_seed(SEED)\n",
-    "torch.set_num_threads(1)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "cce4de11",
-   "metadata": {},
-   "source": [
-    "In time series experiments, reproducibility means more than a seed.  It also means recording the forecasting horizon, train/test split date, scaling procedure, feature construction rule, and validation design.\n",
-    "\n",
-    "## A.3 Basic time-series objects\n",
-    "\n",
-    "A univariate time series can be stored as a `pandas.Series` with an integer index or a datetime index."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 5,
-   "id": "d7a4a72e",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "n = 120\n",
-    "dates = pd.date_range(\"2026-01-01\", periods=n, freq=\"D\")\n",
-    "y = pd.Series(rng.normal(size=n).cumsum(), index=dates, name=\"y\")\n",
-    "\n",
-    "y.head()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "ae6c599d",
-   "metadata": {},
-   "source": [
-    "A multivariate time series is usually stored as a `pandas.DataFrame`."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 6,
-   "id": "4e880976",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "X = pd.DataFrame({\n",
-    "    \"series_a\": rng.normal(size=n).cumsum(),\n",
-    "    \"series_b\": rng.normal(size=n).cumsum(),\n",
-    "    \"series_c\": rng.normal(size=n).cumsum()\n",
-    "}, index=dates)\n",
-    "\n",
-    "X.head()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "d99492b4",
-   "metadata": {},
-   "source": [
-    "When working with dates, always check the frequency."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 7,
-   "id": "3476cf9e",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "print(y.index.freq)\n",
-    "print(pd.infer_freq(y.index))"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "8680a470",
-   "metadata": {},
-   "source": [
-    "## A.4 Plotting conventions\n",
-    "\n",
-    "For static plots in Python chunks, use `matplotlib`.  For book interactives, Plotly is loaded globally through `assets/header.html`; do not add another Plotly script tag inside a chapter."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 8,
-   "id": "9966fb9f",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "fig, ax = plt.subplots(figsize=(8, 3))\n",
-    "y.plot(ax=ax)\n",
-    "ax.set_title(\"Time Series Plot\")\n",
-    "ax.set_xlabel(\"time\")\n",
-    "ax.set_ylabel(\"value\")\n",
-    "plt.show()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "036f9313",
-   "metadata": {},
-   "source": [
-    "ACF and PACF plots are frequently used for model identification."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 9,
-   "id": "9278f45a",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "fig, ax = plt.subplots(figsize=(7, 3))\n",
-    "plot_acf(y.dropna(), lags=30, ax=ax)\n",
-    "ax.set_title(\"Sample ACF\")\n",
-    "plt.show()\n",
-    "\n",
-    "fig, ax = plt.subplots(figsize=(7, 3))\n",
-    "plot_pacf(y.dropna(), lags=30, ax=ax, method=\"ywm\")\n",
-    "ax.set_title(\"Sample PACF\")\n",
-    "plt.show()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "ea234f01",
-   "metadata": {},
-   "source": [
-    "## A.5 Common simulation patterns\n",
-    "\n",
-    "### White noise\n",
-    "\n",
-    "White noise has mean zero, constant variance, and zero autocovariance at nonzero lags."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 10,
-   "id": "8d7a79c6",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "n = 400\n",
-    "sigma = 1.0\n",
-    "w = rng.normal(0, sigma, size=n)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "b067a932",
-   "metadata": {},
-   "source": [
-    "### Random walk\n",
-    "\n",
-    "The random walk satisfies $X_t = X_{t-1} + W_t$."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 11,
-   "id": "f969cdb5",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "x_rw = np.cumsum(w)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "96170745",
-   "metadata": {},
-   "source": [
-    "### AR(1)\n",
-    "\n",
-    "The AR(1) model is\n",
-    "\n",
-    "$$\n",
-    "X_t = \\phi X_{t-1} + W_t.\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 12,
-   "id": "2619452c",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "n = 400\n",
-    "burnin = 200\n",
-    "total = n + burnin\n",
-    "phi = 0.75\n",
-    "w = rng.normal(0, 1, size=total)\n",
-    "x_full = np.zeros(total)\n",
-    "\n",
-    "for t in range(1, total):\n",
-    "    x_full[t] = phi * x_full[t - 1] + w[t]\n",
-    "\n",
-    "x_ar1 = x_full[burnin:]\n",
-    "assert len(x_ar1) == n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "af693292",
-   "metadata": {},
-   "source": [
-    "### MA(1)\n",
-    "\n",
-    "The MA(1) model is\n",
-    "\n",
-    "$$\n",
-    "X_t = W_t + \\theta W_{t-1}.\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 13,
-   "id": "efe4f322",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "theta = 0.70\n",
-    "x_full = np.zeros(total)\n",
-    "\n",
-    "for t in range(1, total):\n",
-    "    x_full[t] = w[t] + theta * w[t - 1]\n",
-    "\n",
-    "x_ma1 = x_full[burnin:]\n",
-    "assert len(x_ma1) == n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "a134cfe2",
-   "metadata": {},
-   "source": [
-    "### ARMA(1,1)\n",
-    "\n",
-    "The ARMA(1,1) model is\n",
-    "\n",
-    "$$\n",
-    "X_t = \\phi X_{t-1} + W_t + \\theta W_{t-1}.\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 14,
-   "id": "20872df8",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "phi = 0.65\n",
-    "theta = 0.50\n",
-    "x_full = np.zeros(total)\n",
-    "\n",
-    "for t in range(1, total):\n",
-    "    x_full[t] = phi * x_full[t - 1] + w[t] + theta * w[t - 1]\n",
-    "\n",
-    "x_arma11 = x_full[burnin:]\n",
-    "assert len(x_arma11) == n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "8835a5d0",
-   "metadata": {},
-   "source": [
-    "## A.6 Sample autocovariance and ACF from scratch\n",
-    "\n",
-    "The sample autocovariance at lag $h$ is often estimated by\n",
-    "\n",
-    "$$\n",
-    "\\widehat{\\gamma}(h)\n",
-    "= \\frac{1}{n}\\sum_{t=h+1}^{n} (x_t-\\bar{x})(x_{t-h}-\\bar{x}).\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 15,
-   "id": "dcf59c64",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def sample_autocovariance(x, max_lag):\n",
-    "    x = np.asarray(x, dtype=float)\n",
-    "    n = len(x)\n",
-    "    x_centered = x - x.mean()\n",
-    "    gamma = []\n",
-    "    for h in range(max_lag + 1):\n",
-    "        value = np.sum(x_centered[h:] * x_centered[:n - h]) / n\n",
-    "        gamma.append(value)\n",
-    "    return np.array(gamma)\n",
-    "\n",
-    "\n",
-    "def sample_acf(x, max_lag):\n",
-    "    gamma = sample_autocovariance(x, max_lag)\n",
-    "    return gamma / gamma[0]\n",
-    "\n",
-    "rho_hat = sample_acf(x_ar1, max_lag=20)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "3170b3c1",
-   "metadata": {},
-   "source": [
-    "## A.7 Train, validation, and test splits\n",
-    "\n",
-    "For forecasting, split by time order."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 16,
-   "id": "15e771bf",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def chronological_split(y, train_frac=0.7, val_frac=0.15):\n",
-    "    n = len(y)\n",
-    "    n_train = int(train_frac * n)\n",
-    "    n_val = int(val_frac * n)\n",
-    "\n",
-    "    train = y.iloc[:n_train]\n",
-    "    val = y.iloc[n_train:n_train + n_val]\n",
-    "    test = y.iloc[n_train + n_val:]\n",
-    "\n",
-    "    return train, val, test\n",
-    "\n",
-    "train, val, test = chronological_split(y)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "5834d822",
-   "metadata": {},
-   "source": [
-    "Avoid this for forecasting:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 17,
-   "id": "187921d9",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "# Do not use this for time-series forecasting validation.\n",
-    "# from sklearn.model_selection import train_test_split\n",
-    "# train, test = train_test_split(y, test_size=0.2, shuffle=True)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "fa6c282d",
-   "metadata": {},
-   "source": [
-    "## A.8 Forecasting metrics\n",
-    "\n",
-    "For observations $y_t$ and forecasts $\\widehat{y}_t$, common point-forecast metrics include\n",
-    "\n",
-    "$$\n",
-    "\\operatorname{MAE} = \\frac{1}{n}\\sum_{t=1}^{n}|y_t-\\widehat{y}_t|,\n",
-    "$$\n",
-    "\n",
-    "$$\n",
-    "\\operatorname{RMSE} = \\sqrt{\\frac{1}{n}\\sum_{t=1}^{n}(y_t-\\widehat{y}_t)^2}.\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 18,
-   "id": "b483934e",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def rmse(y_true, y_pred):\n",
-    "    y_true = np.asarray(y_true)\n",
-    "    y_pred = np.asarray(y_pred)\n",
-    "    return np.sqrt(np.mean((y_true - y_pred) ** 2))\n",
-    "\n",
-    "\n",
-    "def mae(y_true, y_pred):\n",
-    "    y_true = np.asarray(y_true)\n",
-    "    y_pred = np.asarray(y_pred)\n",
-    "    return np.mean(np.abs(y_true - y_pred))"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "5a1b74dc",
-   "metadata": {},
-   "source": [
-    "For seasonal data, a seasonal naive model is an essential baseline."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 19,
-   "id": "31feb568",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def seasonal_naive_forecast(y_train, horizon, season_length):\n",
-    "    y_train = np.asarray(y_train)\n",
-    "    if len(y_train) < season_length:\n",
-    "        raise ValueError(\"Training series must be at least one seasonal period long.\")\n",
-    "    repeats = int(np.ceil(horizon / season_length))\n",
-    "    forecast = np.tile(y_train[-season_length:], repeats)[:horizon]\n",
-    "    return forecast"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "452d6315",
-   "metadata": {},
-   "source": [
-    "## A.9 Rolling-origin backtesting\n",
-    "\n",
-    "Rolling-origin evaluation repeatedly refits or updates the model using only past data."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 20,
-   "id": "31fef07b",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def rolling_origin_splits(n, initial_window, horizon, step=1):\n",
-    "    starts = []\n",
-    "    train_ends = []\n",
-    "    test_ranges = []\n",
-    "\n",
-    "    train_end = initial_window\n",
-    "    while train_end + horizon <= n:\n",
-    "        starts.append(0)\n",
-    "        train_ends.append(train_end)\n",
-    "        test_ranges.append((train_end, train_end + horizon))\n",
-    "        train_end += step\n",
-    "\n",
-    "    return list(zip(starts, train_ends, test_ranges))\n",
-    "\n",
-    "splits = rolling_origin_splits(n=200, initial_window=100, horizon=12, step=12)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "73194b7c",
-   "metadata": {},
-   "source": [
-    "A template for evaluating a simple forecasting function is:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 21,
-   "id": "ce749a19",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def evaluate_rolling_origin(y, forecast_function, initial_window, horizon, step=1):\n",
-    "    y = pd.Series(y).reset_index(drop=True)\n",
-    "    records = []\n",
-    "\n",
-    "    for start, train_end, (test_start, test_end) in rolling_origin_splits(\n",
-    "        len(y), initial_window, horizon, step\n",
-    "    ):\n",
-    "        y_train = y.iloc[start:train_end]\n",
-    "        y_test = y.iloc[test_start:test_end]\n",
-    "        y_pred = forecast_function(y_train, horizon)\n",
-    "\n",
-    "        records.append({\n",
-    "            \"train_end\": train_end,\n",
-    "            \"horizon\": horizon,\n",
-    "            \"mae\": mae(y_test, y_pred),\n",
-    "            \"rmse\": rmse(y_test, y_pred)\n",
-    "        })\n",
-    "\n",
-    "    return pd.DataFrame(records)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "86eb3e1a",
-   "metadata": {},
-   "source": [
-    "## A.10 Fitting ARIMA and SARIMA models\n",
-    "\n",
-    "A basic ARIMA fit uses `statsmodels`."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 22,
-   "id": "c9547d8c",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "model = ARIMA(train, order=(1, 1, 1))\n",
-    "result = model.fit()\n",
-    "print(result.summary())\n",
-    "\n",
-    "forecast_result = result.get_forecast(steps=len(test))\n",
-    "forecast_mean = forecast_result.predicted_mean\n",
-    "forecast_interval = forecast_result.conf_int()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "b57d22c2",
-   "metadata": {},
-   "source": [
-    "A SARIMA model can be fitted with `SARIMAX`."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 23,
-   "id": "09a1d845",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "model = SARIMAX(\n",
-    "    train,\n",
-    "    order=(1, 1, 1),\n",
-    "    seasonal_order=(1, 1, 1, 12),\n",
-    "    enforce_stationarity=False,\n",
-    "    enforce_invertibility=False\n",
-    ")\n",
-    "result = model.fit(disp=False)\n",
-    "forecast = result.get_forecast(steps=len(test))"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "cab7bbcf",
-   "metadata": {},
-   "source": [
-    "Residual diagnostics should always be checked."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 24,
-   "id": "91d11ba0",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "resid = result.resid.dropna()\n",
-    "\n",
-    "fig, ax = plt.subplots(figsize=(7, 3))\n",
-    "plot_acf(resid, lags=30, ax=ax)\n",
-    "ax.set_title(\"Residual ACF\")\n",
-    "plt.show()\n",
-    "\n",
-    "lb = acorr_ljungbox(resid, lags=[10, 20], return_df=True)\n",
-    "lb"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "0e5904c4",
-   "metadata": {},
-   "source": [
-    "## A.11 Supervised learning matrix from lags\n",
-    "\n",
-    "Many machine learning models require turning a time series into a supervised learning table."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 25,
-   "id": "fae65274",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def make_lagged_frame(y, lags, horizon=1):\n",
-    "    y = pd.Series(y).reset_index(drop=True)\n",
-    "    data = pd.DataFrame({\"y\": y})\n",
-    "\n",
-    "    for lag in lags:\n",
-    "        data[f\"lag_{lag}\"] = data[\"y\"].shift(lag)\n",
-    "\n",
-    "    data[\"target\"] = data[\"y\"].shift(-horizon)\n",
-    "    data = data.dropna().reset_index(drop=True)\n",
-    "\n",
-    "    X = data[[f\"lag_{lag}\" for lag in lags]]\n",
-    "    target = data[\"target\"]\n",
-    "    return X, target\n",
-    "\n",
-    "X_lag, y_target = make_lagged_frame(y, lags=[1, 2, 3, 7], horizon=1)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "a2d3ac79",
-   "metadata": {},
-   "source": [
-    "The scaling rule is important.  Fit scalers only on training data."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 26,
-   "id": "6e1608f8",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "split = int(0.8 * len(X_lag))\n",
-    "X_train, X_test = X_lag.iloc[:split], X_lag.iloc[split:]\n",
-    "y_train, y_test = y_target.iloc[:split], y_target.iloc[split:]\n",
-    "\n",
-    "scaler = StandardScaler()\n",
-    "X_train_scaled = scaler.fit_transform(X_train)\n",
-    "X_test_scaled = scaler.transform(X_test)\n",
-    "\n",
-    "model = Ridge(alpha=1.0)\n",
-    "model.fit(X_train_scaled, y_train)\n",
-    "y_pred = model.predict(X_test_scaled)\n",
-    "\n",
-    "print(\"MAE:\", mae(y_test, y_pred))\n",
-    "print(\"RMSE:\", rmse(y_test, y_pred))"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "12e91f90",
-   "metadata": {},
-   "source": [
-    "## A.12 Window datasets for neural networks\n",
-    "\n",
-    "For neural networks, a common supervised learning format is\n",
-    "\n",
-    "$$\n",
-    "(x_{t-L+1},\\ldots,x_t) \\mapsto (x_{t+1},\\ldots,x_{t+H}).\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 27,
-   "id": "e065cace",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def make_windows(y, input_length, horizon):\n",
-    "    y = np.asarray(y, dtype=np.float32)\n",
-    "    X = []\n",
-    "    Y = []\n",
-    "    for start in range(0, len(y) - input_length - horizon + 1):\n",
-    "        end = start + input_length\n",
-    "        X.append(y[start:end])\n",
-    "        Y.append(y[end:end + horizon])\n",
-    "    return np.array(X), np.array(Y)\n",
-    "\n",
-    "X_win, Y_win = make_windows(y.values, input_length=24, horizon=12)\n",
-    "print(X_win.shape, Y_win.shape)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "172432f6",
-   "metadata": {},
-   "source": [
-    "A minimal PyTorch dataset is:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 28,
-   "id": "3e594019",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "class WindowDataset(Dataset):\n",
-    "    def __init__(self, X, Y):\n",
-    "        self.X = torch.tensor(X, dtype=torch.float32)\n",
-    "        self.Y = torch.tensor(Y, dtype=torch.float32)\n",
-    "\n",
-    "    def __len__(self):\n",
-    "        return len(self.X)\n",
-    "\n",
-    "    def __getitem__(self, idx):\n",
-    "        return self.X[idx], self.Y[idx]\n",
-    "\n",
-    "train_ds = WindowDataset(X_win, Y_win)\n",
-    "train_loader = DataLoader(train_ds, batch_size=32, shuffle=False)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "3963c98f",
-   "metadata": {},
-   "source": [
-    "For forecasting, avoid shuffling validation and test windows.  Shuffling training windows is sometimes acceptable for neural-network optimization after the windows have been created without leakage, but validation must remain chronological.\n",
-    "\n",
-    "## A.13 Minimal neural network forecaster"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 29,
-   "id": "29e7fc84",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "class MLPForecaster(nn.Module):\n",
-    "    def __init__(self, input_length, horizon, hidden=64):\n",
-    "        super().__init__()\n",
-    "        self.net = nn.Sequential(\n",
-    "            nn.Linear(input_length, hidden),\n",
-    "            nn.ReLU(),\n",
-    "            nn.Linear(hidden, hidden),\n",
-    "            nn.ReLU(),\n",
-    "            nn.Linear(hidden, horizon)\n",
-    "        )\n",
-    "\n",
-    "    def forward(self, x):\n",
-    "        return self.net(x)\n",
-    "\n",
-    "model = MLPForecaster(input_length=24, horizon=12)\n",
-    "optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)\n",
-    "loss_fn = nn.MSELoss()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "03c59a8e",
-   "metadata": {},
-   "source": [
-    "A small training loop:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 30,
-   "id": "ea49bc77",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "for epoch in range(20):\n",
-    "    model.train()\n",
-    "    total_loss = 0.0\n",
-    "\n",
-    "    for xb, yb in train_loader:\n",
-    "        optimizer.zero_grad()\n",
-    "        pred = model(xb)\n",
-    "        loss = loss_fn(pred, yb)\n",
-    "        loss.backward()\n",
-    "        optimizer.step()\n",
-    "        total_loss += loss.item() * len(xb)\n",
-    "\n",
-    "    avg_loss = total_loss / len(train_loader.dataset)\n",
-    "    print(f\"epoch={epoch + 1:02d}, train_mse={avg_loss:.4f}\")"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "76bf0712",
-   "metadata": {},
-   "source": [
-    "## A.14 Causal convolution helper\n",
-    "\n",
-    "A 1D causal convolution should not use future values.  The output at time $t$ may depend on $x_t,x_{t-1},x_{t-2},\\ldots$, but not on $x_{t+1}$."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 31,
-   "id": "bc233925",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def causal_convolution_1d(x, kernel, dilation=1):\n",
-    "    x = np.asarray(x, dtype=float)\n",
-    "    kernel = np.asarray(kernel, dtype=float)\n",
-    "    n = len(x)\n",
-    "    k = len(kernel)\n",
-    "    y = np.zeros(n)\n",
-    "\n",
-    "    for t in range(n):\n",
-    "        value = 0.0\n",
-    "        for j in range(k):\n",
-    "            idx = t - dilation * j\n",
-    "            if idx >= 0:\n",
-    "                value += kernel[j] * x[idx]\n",
-    "        y[t] = value\n",
-    "\n",
-    "    return y"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "b5adabb1",
-   "metadata": {},
-   "source": [
-    "The receptive field of a stack of dilated convolutions with kernel size $K$ and dilations $d_1,\\ldots,d_L$ is\n",
-    "\n",
-    "$$\n",
-    "R = 1 + (K-1)\\sum_{\\ell=1}^{L} d_\\ell.\n",
-    "$$\n",
-    "\n",
-    "## A.15 Attention helper functions\n",
-    "\n",
-    "The scaled dot-product attention formula is\n",
-    "\n",
-    "$$\n",
-    "\\operatorname{Attention}(Q,K,V)\n",
-    "= \\operatorname{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}} + M\\right)V.\n",
-    "$$"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 32,
-   "id": "cad10cd1",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "def softmax_rows(A):\n",
-    "    A = A - A.max(axis=1, keepdims=True)\n",
-    "    E = np.exp(A)\n",
-    "    return E / E.sum(axis=1, keepdims=True)\n",
-    "\n",
-    "\n",
-    "def scaled_dot_product_attention(Q, K, V, mask=None):\n",
-    "    d_k = Q.shape[-1]\n",
-    "    scores = Q @ K.T / np.sqrt(d_k)\n",
-    "    if mask is not None:\n",
-    "        scores = scores + mask\n",
-    "    weights = softmax_rows(scores)\n",
-    "    output = weights @ V\n",
-    "    return output, weights\n",
-    "\n",
-    "\n",
-    "def causal_mask(T):\n",
-    "    M = np.triu(np.ones((T, T)), k=1)\n",
-    "    return np.where(M == 1, -1e9, 0.0)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "a17bd866",
-   "metadata": {},
-   "source": [
-    "## A.16 Plotly interactive pattern for this book\n",
-    "\n",
-    "Plotly.js is included once globally in `assets/header.html`.  Interactive modules should use the shared configuration in `assets/ts-interactives.js`.\n",
-    "\n",
-    "A standard pattern is:\n",
-    "\n",
-    "```{js}\n",
-    "//| eval: false\n",
-    "window.TSInteractives = window.TSInteractives || {};\n",
-    "\n",
-    "window.TSInteractives.exampleModule = function () {\n",
-    "  const plotDiv = document.getElementById(\"example-plot\");\n",
-    "  if (!plotDiv || typeof Plotly === \"undefined\") return;\n",
-    "\n",
-    "  const traces = [\n",
-    "    { x: [0, 1, 2], y: [0, 1, 0], mode: \"lines\", name: \"example\" }\n",
-    "  ];\n",
-    "\n",
-    "  const layout = {\n",
-    "    title: \"Example Interactive\",\n",
-    "    margin: { t: 60, r: 30, b: 50, l: 50 }\n",
-    "  };\n",
-    "\n",
-    "  Plotly.react(\n",
-    "    plotDiv,\n",
-    "    traces,\n",
-    "    layout,\n",
-    "    window.TSInteractives.plotlyConfig\n",
-    "  );\n",
-    "};\n",
-    "\n",
-    "document.addEventListener(\"DOMContentLoaded\", function () {\n",
-    "  window.TSInteractives.exampleModule();\n",
-    "});\n",
-    "```\n",
-    "\n",
-    "The chapter `.qmd` file should contain only the container, not another Plotly script tag.\n",
-    "\n",
-    "```{markdown}\n",
-    "```html\n",
-    "<div class=\"interactive-card\">\n",
-    "  <h3>Interactive Module</h3>\n",
-    "  <div id=\"example-plot\" style=\"width:100%; height:480px;\"></div>\n",
-    "</div>\n",
-    "```\n",
-    "```\n",
-    "\n",
-    "## A.17 Common debugging checklist\n",
-    "\n",
-    "When a lab or interactive does not work, check these items first.\n",
-    "\n",
-    "- Confirm the notebook runtime is using Python 3.10 or later.\n",
-    "- Run all cells from the top instead of running isolated cells out of order.\n",
-    "- Check array lengths after differencing, lagging, and windowing.\n",
-    "- Use `assert` statements for expected shapes.\n",
-    "- Make sure scaling is fitted only on the training set.\n",
-    "- Make sure validation and test sets are later in time than the training set.\n",
-    "- Check that `assets/header.html` loads Plotly.js once.\n",
-    "- Check browser developer tools for missing file errors such as `404 Not Found`.\n",
-    "- Check that each interactive container ID matches the JavaScript code.\n",
-    "- Avoid raw HTML tables inside Quarto documents when rendering to PDF.\n",
-    "\n",
-    "Useful shape checks:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 33,
-   "id": "8964cba7",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "assert len(y_train) > 0\n",
-    "assert len(y_test) > 0\n",
-    "assert X_train.shape[0] == len(y_train)\n",
-    "assert X_test.shape[0] == len(y_test)\n",
-    "assert np.isfinite(X_train).all().all()\n",
-    "assert np.isfinite(y_train).all()"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "b20ca200",
-   "metadata": {},
-   "source": [
-    "## A.18 AI-assisted Python workflow\n",
-    "\n",
-    "AI tools are helpful for code review, but they must be asked precise, time-series-aware questions.  Good prompts include the data structure, the forecast horizon, the information set, and the validation design.\n",
-    "\n",
-    "Example prompt:\n",
-    "\n",
-    "> I am forecasting $y_{t+12}$ using only information available up to time $t$.  Here is my feature construction and train/test split.  Check whether any feature leaks future information.  Also check whether my scaling is fitted only on the training set.\n",
-    "\n",
-    "Another useful prompt:\n",
-    "\n",
-    "> Here is my residual ACF, Ljung-Box result, and rolling-origin error table.  Give three possible reasons the model fails, and propose checks that I can verify with code.\n",
-    "\n",
-    "AI-generated code should be treated as a draft.  Before using it in a project, verify the following.\n",
-    "\n",
-    "- The model does not use future observations as predictors.\n",
-    "- Differencing, scaling, and feature engineering are performed in the correct chronological order.\n",
-    "- The validation method matches the forecasting task.\n",
-    "- Baselines are included.\n",
-    "- Residual diagnostics are checked.\n",
-    "- The code is reproducible from a fresh runtime.\n",
-    "\n",
-    "## A.19 Minimal project notebook structure\n",
-    "\n",
-    "A strong final-project notebook should follow this structure.\n",
-    "\n",
-    "1. Problem statement and forecast contract.\n",
-    "2. Data loading and cleaning.\n",
-    "3. Exploratory time-series analysis.\n",
-    "4. Baseline models.\n",
-    "5. Main models.\n",
-    "6. Rolling-origin or chronological validation.\n",
-    "7. Residual diagnostics and uncertainty.\n",
-    "8. Interpretation and limitations.\n",
-    "9. Final conclusion.\n",
-    "\n",
-    "A simple project header can be:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 34,
-   "id": "15ba01e7",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "#| eval: false\n",
-    "PROJECT_TITLE = \"Short descriptive title\"\n",
-    "FORECAST_TARGET = \"variable to forecast\"\n",
-    "FORECAST_HORIZON = 12\n",
-    "INFORMATION_SET = \"all variables observed up to forecast origin t\"\n",
-    "VALIDATION_SCHEME = \"rolling-origin evaluation\"\n",
-    "RANDOM_SEED = 7339"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "e7e8b791",
-   "metadata": {},
-   "source": [
-    "## A.20 Key principle\n",
-    "\n",
-    "For sequence data, the order is part of the data.  A model that ignores the order may still be useful, but a validation procedure that ignores the order is usually misleading."
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3",
-   "path": "/Users/he.wang/miniconda3/share/jupyter/kernels/python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.10.9"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Python Reference for Time Series and Sequence Learning\n",
+        "\n",
+        "This appendix collects the Python patterns used throughout the book.  It is designed as a practical companion for the labs.  The goal is not to replace documentation for `numpy`, `pandas`, `statsmodels`, `scikit-learn`, `torch`, or `plotly`, but to give students a consistent workflow for simulation, visualization, modeling, validation, and debugging.\n",
+        "\n",
+        "The guiding principle is simple: in time series, code must respect time order.  Random shuffling, scaling with future data, or using future observations as features can make a model look much better than it really is.\n",
+        "\n",
+        "## A.1 Recommended Python environment\n",
+        "\n",
+        "The labs are written for Python 3.10 or later.  A standard environment should include the following packages."
+      ],
+      "id": "13d72e19"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "# Core scientific stack\n",
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "# Time series tools\n",
+        "from statsmodels.graphics.tsaplots import plot_acf, plot_pacf\n",
+        "from statsmodels.tsa.stattools import acf, pacf, adfuller\n",
+        "from statsmodels.tsa.arima.model import ARIMA\n",
+        "from statsmodels.tsa.statespace.sarimax import SARIMAX\n",
+        "from statsmodels.stats.diagnostic import acorr_ljungbox\n",
+        "\n",
+        "# Machine learning tools\n",
+        "from sklearn.linear_model import LinearRegression, Ridge\n",
+        "from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor\n",
+        "from sklearn.metrics import mean_absolute_error, mean_squared_error\n",
+        "from sklearn.preprocessing import StandardScaler\n",
+        "\n",
+        "# Optional deep learning tools\n",
+        "import torch\n",
+        "import torch.nn as nn\n",
+        "from torch.utils.data import Dataset, DataLoader"
+      ],
+      "id": "071ebf5e",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "For Google Colab, a minimal setup cell is:"
+      ],
+      "id": "092a68a1"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "!pip install numpy pandas matplotlib statsmodels scikit-learn plotly torch --quiet"
+      ],
+      "id": "a3980320",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Some optional packages used in advanced labs may require installation only when needed:"
+      ],
+      "id": "5eabbf1c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "!pip install prophet pmdarima PyWavelets hmmlearn --quiet"
+      ],
+      "id": "68a11cf2",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.2 Reproducibility\n",
+        "\n",
+        "Use a fixed seed whenever simulation or randomized training is involved."
+      ],
+      "id": "ff3c3292"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "import numpy as np\n",
+        "import torch\n",
+        "\n",
+        "SEED = 7339\n",
+        "rng = np.random.default_rng(SEED)\n",
+        "\n",
+        "torch.manual_seed(SEED)\n",
+        "torch.set_num_threads(1)"
+      ],
+      "id": "fcd46ff5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "In time series experiments, reproducibility means more than a seed.  It also means recording the forecasting horizon, train/test split date, scaling procedure, feature construction rule, and validation design.\n",
+        "\n",
+        "## A.3 Basic time-series objects\n",
+        "\n",
+        "A univariate time series can be stored as a `pandas.Series` with an integer index or a datetime index."
+      ],
+      "id": "e35768e5"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "n = 120\n",
+        "dates = pd.date_range(\"2026-01-01\", periods=n, freq=\"D\")\n",
+        "y = pd.Series(rng.normal(size=n).cumsum(), index=dates, name=\"y\")\n",
+        "\n",
+        "y.head()"
+      ],
+      "id": "b42d6b1c",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "A multivariate time series is usually stored as a `pandas.DataFrame`."
+      ],
+      "id": "16f1df14"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "X = pd.DataFrame({\n",
+        "    \"series_a\": rng.normal(size=n).cumsum(),\n",
+        "    \"series_b\": rng.normal(size=n).cumsum(),\n",
+        "    \"series_c\": rng.normal(size=n).cumsum()\n",
+        "}, index=dates)\n",
+        "\n",
+        "X.head()"
+      ],
+      "id": "3431fc48",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "When working with dates, always check the frequency."
+      ],
+      "id": "c19a9831"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "print(y.index.freq)\n",
+        "print(pd.infer_freq(y.index))"
+      ],
+      "id": "df5a9afe",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.4 Plotting conventions\n",
+        "\n",
+        "For static plots in Python chunks, use `matplotlib`.  For book interactives, Plotly is loaded globally through `assets/header.html`; do not add another Plotly script tag inside a chapter."
+      ],
+      "id": "64f601f4"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "fig, ax = plt.subplots(figsize=(8, 3))\n",
+        "y.plot(ax=ax)\n",
+        "ax.set_title(\"Time Series Plot\")\n",
+        "ax.set_xlabel(\"time\")\n",
+        "ax.set_ylabel(\"value\")\n",
+        "plt.show()"
+      ],
+      "id": "6db1396d",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "ACF and PACF plots are frequently used for model identification."
+      ],
+      "id": "b7b6a0b7"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "fig, ax = plt.subplots(figsize=(7, 3))\n",
+        "plot_acf(y.dropna(), lags=30, ax=ax)\n",
+        "ax.set_title(\"Sample ACF\")\n",
+        "plt.show()\n",
+        "\n",
+        "fig, ax = plt.subplots(figsize=(7, 3))\n",
+        "plot_pacf(y.dropna(), lags=30, ax=ax, method=\"ywm\")\n",
+        "ax.set_title(\"Sample PACF\")\n",
+        "plt.show()"
+      ],
+      "id": "1367948d",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.5 Common simulation patterns\n",
+        "\n",
+        "### White noise\n",
+        "\n",
+        "White noise has mean zero, constant variance, and zero autocovariance at nonzero lags."
+      ],
+      "id": "d1042129"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "n = 400\n",
+        "sigma = 1.0\n",
+        "w = rng.normal(0, sigma, size=n)"
+      ],
+      "id": "0d3ab7a5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "### Random walk\n",
+        "\n",
+        "The random walk satisfies $X_t = X_{t-1} + W_t$."
+      ],
+      "id": "715e6e00"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "x_rw = np.cumsum(w)"
+      ],
+      "id": "e075eb6d",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "### AR(1)\n",
+        "\n",
+        "The AR(1) model is\n",
+        "\n",
+        "$$\n",
+        "X_t = \\phi X_{t-1} + W_t.\n",
+        "$$"
+      ],
+      "id": "747eba87"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "n = 400\n",
+        "burnin = 200\n",
+        "total = n + burnin\n",
+        "phi = 0.75\n",
+        "w = rng.normal(0, 1, size=total)\n",
+        "x_full = np.zeros(total)\n",
+        "\n",
+        "for t in range(1, total):\n",
+        "    x_full[t] = phi * x_full[t - 1] + w[t]\n",
+        "\n",
+        "x_ar1 = x_full[burnin:]\n",
+        "assert len(x_ar1) == n"
+      ],
+      "id": "6c960ec8",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "### MA(1)\n",
+        "\n",
+        "The MA(1) model is\n",
+        "\n",
+        "$$\n",
+        "X_t = W_t + \\theta W_{t-1}.\n",
+        "$$"
+      ],
+      "id": "a85f2176"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "theta = 0.70\n",
+        "x_full = np.zeros(total)\n",
+        "\n",
+        "for t in range(1, total):\n",
+        "    x_full[t] = w[t] + theta * w[t - 1]\n",
+        "\n",
+        "x_ma1 = x_full[burnin:]\n",
+        "assert len(x_ma1) == n"
+      ],
+      "id": "7928f3d5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "### ARMA(1,1)\n",
+        "\n",
+        "The ARMA(1,1) model is\n",
+        "\n",
+        "$$\n",
+        "X_t = \\phi X_{t-1} + W_t + \\theta W_{t-1}.\n",
+        "$$"
+      ],
+      "id": "bd1a9b2f"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "phi = 0.65\n",
+        "theta = 0.50\n",
+        "x_full = np.zeros(total)\n",
+        "\n",
+        "for t in range(1, total):\n",
+        "    x_full[t] = phi * x_full[t - 1] + w[t] + theta * w[t - 1]\n",
+        "\n",
+        "x_arma11 = x_full[burnin:]\n",
+        "assert len(x_arma11) == n"
+      ],
+      "id": "0431699d",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.6 Sample autocovariance and ACF from scratch\n",
+        "\n",
+        "The sample autocovariance at lag $h$ is often estimated by\n",
+        "\n",
+        "$$\n",
+        "\\widehat{\\gamma}(h)\n",
+        "= \\frac{1}{n}\\sum_{t=h+1}^{n} (x_t-\\bar{x})(x_{t-h}-\\bar{x}).\n",
+        "$$"
+      ],
+      "id": "b874f2b1"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def sample_autocovariance(x, max_lag):\n",
+        "    x = np.asarray(x, dtype=float)\n",
+        "    n = len(x)\n",
+        "    x_centered = x - x.mean()\n",
+        "    gamma = []\n",
+        "    for h in range(max_lag + 1):\n",
+        "        value = np.sum(x_centered[h:] * x_centered[:n - h]) / n\n",
+        "        gamma.append(value)\n",
+        "    return np.array(gamma)\n",
+        "\n",
+        "\n",
+        "def sample_acf(x, max_lag):\n",
+        "    gamma = sample_autocovariance(x, max_lag)\n",
+        "    return gamma / gamma[0]\n",
+        "\n",
+        "rho_hat = sample_acf(x_ar1, max_lag=20)"
+      ],
+      "id": "39335e83",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.7 Train, validation, and test splits\n",
+        "\n",
+        "For forecasting, split by time order."
+      ],
+      "id": "93ab6fe8"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def chronological_split(y, train_frac=0.7, val_frac=0.15):\n",
+        "    n = len(y)\n",
+        "    n_train = int(train_frac * n)\n",
+        "    n_val = int(val_frac * n)\n",
+        "\n",
+        "    train = y.iloc[:n_train]\n",
+        "    val = y.iloc[n_train:n_train + n_val]\n",
+        "    test = y.iloc[n_train + n_val:]\n",
+        "\n",
+        "    return train, val, test\n",
+        "\n",
+        "train, val, test = chronological_split(y)"
+      ],
+      "id": "b40cbffd",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Avoid this for forecasting:"
+      ],
+      "id": "7f0c76f6"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "# Do not use this for time-series forecasting validation.\n",
+        "# from sklearn.model_selection import train_test_split\n",
+        "# train, test = train_test_split(y, test_size=0.2, shuffle=True)"
+      ],
+      "id": "e4915bb6",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.8 Forecasting metrics\n",
+        "\n",
+        "For observations $y_t$ and forecasts $\\widehat{y}_t$, common point-forecast metrics include\n",
+        "\n",
+        "$$\n",
+        "\\operatorname{MAE} = \\frac{1}{n}\\sum_{t=1}^{n}|y_t-\\widehat{y}_t|,\n",
+        "$$\n",
+        "\n",
+        "$$\n",
+        "\\operatorname{RMSE} = \\sqrt{\\frac{1}{n}\\sum_{t=1}^{n}(y_t-\\widehat{y}_t)^2}.\n",
+        "$$"
+      ],
+      "id": "a8ba1b2e"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def rmse(y_true, y_pred):\n",
+        "    y_true = np.asarray(y_true)\n",
+        "    y_pred = np.asarray(y_pred)\n",
+        "    return np.sqrt(np.mean((y_true - y_pred) ** 2))\n",
+        "\n",
+        "\n",
+        "def mae(y_true, y_pred):\n",
+        "    y_true = np.asarray(y_true)\n",
+        "    y_pred = np.asarray(y_pred)\n",
+        "    return np.mean(np.abs(y_true - y_pred))"
+      ],
+      "id": "f62a8960",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "For seasonal data, a seasonal naive model is an essential baseline."
+      ],
+      "id": "abffaef3"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def seasonal_naive_forecast(y_train, horizon, season_length):\n",
+        "    y_train = np.asarray(y_train)\n",
+        "    if len(y_train) < season_length:\n",
+        "        raise ValueError(\"Training series must be at least one seasonal period long.\")\n",
+        "    repeats = int(np.ceil(horizon / season_length))\n",
+        "    forecast = np.tile(y_train[-season_length:], repeats)[:horizon]\n",
+        "    return forecast"
+      ],
+      "id": "bcc0b597",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.9 Rolling-origin backtesting\n",
+        "\n",
+        "Rolling-origin evaluation repeatedly refits or updates the model using only past data."
+      ],
+      "id": "2931c25f"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def rolling_origin_splits(n, initial_window, horizon, step=1):\n",
+        "    starts = []\n",
+        "    train_ends = []\n",
+        "    test_ranges = []\n",
+        "\n",
+        "    train_end = initial_window\n",
+        "    while train_end + horizon <= n:\n",
+        "        starts.append(0)\n",
+        "        train_ends.append(train_end)\n",
+        "        test_ranges.append((train_end, train_end + horizon))\n",
+        "        train_end += step\n",
+        "\n",
+        "    return list(zip(starts, train_ends, test_ranges))\n",
+        "\n",
+        "splits = rolling_origin_splits(n=200, initial_window=100, horizon=12, step=12)"
+      ],
+      "id": "4ddfd08b",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "A template for evaluating a simple forecasting function is:"
+      ],
+      "id": "ecdb923a"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def evaluate_rolling_origin(y, forecast_function, initial_window, horizon, step=1):\n",
+        "    y = pd.Series(y).reset_index(drop=True)\n",
+        "    records = []\n",
+        "\n",
+        "    for start, train_end, (test_start, test_end) in rolling_origin_splits(\n",
+        "        len(y), initial_window, horizon, step\n",
+        "    ):\n",
+        "        y_train = y.iloc[start:train_end]\n",
+        "        y_test = y.iloc[test_start:test_end]\n",
+        "        y_pred = forecast_function(y_train, horizon)\n",
+        "\n",
+        "        records.append({\n",
+        "            \"train_end\": train_end,\n",
+        "            \"horizon\": horizon,\n",
+        "            \"mae\": mae(y_test, y_pred),\n",
+        "            \"rmse\": rmse(y_test, y_pred)\n",
+        "        })\n",
+        "\n",
+        "    return pd.DataFrame(records)"
+      ],
+      "id": "1419a7bc",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.10 Fitting ARIMA and SARIMA models\n",
+        "\n",
+        "A basic ARIMA fit uses `statsmodels`."
+      ],
+      "id": "407bbc44"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "model = ARIMA(train, order=(1, 1, 1))\n",
+        "result = model.fit()\n",
+        "print(result.summary())\n",
+        "\n",
+        "forecast_result = result.get_forecast(steps=len(test))\n",
+        "forecast_mean = forecast_result.predicted_mean\n",
+        "forecast_interval = forecast_result.conf_int()"
+      ],
+      "id": "f89d832f",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "A SARIMA model can be fitted with `SARIMAX`."
+      ],
+      "id": "f5abb8ff"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "model = SARIMAX(\n",
+        "    train,\n",
+        "    order=(1, 1, 1),\n",
+        "    seasonal_order=(1, 1, 1, 12),\n",
+        "    enforce_stationarity=False,\n",
+        "    enforce_invertibility=False\n",
+        ")\n",
+        "result = model.fit(disp=False)\n",
+        "forecast = result.get_forecast(steps=len(test))"
+      ],
+      "id": "59c53575",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Residual diagnostics should always be checked."
+      ],
+      "id": "aeb3df9a"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "resid = result.resid.dropna()\n",
+        "\n",
+        "fig, ax = plt.subplots(figsize=(7, 3))\n",
+        "plot_acf(resid, lags=30, ax=ax)\n",
+        "ax.set_title(\"Residual ACF\")\n",
+        "plt.show()\n",
+        "\n",
+        "lb = acorr_ljungbox(resid, lags=[10, 20], return_df=True)\n",
+        "lb"
+      ],
+      "id": "da3b0854",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.11 Supervised learning matrix from lags\n",
+        "\n",
+        "Many machine learning models require turning a time series into a supervised learning table."
+      ],
+      "id": "0a0a461b"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def make_lagged_frame(y, lags, horizon=1):\n",
+        "    y = pd.Series(y).reset_index(drop=True)\n",
+        "    data = pd.DataFrame({\"y\": y})\n",
+        "\n",
+        "    for lag in lags:\n",
+        "        data[f\"lag_{lag}\"] = data[\"y\"].shift(lag)\n",
+        "\n",
+        "    data[\"target\"] = data[\"y\"].shift(-horizon)\n",
+        "    data = data.dropna().reset_index(drop=True)\n",
+        "\n",
+        "    X = data[[f\"lag_{lag}\" for lag in lags]]\n",
+        "    target = data[\"target\"]\n",
+        "    return X, target\n",
+        "\n",
+        "X_lag, y_target = make_lagged_frame(y, lags=[1, 2, 3, 7], horizon=1)"
+      ],
+      "id": "426cb961",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "The scaling rule is important.  Fit scalers only on training data."
+      ],
+      "id": "54cb6093"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "split = int(0.8 * len(X_lag))\n",
+        "X_train, X_test = X_lag.iloc[:split], X_lag.iloc[split:]\n",
+        "y_train, y_test = y_target.iloc[:split], y_target.iloc[split:]\n",
+        "\n",
+        "scaler = StandardScaler()\n",
+        "X_train_scaled = scaler.fit_transform(X_train)\n",
+        "X_test_scaled = scaler.transform(X_test)\n",
+        "\n",
+        "model = Ridge(alpha=1.0)\n",
+        "model.fit(X_train_scaled, y_train)\n",
+        "y_pred = model.predict(X_test_scaled)\n",
+        "\n",
+        "print(\"MAE:\", mae(y_test, y_pred))\n",
+        "print(\"RMSE:\", rmse(y_test, y_pred))"
+      ],
+      "id": "85ef0a63",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.12 Window datasets for neural networks\n",
+        "\n",
+        "For neural networks, a common supervised learning format is\n",
+        "\n",
+        "$$\n",
+        "(x_{t-L+1},\\ldots,x_t) \\mapsto (x_{t+1},\\ldots,x_{t+H}).\n",
+        "$$"
+      ],
+      "id": "8fc4a7fe"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def make_windows(y, input_length, horizon):\n",
+        "    y = np.asarray(y, dtype=np.float32)\n",
+        "    X = []\n",
+        "    Y = []\n",
+        "    for start in range(0, len(y) - input_length - horizon + 1):\n",
+        "        end = start + input_length\n",
+        "        X.append(y[start:end])\n",
+        "        Y.append(y[end:end + horizon])\n",
+        "    return np.array(X), np.array(Y)\n",
+        "\n",
+        "X_win, Y_win = make_windows(y.values, input_length=24, horizon=12)\n",
+        "print(X_win.shape, Y_win.shape)"
+      ],
+      "id": "899d2970",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "A minimal PyTorch dataset is:"
+      ],
+      "id": "2d267f12"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "class WindowDataset(Dataset):\n",
+        "    def __init__(self, X, Y):\n",
+        "        self.X = torch.tensor(X, dtype=torch.float32)\n",
+        "        self.Y = torch.tensor(Y, dtype=torch.float32)\n",
+        "\n",
+        "    def __len__(self):\n",
+        "        return len(self.X)\n",
+        "\n",
+        "    def __getitem__(self, idx):\n",
+        "        return self.X[idx], self.Y[idx]\n",
+        "\n",
+        "train_ds = WindowDataset(X_win, Y_win)\n",
+        "train_loader = DataLoader(train_ds, batch_size=32, shuffle=False)"
+      ],
+      "id": "7f8b8c2a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "For forecasting, avoid shuffling validation and test windows.  Shuffling training windows is sometimes acceptable for neural-network optimization after the windows have been created without leakage, but validation must remain chronological.\n",
+        "\n",
+        "## A.13 Minimal neural network forecaster"
+      ],
+      "id": "074cee69"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "class MLPForecaster(nn.Module):\n",
+        "    def __init__(self, input_length, horizon, hidden=64):\n",
+        "        super().__init__()\n",
+        "        self.net = nn.Sequential(\n",
+        "            nn.Linear(input_length, hidden),\n",
+        "            nn.ReLU(),\n",
+        "            nn.Linear(hidden, hidden),\n",
+        "            nn.ReLU(),\n",
+        "            nn.Linear(hidden, horizon)\n",
+        "        )\n",
+        "\n",
+        "    def forward(self, x):\n",
+        "        return self.net(x)\n",
+        "\n",
+        "model = MLPForecaster(input_length=24, horizon=12)\n",
+        "optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)\n",
+        "loss_fn = nn.MSELoss()"
+      ],
+      "id": "b18ccfc8",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "A small training loop:"
+      ],
+      "id": "2bc53669"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "for epoch in range(20):\n",
+        "    model.train()\n",
+        "    total_loss = 0.0\n",
+        "\n",
+        "    for xb, yb in train_loader:\n",
+        "        optimizer.zero_grad()\n",
+        "        pred = model(xb)\n",
+        "        loss = loss_fn(pred, yb)\n",
+        "        loss.backward()\n",
+        "        optimizer.step()\n",
+        "        total_loss += loss.item() * len(xb)\n",
+        "\n",
+        "    avg_loss = total_loss / len(train_loader.dataset)\n",
+        "    print(f\"epoch={epoch + 1:02d}, train_mse={avg_loss:.4f}\")"
+      ],
+      "id": "61707987",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.14 Causal convolution helper\n",
+        "\n",
+        "A 1D causal convolution should not use future values.  The output at time $t$ may depend on $x_t,x_{t-1},x_{t-2},\\ldots$, but not on $x_{t+1}$."
+      ],
+      "id": "0725b1fc"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def causal_convolution_1d(x, kernel, dilation=1):\n",
+        "    x = np.asarray(x, dtype=float)\n",
+        "    kernel = np.asarray(kernel, dtype=float)\n",
+        "    n = len(x)\n",
+        "    k = len(kernel)\n",
+        "    y = np.zeros(n)\n",
+        "\n",
+        "    for t in range(n):\n",
+        "        value = 0.0\n",
+        "        for j in range(k):\n",
+        "            idx = t - dilation * j\n",
+        "            if idx >= 0:\n",
+        "                value += kernel[j] * x[idx]\n",
+        "        y[t] = value\n",
+        "\n",
+        "    return y"
+      ],
+      "id": "c356cdad",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "The receptive field of a stack of dilated convolutions with kernel size $K$ and dilations $d_1,\\ldots,d_L$ is\n",
+        "\n",
+        "$$\n",
+        "R = 1 + (K-1)\\sum_{\\ell=1}^{L} d_\\ell.\n",
+        "$$\n",
+        "\n",
+        "## A.15 Attention helper functions\n",
+        "\n",
+        "The scaled dot-product attention formula is\n",
+        "\n",
+        "$$\n",
+        "\\operatorname{Attention}(Q,K,V)\n",
+        "= \\operatorname{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}} + M\\right)V.\n",
+        "$$"
+      ],
+      "id": "4b5a3bf5"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "def softmax_rows(A):\n",
+        "    A = A - A.max(axis=1, keepdims=True)\n",
+        "    E = np.exp(A)\n",
+        "    return E / E.sum(axis=1, keepdims=True)\n",
+        "\n",
+        "\n",
+        "def scaled_dot_product_attention(Q, K, V, mask=None):\n",
+        "    d_k = Q.shape[-1]\n",
+        "    scores = Q @ K.T / np.sqrt(d_k)\n",
+        "    if mask is not None:\n",
+        "        scores = scores + mask\n",
+        "    weights = softmax_rows(scores)\n",
+        "    output = weights @ V\n",
+        "    return output, weights\n",
+        "\n",
+        "\n",
+        "def causal_mask(T):\n",
+        "    M = np.triu(np.ones((T, T)), k=1)\n",
+        "    return np.where(M == 1, -1e9, 0.0)"
+      ],
+      "id": "f86e6e22",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.16 Plotly interactive pattern for this book\n",
+        "\n",
+        "Plotly.js is included once globally in `assets/header.html`.  Interactive modules should use the shared configuration in `assets/ts-interactives.js`.\n",
+        "\n",
+        "A standard pattern is:\n",
+        "\n",
+        "```{js}\n",
+        "//| eval: false\n",
+        "window.TSInteractives = window.TSInteractives || {};\n",
+        "\n",
+        "window.TSInteractives.exampleModule = function () {\n",
+        "  const plotDiv = document.getElementById(\"example-plot\");\n",
+        "  if (!plotDiv || typeof Plotly === \"undefined\") return;\n",
+        "\n",
+        "  const traces = [\n",
+        "    { x: [0, 1, 2], y: [0, 1, 0], mode: \"lines\", name: \"example\" }\n",
+        "  ];\n",
+        "\n",
+        "  const layout = {\n",
+        "    title: \"Example Interactive\",\n",
+        "    margin: { t: 60, r: 30, b: 50, l: 50 }\n",
+        "  };\n",
+        "\n",
+        "  Plotly.react(\n",
+        "    plotDiv,\n",
+        "    traces,\n",
+        "    layout,\n",
+        "    window.TSInteractives.plotlyConfig\n",
+        "  );\n",
+        "};\n",
+        "\n",
+        "document.addEventListener(\"DOMContentLoaded\", function () {\n",
+        "  window.TSInteractives.exampleModule();\n",
+        "});\n",
+        "```\n",
+        "\n",
+        "The chapter `.qmd` file should contain only the container, not another Plotly script tag.\n",
+        "\n",
+        "```{markdown}\n",
+        "```html\n",
+        "<div class=\"interactive-card\">\n",
+        "  <h3>Interactive Module</h3>\n",
+        "  <div id=\"example-plot\" style=\"width:100%; height:480px;\"></div>\n",
+        "</div>\n",
+        "```\n",
+        "```\n",
+        "\n",
+        "## A.17 Common debugging checklist\n",
+        "\n",
+        "When a lab or interactive does not work, check these items first.\n",
+        "\n",
+        "- Confirm the notebook runtime is using Python 3.10 or later.\n",
+        "- Run all cells from the top instead of running isolated cells out of order.\n",
+        "- Check array lengths after differencing, lagging, and windowing.\n",
+        "- Use `assert` statements for expected shapes.\n",
+        "- Make sure scaling is fitted only on the training set.\n",
+        "- Make sure validation and test sets are later in time than the training set.\n",
+        "- Check that `assets/header.html` loads Plotly.js once.\n",
+        "- Check browser developer tools for missing file errors such as `404 Not Found`.\n",
+        "- Check that each interactive container ID matches the JavaScript code.\n",
+        "- Avoid raw HTML tables inside Quarto documents when rendering to PDF.\n",
+        "\n",
+        "Useful shape checks:"
+      ],
+      "id": "d6218fed"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "assert len(y_train) > 0\n",
+        "assert len(y_test) > 0\n",
+        "assert X_train.shape[0] == len(y_train)\n",
+        "assert X_test.shape[0] == len(y_test)\n",
+        "assert np.isfinite(X_train).all().all()\n",
+        "assert np.isfinite(y_train).all()"
+      ],
+      "id": "f42d9dc6",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.18 AI-assisted Python workflow\n",
+        "\n",
+        "AI tools are helpful for code review, but they must be asked precise, time-series-aware questions.  Good prompts include the data structure, the forecast horizon, the information set, and the validation design.\n",
+        "\n",
+        "Example prompt:\n",
+        "\n",
+        "> I am forecasting $y_{t+12}$ using only information available up to time $t$.  Here is my feature construction and train/test split.  Check whether any feature leaks future information.  Also check whether my scaling is fitted only on the training set.\n",
+        "\n",
+        "Another useful prompt:\n",
+        "\n",
+        "> Here is my residual ACF, Ljung-Box result, and rolling-origin error table.  Give three possible reasons the model fails, and propose checks that I can verify with code.\n",
+        "\n",
+        "AI-generated code should be treated as a draft.  Before using it in a project, verify the following.\n",
+        "\n",
+        "- The model does not use future observations as predictors.\n",
+        "- Differencing, scaling, and feature engineering are performed in the correct chronological order.\n",
+        "- The validation method matches the forecasting task.\n",
+        "- Baselines are included.\n",
+        "- Residual diagnostics are checked.\n",
+        "- The code is reproducible from a fresh runtime.\n",
+        "\n",
+        "## A.19 Minimal project notebook structure\n",
+        "\n",
+        "A strong final-project notebook should follow this structure.\n",
+        "\n",
+        "1. Problem statement and forecast contract.\n",
+        "2. Data loading and cleaning.\n",
+        "3. Exploratory time-series analysis.\n",
+        "4. Baseline models.\n",
+        "5. Main models.\n",
+        "6. Rolling-origin or chronological validation.\n",
+        "7. Residual diagnostics and uncertainty.\n",
+        "8. Interpretation and limitations.\n",
+        "9. Final conclusion.\n",
+        "\n",
+        "A simple project header can be:"
+      ],
+      "id": "4d4da2e6"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| eval: false\n",
+        "PROJECT_TITLE = \"Short descriptive title\"\n",
+        "FORECAST_TARGET = \"variable to forecast\"\n",
+        "FORECAST_HORIZON = 12\n",
+        "INFORMATION_SET = \"all variables observed up to forecast origin t\"\n",
+        "VALIDATION_SCHEME = \"rolling-origin evaluation\"\n",
+        "RANDOM_SEED = 7339"
+      ],
+      "id": "342b2865",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## A.20 Key principle\n",
+        "\n",
+        "For sequence data, the order is part of the data.  A model that ignores the order may still be useful, but a validation procedure that ignores the order is usually misleading."
+      ],
+      "id": "605c3a6f"
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python3",
+      "language": "python",
+      "display_name": "Python 3 (ipykernel)",
+      "path": "/Users/he.wang/miniconda3/share/jupyter/kernels/python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
 }

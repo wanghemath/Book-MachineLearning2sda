@@ -208,7 +208,7 @@
         "\n",
         "### Python: direct DFT versus NumPy FFT"
       ],
-      "id": "6d64e715"
+      "id": "8952e6b3"
     },
     {
       "cell_type": "code",
@@ -306,7 +306,7 @@
         "\n",
         "### Python: periodogram of a hidden periodic signal"
       ],
-      "id": "21a44a94"
+      "id": "a207efa3"
     },
     {
       "cell_type": "code",
@@ -419,7 +419,7 @@
         "\n",
         "### Python: smoothing a periodogram"
       ],
-      "id": "06022a25"
+      "id": "4fe18c0c"
     },
     {
       "cell_type": "code",
@@ -514,7 +514,7 @@
         "\n",
         "### Python: timing direct DFT and FFT"
       ],
-      "id": "59b2474c"
+      "id": "d8ae8bcb"
     },
     {
       "cell_type": "code",
@@ -578,7 +578,7 @@
         "\n",
         "### Python: leakage and tapering"
       ],
-      "id": "043c14e4"
+      "id": "29d48897"
     },
     {
       "cell_type": "code",
@@ -796,7 +796,7 @@
         "\n",
         "### Python: peak detection followed by sinusoidal regression"
       ],
-      "id": "fe622fb8"
+      "id": "9f901960"
     },
     {
       "cell_type": "code",
@@ -884,7 +884,7 @@
         "\n",
         "### Python: white noise has random periodogram peaks"
       ],
-      "id": "b7674078"
+      "id": "2c1a40ec"
     },
     {
       "cell_type": "code",
@@ -1089,7 +1089,7 @@
         "\n",
         "The next chapter studies filtering and wavelets. Filters modify the spectrum, while wavelets localize patterns in both time and frequency. Together, they extend the Fourier viewpoint toward multiresolution analysis and modern signal-processing tools for time series."
       ],
-      "id": "7bcedab9"
+      "id": "821dd83e"
     }
   ],
   "metadata": {

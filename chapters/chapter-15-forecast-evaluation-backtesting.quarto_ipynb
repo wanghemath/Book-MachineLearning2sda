@@ -661,7 +661,7 @@
         "\n",
         "The following code defines several common metrics. In a serious project, keeping metric definitions explicit is useful because different libraries sometimes make different choices for zero handling, averaging, and seasonal scaling."
       ],
-      "id": "e51b3cf4"
+      "id": "1e88dfc1"
     },
     {
       "cell_type": "code",
@@ -745,7 +745,7 @@
         "\n",
         "We now implement an expanding-window backtest for simple baselines."
       ],
-      "id": "07c5813f"
+      "id": "b1cda3d0"
     },
     {
       "cell_type": "code",
@@ -883,7 +883,7 @@
         "\n",
         "A single score can hide important structure. Horizon-wise curves show how accuracy changes as the forecast looks farther ahead."
       ],
-      "id": "3587eb05"
+      "id": "cbc94c82"
     },
     {
       "cell_type": "code",
@@ -918,7 +918,7 @@
         "\n",
         "A simple residual-based interval can be constructed by estimating the distribution of past forecast errors. This is not always valid, but it is a useful starting point."
       ],
-      "id": "737bf804"
+      "id": "13681780"
     },
     {
       "cell_type": "code",
@@ -1072,7 +1072,7 @@
         "- evaluate interval coverage and width;\n",
         "- use AI as an evaluation auditor while verifying every claim yourself."
       ],
-      "id": "469c06c0"
+      "id": "148c0b98"
     }
   ],
   "metadata": {

@@ -528,7 +528,7 @@
         "\n",
         "The next example simulates a stable two-dimensional VAR(1), estimates the coefficient matrix by least squares, and produces recursive forecasts."
       ],
-      "id": "a88c4817"
+      "id": "ab6aaea3"
     },
     {
       "cell_type": "code",
@@ -598,7 +598,7 @@
         "\n",
         "For a VAR(1), the response after $h$ steps to a shock $\\mathbf s$ is $A^h\\mathbf s$."
       ],
-      "id": "d903a1ec"
+      "id": "7ce68f37"
     },
     {
       "cell_type": "code",
@@ -637,7 +637,7 @@
         "\n",
         "The next example reconciles forecasts for a hierarchy with one total and three bottom-level series."
       ],
-      "id": "dde46ccc"
+      "id": "1d81c87a"
     },
     {
       "cell_type": "code",
@@ -691,7 +691,7 @@
         "\n",
         "This example turns many related series into one supervised-learning table. The model shares lag coefficients across series but allows different intercepts through series indicators."
       ],
-      "id": "e12fd244"
+      "id": "69e46dd4"
     },
     {
       "cell_type": "code",
@@ -857,7 +857,7 @@
         "- How does projection-based reconciliation work?\n",
         "- What leakage risks are common in panel and hierarchical forecasting?"
       ],
-      "id": "2f7446ad"
+      "id": "eca5e9c9"
     }
   ],
   "metadata": {

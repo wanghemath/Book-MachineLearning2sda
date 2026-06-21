@@ -414,7 +414,7 @@
         "\n",
         "The following code implements causal scaled dot-product attention using only NumPy. Notice how the future weights become zero after masking."
       ],
-      "id": "ffce60e7"
+      "id": "cc561427"
     },
     {
       "cell_type": "code",
@@ -485,7 +485,7 @@
         "\n",
         "The next example constructs sinusoidal positional encodings and plots two components."
       ],
-      "id": "46025c60"
+      "id": "460d29c9"
     },
     {
       "cell_type": "code",
@@ -535,7 +535,7 @@
         "\n",
         "PyTorch includes a multi-head attention layer. The example below uses a causal mask. The mask has shape $T\\times T$ and is `True` exactly where attention is not allowed."
       ],
-      "id": "23f9d6cc"
+      "id": "aaa4f524"
     },
     {
       "cell_type": "code",
@@ -580,7 +580,7 @@
         "\n",
         "Now we build a small encoder-style transformer forecaster. The model receives a window of length $L$ and predicts the next $H$ values. This example is intentionally small so that the code emphasizes structure rather than performance."
       ],
-      "id": "6003fecb"
+      "id": "53fdbb64"
     },
     {
       "cell_type": "code",
@@ -859,7 +859,7 @@
         "- What baselines should be used before claiming improvement?\n",
         "- What can and cannot be concluded from attention weights?"
       ],
-      "id": "3bfe7416"
+      "id": "3ad48103"
     }
   ],
   "metadata": {

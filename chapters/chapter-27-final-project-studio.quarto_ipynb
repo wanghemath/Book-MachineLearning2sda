@@ -294,7 +294,7 @@
         "\n",
         "The following example simulates daily demand data, creates a chronological split, evaluates naive and seasonal-naive baselines, and fits a small lag-feature regression model. It illustrates the minimum level of computational reproducibility expected in a project."
       ],
-      "id": "0fe8e934"
+      "id": "3cf8b183"
     },
     {
       "cell_type": "code",
@@ -375,7 +375,7 @@
         "\n",
         "The next example evaluates a one-step-ahead ridge model over many forecast origins. The important point is that the model is refit at each origin using only past information."
       ],
-      "id": "9b94d75e"
+      "id": "d6922a22"
     },
     {
       "cell_type": "code",
@@ -693,7 +693,7 @@
         "This final chapter turns the methods of the course into an independent project. A successful project demonstrates mathematical formulation, computational skill, diagnostic judgment, communication, and responsible use of AI tools.\n",
         ":::"
       ],
-      "id": "2999a3e7"
+      "id": "b1512c05"
     }
   ],
   "metadata": {

@@ -507,7 +507,7 @@
         "\n",
         "The following code constructs a synthetic daily series and converts it to a supervised-learning data frame."
       ],
-      "id": "09565d25"
+      "id": "e9fcd693"
     },
     {
       "cell_type": "code",
@@ -660,7 +660,7 @@
         "\n",
         "## 17.10 Python example: chronological split and model comparison"
       ],
-      "id": "477594c1"
+      "id": "cb449e76"
     },
     {
       "cell_type": "code",
@@ -774,7 +774,7 @@
         "\n",
         "Recursive forecasting trains a one-step model and repeatedly updates the lag vector using predicted values. The following example illustrates the idea with ridge regression. Recursive code is more delicate than direct code because future feature rows do not already exist."
       ],
-      "id": "fb68e173"
+      "id": "0077b567"
     },
     {
       "cell_type": "code",
@@ -841,7 +841,7 @@
         "\n",
         "Each model uses the same origin-time features but a different target."
       ],
-      "id": "72e080de"
+      "id": "8faf130d"
     },
     {
       "cell_type": "code",
@@ -907,7 +907,7 @@
         "\n",
         "The following backtest trains a model repeatedly at different forecast origins. This is slower than a single chronological split, but it gives a more realistic estimate of forecasting performance."
       ],
-      "id": "f9fe1f0f"
+      "id": "a2021b09"
     },
     {
       "cell_type": "code",
@@ -990,7 +990,7 @@
         "\n",
         "Then ask whether removing an entire group changes validation performance."
       ],
-      "id": "ef13f5aa"
+      "id": "06b72f15"
     },
     {
       "cell_type": "code",
@@ -1054,7 +1054,7 @@
         "\n",
         "If the forecast errors have strong autocorrelation, the feature set or model may be missing temporal information. If errors vary systematically by day of week, the seasonal features may be insufficient. If errors grow sharply with horizon, the multi-step strategy may need revision."
       ],
-      "id": "0f6a38fc"
+      "id": "d74d10fb"
     },
     {
       "cell_type": "code",
@@ -1213,7 +1213,7 @@
         "\n",
         "The lab asks you to build a leakage-aware ML forecasting pipeline with lag, rolling, Fourier, and calendar features; compare linear and tree-based models; and write a short diagnostic report."
       ],
-      "id": "639a941e"
+      "id": "2db23891"
     }
   ],
   "metadata": {

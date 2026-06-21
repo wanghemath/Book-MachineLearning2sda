@@ -479,7 +479,7 @@
         "\n",
         "The following synthetic series contains autoregressive dependence, nonlinear dependence, seasonality, and noise. It is simple enough to understand but nonlinear enough to motivate a neural model."
       ],
-      "id": "e1620d4c"
+      "id": "6d0c078e"
     },
     {
       "cell_type": "code",
@@ -531,7 +531,7 @@
         "\n",
         "The function below transforms a single series into a supervised learning data set. This is the most important preprocessing step for neural forecasting."
       ],
-      "id": "907e3362"
+      "id": "3fd9e659"
     },
     {
       "cell_type": "code",
@@ -615,7 +615,7 @@
         "\n",
         "Scaling must also be fit on the training period only. If the test period is used to compute the mean or standard deviation, the model has already seen information from the future."
       ],
-      "id": "3dcccaa3"
+      "id": "bce92e81"
     },
     {
       "cell_type": "code",
@@ -673,7 +673,7 @@
         "\n",
         "We also fit a ridge regression model on the same input windows. This is a linear benchmark for the neural network."
       ],
-      "id": "0a46925a"
+      "id": "fee97745"
     },
     {
       "cell_type": "code",
@@ -725,7 +725,7 @@
         "\n",
         "The architecture is intentionally small. In a course project, model size should be chosen by validation performance, not by excitement about deep learning."
       ],
-      "id": "f3044a22"
+      "id": "324a81d3"
     },
     {
       "cell_type": "code",
@@ -821,7 +821,7 @@
         "\n",
         "We now evaluate on the held-out test period. The test set was not used to fit preprocessing parameters, train the model, or choose the best epoch."
       ],
-      "id": "66cfa4a7"
+      "id": "fa9fbe52"
     },
     {
       "cell_type": "code",
@@ -854,7 +854,7 @@
       "source": [
         "A neural model does not have to win every comparison. A strong linear baseline may be difficult to beat when the data-generating mechanism is mostly linear, the sample size is small, or the neural architecture is not tuned. The correct conclusion is not always \"use a larger neural network.\" The correct conclusion is to inspect the error by horizon, validation design, and residual structure."
       ],
-      "id": "897bed24"
+      "id": "46350351"
     },
     {
       "cell_type": "code",
@@ -941,7 +941,7 @@
         "\n",
         "The mini-batch examples can often be shuffled **within the training period** because the model is trained on windows, not by updating a hidden state through the original sequence. However, the train-validation-test split itself should remain chronological."
       ],
-      "id": "a41f9553"
+      "id": "3c125b6f"
     },
     {
       "cell_type": "code",
@@ -1101,7 +1101,7 @@
         "- Can you describe the loss function mathematically?\n",
         "- Can you identify at least three possible leakage sources?"
       ],
-      "id": "d01786fd"
+      "id": "a5f49d4a"
     }
   ],
   "metadata": {

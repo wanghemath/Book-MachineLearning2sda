@@ -706,7 +706,7 @@
         "\n",
         "The next code block simulates a two-state Gaussian HMM without using a specialized HMM package. This is useful pedagogically because the model assumptions are completely visible."
       ],
-      "id": "252e1ef6"
+      "id": "a50add90"
     },
     {
       "cell_type": "code",
@@ -744,7 +744,7 @@
         "plt.legend()\n",
         "plt.show()"
       ],
-      "id": "22b0da9b",
+      "id": "6e9db2b3",
       "execution_count": null,
       "outputs": []
     },
@@ -754,7 +754,7 @@
       "source": [
         "A useful first diagnostic is to compare the sample behavior within the true states."
       ],
-      "id": "df2d9563"
+      "id": "5273f21a"
     },
     {
       "cell_type": "code",
@@ -764,7 +764,7 @@
         "    values = y[states == j]\n",
         "    print(f\"state {j + 1}: count={len(values):3d}, sample mean={values.mean(): .3f}, sample sd={values.std(ddof=1): .3f}\")"
       ],
-      "id": "acc4e791",
+      "id": "e2a8e7a3",
       "execution_count": null,
       "outputs": []
     },
@@ -776,7 +776,7 @@
         "\n",
         "We now implement the forward algorithm. The function below returns the filtered state probabilities and the log-likelihood."
       ],
-      "id": "b1e73845"
+      "id": "4bac5cfb"
     },
     {
       "cell_type": "code",
@@ -816,7 +816,7 @@
         "print(f\"Log-likelihood under the true parameters: {loglik:.2f}\")\n",
         "print(\"Last filtered state probability:\", alpha[-1])"
       ],
-      "id": "daa54a72",
+      "id": "48e27f7b",
       "execution_count": null,
       "outputs": []
     },
@@ -826,7 +826,7 @@
       "source": [
         "Plotting the filtered probability of state 2 shows how the model tracks the hidden regime."
       ],
-      "id": "7cd71d08"
+      "id": "9670bf13"
     },
     {
       "cell_type": "code",
@@ -841,7 +841,7 @@
         "plt.legend()\n",
         "plt.show()"
       ],
-      "id": "9b21b518",
+      "id": "9581d875",
       "execution_count": null,
       "outputs": []
     },
@@ -853,7 +853,7 @@
         "\n",
         "The following function implements Viterbi decoding in log scale."
       ],
-      "id": "074e77c2"
+      "id": "3aa5a24f"
     },
     {
       "cell_type": "code",
@@ -893,7 +893,7 @@
         "accuracy = np.mean(path == states)\n",
         "print(f\"Viterbi state decoding accuracy against simulated truth: {accuracy:.3f}\")"
       ],
-      "id": "360860d6",
+      "id": "9825c990",
       "execution_count": null,
       "outputs": []
     },
@@ -910,7 +910,7 @@
         "plt.legend()\n",
         "plt.show()"
       ],
-      "id": "4360d9da",
+      "id": "a1aa5f30",
       "execution_count": null,
       "outputs": []
     },
@@ -922,7 +922,7 @@
         "\n",
         "Here is a compact educational implementation of EM for a Gaussian HMM. The goal is clarity, not production-level numerical robustness."
       ],
-      "id": "674de885"
+      "id": "4df1b571"
     },
     {
       "cell_type": "code",
@@ -997,7 +997,7 @@
         "print(\"Estimated means:\", np.round(mu_hat, 3))\n",
         "print(\"Estimated standard deviations:\", np.round(sigma_hat, 3))"
       ],
-      "id": "f625324c",
+      "id": "a21344f6",
       "execution_count": null,
       "outputs": []
     },
@@ -1012,7 +1012,7 @@
         "plt.ylabel(\"log-likelihood\")\n",
         "plt.show()"
       ],
-      "id": "6b24aa85",
+      "id": "2a661265",
       "execution_count": null,
       "outputs": []
     },
@@ -1221,7 +1221,7 @@
         "\n",
         "The next part of the book moves from hidden-state time-domain models to frequency-domain methods. Instead of asking which hidden regime generated the observation, we ask which oscillatory components explain the variation in the sequence."
       ],
-      "id": "c5831415"
+      "id": "8ffe6ddf"
     }
   ],
   "metadata": {

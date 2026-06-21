@@ -318,7 +318,7 @@
         "\n",
         "## 18.7 Python example: model-based AR(1) forecast intervals"
       ],
-      "id": "e3fe127a"
+      "id": "f20ddb1a"
     },
     {
       "cell_type": "code",
@@ -413,7 +413,7 @@
         "\n",
         "Good intervals should have empirical coverage near the nominal level and should not be unnecessarily wide."
       ],
-      "id": "80fd5615"
+      "id": "e34a18e4"
     },
     {
       "cell_type": "code",
@@ -530,7 +530,7 @@
         "\n",
         "It rewards narrow intervals but penalizes misses."
       ],
-      "id": "158213fa"
+      "id": "f4d8f757"
     },
     {
       "cell_type": "code",
@@ -589,7 +589,7 @@
         "\n",
         "By fitting two models, one for $\\tau=0.05$ and one for $\\tau=0.95$, we obtain a 90% interval."
       ],
-      "id": "46834bcc"
+      "id": "d86f5c15"
     },
     {
       "cell_type": "code",
@@ -713,7 +713,7 @@
         "\n",
         "Then horizon-specific intervals use horizon-specific residual quantiles."
       ],
-      "id": "c05fe426"
+      "id": "392d5894"
     },
     {
       "cell_type": "code",
@@ -804,7 +804,7 @@
         "=\\text{the }\\left\\lceil (n_{\\text{cal}}+1)(1-\\alpha)\\right\\rceil\\text{-th smallest calibration score}.\n",
         "$$"
       ],
-      "id": "8f7ba2ce"
+      "id": "ff19837e"
     },
     {
       "cell_type": "code",
@@ -933,7 +933,7 @@
         "- neural-network ensembles;\n",
         "- scenario analysis."
       ],
-      "id": "e11f9108"
+      "id": "819d519b"
     },
     {
       "cell_type": "code",
@@ -1096,7 +1096,7 @@
         "6. interval misses over time;\n",
         "7. separate upper-tail and lower-tail miss rates."
       ],
-      "id": "99b1196d"
+      "id": "9607d91d"
     },
     {
       "cell_type": "code",
@@ -1171,7 +1171,7 @@
         "\n",
         "## 18.22 Python example: decision threshold probability"
       ],
-      "id": "386287ad"
+      "id": "4b87c6a0"
     },
     {
       "cell_type": "code",
@@ -1312,7 +1312,7 @@
         "\n",
         "The lab asks you to compare Gaussian, residual-bootstrap, quantile-regression, and conformal intervals on a synthetic or real time series; evaluate empirical coverage and average width by horizon; and write a short uncertainty-audit report."
       ],
-      "id": "f65eead6"
+      "id": "669433ef"
     }
   ],
   "metadata": {

@@ -553,7 +553,7 @@
         "\n",
         "## 6.10 Python example: AR(1) forecast and forecast intervals"
       ],
-      "id": "e50b7b1f"
+      "id": "a49c5db8"
     },
     {
       "cell_type": "code",
@@ -631,7 +631,7 @@
         "\n",
         "which is the autocovariance of a stationary AR(1). If we solve the best linear prediction equations using many lags, we should discover that only the first lag is needed."
       ],
-      "id": "3fbc48f9"
+      "id": "50db5482"
     },
     {
       "cell_type": "code",
@@ -886,7 +886,7 @@
         "\n",
         "## 6.15 Python example: recursive AR(2) forecasting"
       ],
-      "id": "0be7e11a"
+      "id": "ab5587e4"
     },
     {
       "cell_type": "code",
@@ -1014,7 +1014,7 @@
         "\n",
         "## 6.18 Python example: forecast error variance from impulse responses"
       ],
-      "id": "98bd3789"
+      "id": "e8e4a196"
     },
     {
       "cell_type": "code",
@@ -1124,7 +1124,7 @@
         "\n",
         "A common mistake is to train on data that includes future observations. Time-series forecasting must respect chronological order."
       ],
-      "id": "bc642b3b"
+      "id": "a83a96b0"
     },
     {
       "cell_type": "code",
@@ -1379,7 +1379,7 @@
         "\n",
         "Best linear prediction is the mathematical core of classical forecasting. The forecast is a projection of the future value onto the space spanned by the observed past. The residual is orthogonal to all information used in the prediction. For stationary processes, this projection is determined by the autocovariance function. For AR and ARMA models, the same theory leads to simple recursive forecasts and explicit formulas for forecast uncertainty. These ideas remain central in modern machine learning, where lag windows, convolutional filters, recurrent states, and attention mechanisms are nonlinear extensions of the same basic goal: use the past to predict the future without leaking information from the future."
       ],
-      "id": "ea8976c9"
+      "id": "436d5d8d"
     }
   ],
   "metadata": {

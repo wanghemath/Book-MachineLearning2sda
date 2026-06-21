@@ -756,7 +756,7 @@
         "\n",
         "The following example compares deterministic and stochastic trend. Both can look nonstationary, but their meanings are different."
       ],
-      "id": "06ab046b"
+      "id": "cc316021"
     },
     {
       "cell_type": "code",
@@ -818,7 +818,7 @@
         "\n",
         "## 8.16 Python example: ACF before and after differencing"
       ],
-      "id": "3a312322"
+      "id": "19ff5733"
     },
     {
       "cell_type": "code",
@@ -861,7 +861,7 @@
         "\n",
         "Here we simulate an ARIMA($1,1,1$) series and fit several candidate models."
       ],
-      "id": "03b48aa6"
+      "id": "2e80e44b"
     },
     {
       "cell_type": "code",
@@ -925,7 +925,7 @@
       "source": [
         "Fit the best candidate and inspect residuals."
       ],
-      "id": "72febe4b"
+      "id": "7540aa4c"
     },
     {
       "cell_type": "code",
@@ -976,7 +976,7 @@
         "\n",
         "The next example fits an ARIMA model and produces forecasts. Notice that `statsmodels` automatically returns forecasts on the original scale of $X_t$, not on the differenced scale."
       ],
-      "id": "11569c31"
+      "id": "d5975e75"
     },
     {
       "cell_type": "code",
@@ -1145,7 +1145,7 @@
         "- I can explain how differenced forecasts are converted back to the original scale.\n",
         "- I can use AI tools for critique and explanation while verifying all modeling decisions."
       ],
-      "id": "b5d8acd8"
+      "id": "b288e426"
     }
   ],
   "metadata": {

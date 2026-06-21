@@ -464,7 +464,7 @@
         "\n",
         "## 14.7 Python: filtering and frequency response"
       ],
-      "id": "38c769d8"
+      "id": "1b63433e"
     },
     {
       "cell_type": "code",
@@ -686,7 +686,7 @@
         "\n",
         "The next code block implements a simple orthonormal Haar transform. This avoids hiding the mathematics inside a library."
       ],
-      "id": "676f7c54"
+      "id": "f50627ac"
     },
     {
       "cell_type": "code",
@@ -826,7 +826,7 @@
         "\n",
         "Soft thresholding is continuous and often produces smoother reconstructions."
       ],
-      "id": "11347b3b"
+      "id": "56a6c9c6"
     },
     {
       "cell_type": "code",
@@ -1024,7 +1024,7 @@
         "\n",
         "Low entropy means the signal's variation is concentrated at a few scales. High entropy means variation is spread over many scales."
       ],
-      "id": "3f3b29de"
+      "id": "3a9c8e7c"
     },
     {
       "cell_type": "code",
@@ -1060,7 +1060,7 @@
         "\n",
         "The following example compares global Fourier evidence with local wavelet evidence. A short high-frequency burst may not dominate the global periodogram, but it can produce large local detail coefficients."
       ],
-      "id": "e724eb43"
+      "id": "3faa054b"
     },
     {
       "cell_type": "code",
@@ -1265,7 +1265,7 @@
         "- Strang and Nguyen, *Wavelets and Filter Banks*.\n",
         "- Brockwell and Davis, *Introduction to Time Series and Forecasting*, chapters on linear filters and spectral methods.\n"
       ],
-      "id": "51437539"
+      "id": "317ba7cd"
     }
   ],
   "metadata": {

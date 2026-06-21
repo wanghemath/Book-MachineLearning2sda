@@ -423,7 +423,7 @@
         "\n",
         "The following example creates synthetic windows from four families and embeds them using simple features followed by PCA."
       ],
-      "id": "42ee6806"
+      "id": "e7afdce2"
     },
     {
       "cell_type": "code",
@@ -525,7 +525,7 @@
         "\n",
         "PCA gives the best rank-$k$ linear reconstruction in squared error. This makes it a useful baseline for autoencoders."
       ],
-      "id": "2f24b32c"
+      "id": "42344016"
     },
     {
       "cell_type": "code",
@@ -585,7 +585,7 @@
         "\n",
         "The next example trains a small MLP autoencoder. This is not meant to be a state-of-the-art model. It is a minimal representation-learning template."
       ],
-      "id": "a2268137"
+      "id": "3f83be4a"
     },
     {
       "cell_type": "code",
@@ -672,7 +672,7 @@
         "\n",
         "Masked reconstruction trains a model to infer missing parts from context. Here is a simple non-neural demonstration of the idea."
       ],
-      "id": "2cd71ad5"
+      "id": "a58e8813"
     },
     {
       "cell_type": "code",
@@ -802,7 +802,7 @@
         "- Goodfellow, Bengio, and Courville, *Deep Learning*, for autoencoders and representation learning.\n",
         "- Recent literature on self-supervised learning for time series, including masked modeling, contrastive predictive coding, and transformer-based sequence pretraining."
       ],
-      "id": "10d23ccc"
+      "id": "545b05fb"
     }
   ],
   "metadata": {

@@ -412,7 +412,7 @@
         "\n",
         "The next code chunk creates a reusable simulator. It is intentionally written in plain NumPy so that the model equations remain visible."
       ],
-      "id": "82edbb62"
+      "id": "70939d9f"
     },
     {
       "cell_type": "code",
@@ -458,7 +458,7 @@
       "source": [
         "We can now compare four sample paths."
       ],
-      "id": "0e603126"
+      "id": "e6fe0293"
     },
     {
       "cell_type": "code",
@@ -505,7 +505,7 @@
         "\n",
         "For a random walk $S_t=\\sum_{i=1}^t W_i$, theory says $E[S_t]=0$ and $\\operatorname{Var}(S_t)=t\\sigma^2$. We can check this by simulating many paths."
       ],
-      "id": "55c14f9e"
+      "id": "e3c0c56c"
     },
     {
       "cell_type": "code",
@@ -582,7 +582,7 @@
         "\n",
         "This converts one sequence into a supervised-learning data set."
       ],
-      "id": "5f5ef394"
+      "id": "0051ac4e"
     },
     {
       "cell_type": "code",
@@ -654,7 +654,7 @@
         "\n",
         "For many real data sets, a sophisticated model is not useful unless it beats these simple baselines under a time-aware validation scheme."
       ],
-      "id": "2dd4d94d"
+      "id": "a8a93e38"
     },
     {
       "cell_type": "code",
@@ -791,7 +791,7 @@
         "\n",
         "Classical notation and introductory examples are covered in @shumway2017time and @brockwell2016introduction. Forecasting validation and baseline thinking are developed in @hyndman2021forecasting. Later chapters connect these ideas to neural sequence modeling and modern AI systems."
       ],
-      "id": "60637458"
+      "id": "768872bd"
     }
   ],
   "metadata": {
